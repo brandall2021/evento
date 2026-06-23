@@ -1,5 +1,7 @@
 import express from 'express'
 import cors from 'cors'
+import path from 'path'
+import { fileURLToPath } from 'url'
 import dotenv from 'dotenv'
 import { sequelize } from './models/index.js'
 import authRoutes from './routes/auth.js'
@@ -9,6 +11,8 @@ import pagoRoutes from './routes/pagos.js'
 import certificadoRoutes from './routes/certificados.js'
 
 dotenv.config()
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const app = express()
 
@@ -23,6 +27,14 @@ app.use('/api/pagos', pagoRoutes)
 app.use('/api/certificados', certificadoRoutes)
 
 app.get('/api/health', (req, res) => res.json({ ok: true }))
+
+const frontendDist = path.resolve(__dirname, '../../dist')
+app.use(express.static(frontendDist))
+app.get('*', (req, res) => {
+  if (!req.path.startsWith('/api')) {
+    res.sendFile(path.join(frontendDist, 'index.html'))
+  }
+})
 
 const PORT = process.env.PORT || 3001
 
