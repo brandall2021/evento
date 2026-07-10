@@ -1,6 +1,6 @@
 # Evento — Sistema de Gestión de Eventos y Cursos
 
-Plataforma completa para que instituciones educativas y organizaciones publiquen cursos, gestionen inscripciones, procesen pagos y emitan certificados digitales con validación por QR.
+Plataforma completa para que instituciones educativas y organizaciones publiquen cursos, gestionen inscripciones, procesen pagos y emitan certificados digitales con validación por QR. Incluye editor de plantillas de certificado con firma electrónica, panel de administración de usuarios, modo oscuro/claro, y landing page institucional.
 
 ## Stack
 
@@ -11,7 +11,9 @@ Plataforma completa para que instituciones educativas y organizaciones publiquen
 | **Base de datos** | PostgreSQL |
 | **ORM** | Sequelize 6 |
 | **Autenticación** | JWT (jsonwebtoken + bcryptjs) |
+| **Editor enriquecido** | Tiptap (descrito de React Quill por incompatibilidad con React 19) |
 | **Generación PDF** | PDFKit + QRCode |
+| **Subida de archivos** | Multer (imágenes de cursos, firma, logo) |
 | **Validación** | express-validator |
 | **Seguridad** | express-rate-limit, CORS configurable |
 | **Despliegue** | Docker (multi-stage) + Dokploy |
@@ -31,19 +33,24 @@ evento-web/
 │   │   │   ├── Inscripcion.js       # Solicitudes, estados, cupos
 │   │   │   ├── Pago.js              # Pagos por cuota
 │   │   │   ├── Asistencia.js        # Control de asistencia
-│   │   │   └── Certificado.js       # PDF + QR + validación
+│   │   │   ├── Certificado.js       # PDF + QR + validación
+│   │   │   └── PlantillaCertificado.js # Plantilla de certificado (JSONB)
 │   │   ├── controllers/
 │   │   │   ├── authController.js       # Registro, login, perfil
 │   │   │   ├── cursoController.js      # CRUD con paginación
 │   │   │   ├── inscripcionController.js# Solicitud, aprobar/rechazar
 │   │   │   ├── pagoController.js       # Crear, confirmar (desbloqueo automático)
-│   │   │   └── certificadoController.js# Emitir, descargar PDF, validar
+│   │   │   ├── certificadoController.js# Emitir, descargar PDF, validar
+│   │   │   ├── plantillaController.js  # CRUD plantillas con archivos
+│   │   │   └── usuarioController.js    # CRUD usuarios + toggleActivo + estadísticas
 │   │   ├── routes/
 │   │   │   ├── auth.js
 │   │   │   ├── cursos.js
 │   │   │   ├── inscripciones.js
 │   │   │   ├── pagos.js
-│   │   │   └── certificados.js
+│   │   │   ├── certificados.js
+│   │   │   ├── plantillas.js        # Multer para firma/logo
+│   │   │   └── usuarios.js          # Solo admin
 │   │   ├── middleware/
 │   │   │   ├── auth.js                 # JWT + roles + query token fallback
 │   │   │   ├── validate.js             # Schemas express-validator
@@ -51,32 +58,37 @@ evento-web/
 │   │   ├── seeders/
 │   │   │   └── seed.js                 # Datos de prueba (5 usuarios, 5 cursos)
 │   │   └── index.js                    # Entry point
-│   ├── uploads/                        # Archivos generados (QR)
+│   ├── uploads/                        # Archivos generados (QR, firmas, logos)
 │   ├── .env                            # Variables de entorno
 │   └── package.json
 ├── src/
 │   ├── components/
 │   │   ├── Layout.jsx                  # Header + navegación responsive
 │   │   ├── ProtectedRoute.jsx          # Guard por autenticación y roles
-│   │   └── ErrorBoundary.jsx           # Captura errores de React
+│   │   ├── ErrorBoundary.jsx           # Captura errores de React
+│   │   └── RichTextEditor.jsx          # Editor Tiptap (compatible React 19)
 │   ├── context/
 │   │   ├── AuthContext.jsx             # Estado de autenticación global
+│   │   ├── ThemeContext.jsx            # Modo oscuro/claro (persistente)
 │   │   └── NotificationContext.jsx     # Sistema de toasts
 │   ├── pages/
+│   │   ├── Landing.jsx                 # Landing page institucional
 │   │   ├── Login.jsx                   # Inicio de sesión
 │   │   ├── Register.jsx                # Registro de usuarios
 │   │   ├── CursosList.jsx              # Grid con búsqueda y filtro por categoría
-│   │   ├── CursoDetail.jsx             # Detalle + solicitud de inscripción
+│   │   ├── CursoDetail.jsx             # Detalle + solicitud de inscripción (HTML render)
 │   │   ├── MisInscripciones.jsx        # Estado de inscripciones + descarga certificados
 │   │   ├── Dashboard.jsx               # Panel admin con estadísticas
-│   │   ├── AdminCursos.jsx             # CRUD completo de cursos
+│   │   ├── AdminCursos.jsx             # CRUD completo de cursos + imágenes
 │   │   ├── AdminInscripciones.jsx      # Aprobar/rechazar solicitudes
-│   │   └── AdminCertificados.jsx       # Emitir y listar certificados
+│   │   ├── AdminCertificados.jsx       # Emitir y listar certificados
+│   │   ├── AdminPlantillas.jsx         # Editor visual de plantillas de certificado
+│   │   └── AdminUsuarios.jsx           # Administración de usuarios
 │   ├── services/
 │   │   └── api.js                      # Cliente HTTP con JWT automático
 │   ├── App.jsx                         # Router con lazy loading
 │   ├── App.css                         # Estilos del sistema
-│   ├── index.css                       # Variables CSS + reset
+│   ├── index.css                       # Variables CSS + reset + modo oscuro
 │   └── main.jsx                        # Entry point
 ├── public/
 ├── Dockerfile                          # Multi-stage build (40MB producción)
@@ -94,13 +106,17 @@ User ──1:N──> Inscripcion <──N:1── Curso
   │                └──1:1──> Certificado
   │
   └──1:N──> Curso (como docente)
+
+PlantillaCertificado ──1:N──> Certificado
+  (JSONB config: colores, fuentes, tamaños, posición elementos)
+  (firma_url, logo_url, is_default)
 ```
 
 ### Roles
 
 | Rol | Permisos |
 |-----|----------|
-| **Admin** | CRUD completo, aprobar/rechazar inscripciones, emitir certificados, confirmar pagos |
+| **Admin** | CRUD completo, aprobar/rechazar inscripciones, emitir certificados, confirmar pagos, gestionar plantillas, administrar usuarios |
 | **Docente** | Crear/editar cursos propios, ver inscripciones de sus cursos |
 | **Estudiante** | Ver cursos, solicitar inscripción, ver estado, descargar certificados |
 
@@ -144,8 +160,30 @@ User ──1:N──> Inscripcion <──N:1── Curso
 |--------|------|------|-------------|
 | GET | `/api/certificados` | Sí | Listar (con paginación) |
 | POST | `/api/certificados/emitir` | Admin | Emitir (verifica 80% asistencia) |
-| GET | `/api/certificados/:id/descargar` | Sí | Descargar PDF |
+| GET | `/api/certificados/:id/descargar` | Sí | Descargar PDF (usa plantilla activa) |
 | GET | `/api/certificados/validar/:codigo` | No | Validar código público |
+
+### Plantillas de certificado
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| GET | `/api/plantillas` | Sí | Listar todas |
+| GET | `/api/plantillas/:id` | Sí | Detalle de plantilla |
+| POST | `/api/plantillas` | Admin | Crear plantilla (con config JSON, firma, logo) |
+| PUT | `/api/plantillas/:id` | Admin | Actualizar plantilla |
+| DELETE | `/api/plantillas/:id` | Admin | Eliminar plantilla |
+| PUT | `/api/plantillas/:id/defecto` | Admin | Establecer como plantilla por defecto |
+| GET | `/api/plantillas/activo/config` | Sí | Obtener configuración de plantilla activa |
+
+### Usuarios (admin)
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| GET | `/api/usuarios` | Admin | Listar (con paginación, filtros: rol, busqueda, activo) |
+| GET | `/api/usuarios/estadisticas` | Admin | Conteos por rol y estado |
+| GET | `/api/usuarios/:id` | Admin | Detalle de usuario |
+| POST | `/api/usuarios` | Admin | Crear usuario |
+| PUT | `/api/usuarios/:id` | Admin | Actualizar usuario |
+| DELETE | `/api/usuarios/:id` | Admin | Eliminar usuario (hard delete) |
+| PUT | `/api/usuarios/:id/toggle` | Admin | Activar/desactivar usuario |
 
 ## Instalación y desarrollo local
 
@@ -294,10 +332,11 @@ docker exec evento-web npm run seed
 ### Notas de producción
 
 - El Dockerfile usa **multi-stage build**: ~40MB en producción
-- El frontend compilado (Vite) se sirve desde Express en `dist/`
-- Los QR generados se guardan en `backend/uploads/`
+- El frontend compilado (Vite) se sirve desde Express en `dist/` con headers `no-cache`
+- Los archivos generados se guardan en `backend/uploads/` (QR, firmas, logos de certificados)
 - Se recomienda usar un **volumen persistente** para `backend/uploads` si se reinicia el contenedor
 - SSL termina en Dokploy o en un reverse proxy (Nginx, Traefik)
+- React 19 requiere `--legacy-peer-deps` para Tiptap (incompatible con react-quill)
 
 ## Funcionalidades
 
@@ -308,7 +347,14 @@ docker exec evento-web npm run seed
 - **Pagos:** Por cuotas, con confirmación manual y desbloqueo automático al completar el pago
 - **Asistencia:** Control por clase, requisito mínimo 80% para certificación
 - **Certificados:** PDF generado con código único, QR de validación pública y endpoint de verificación
+- **Plantillas de certificado:** Editor visual con colores, fuentes, tamaños, posición de elementos; firma electrónica y logo personalizables
 - **Validación pública:** Sin autenticación, solo con el código único del certificado
+- **Administración de usuarios:** CRUD completo con activar/desactivar, estadísticas por rol, búsqueda y filtros
+- **Modo oscuro/claro:** Toggle persistente con preferencia guardada en localStorage
+- **Editor enriquecido:** Tiptap para descripción y requisitos de cursos (compatible con React 19)
+- **Subida de imágenes:** Multer para imágenes de cursos (jpg/png/webp, 5MB máx), firma y logo de certificados
+- **Landing page:** Página de inicio con hero, características, cursos destacados, CTA y footer
+- **Finalización rápida:** Botón para cambiar estado de curso a "finalizado" directamente desde admin
 - **Soft delete:** Todos los modelos mantienen registros eliminados con timestamp
 - **Paginación:** Endpoints de listado soportan `?page=1&pageSize=20`
 - **Rate limiting:** 200 req/15min global, 20 req/15min en auth
@@ -316,6 +362,7 @@ docker exec evento-web npm run seed
 - **Seguridad:** JWT sin exposición en URLs, CORS configurable, manejo centralizado de errores
 - **UX:** Lazy loading de rutas, skeleton loaders, notificaciones toast, error boundary
 - **Responsive:** Adaptado a mobile, tablet y desktop
+- **Despliegue:** Docker multi-stage (~40MB), Dokploy, uploads persistentes
 
 ## Licencia
 
