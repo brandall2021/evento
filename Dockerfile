@@ -5,7 +5,7 @@ WORKDIR /app
 COPY package*.json ./
 COPY backend/package*.json ./backend/
 
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 RUN cd backend && npm ci
 
 COPY . .
