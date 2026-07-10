@@ -19,6 +19,6 @@ const Pago = sequelize.define('Pago', {
   cuota_total: { type: DataTypes.INTEGER, defaultValue: 1 },
   descuento: { type: DataTypes.DECIMAL(10, 2), defaultValue: 0 },
   tipo_beca: DataTypes.STRING,
-})
+}, { paranoid: true })
 
 export default Pago

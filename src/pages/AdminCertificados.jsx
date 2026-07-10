@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api } from '../services/api'
+import { useNotify } from '../context/NotificationContext'
 
 export default function AdminCertificados() {
   const [certificados, setCertificados] = useState([])
@@ -7,7 +8,9 @@ export default function AdminCertificados() {
   const [loading, setLoading] = useState(true)
   const [selectedInsc, setSelectedInsc] = useState('')
   const [nota, setNota] = useState('')
-  const [msg, setMsg] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [descargando, setDescargando] = useState(null)
+  const { success, error } = useNotify()
 
   useEffect(() => {
     Promise.all([
@@ -22,19 +25,32 @@ export default function AdminCertificados() {
 
   async function handleEmitir(e) {
     e.preventDefault()
-    setMsg('')
+    setSubmitting(true)
     try {
       const cert = await api.certificados.emitir({
         inscripcion_id: Number(selectedInsc),
         nota: nota || null,
       })
-      setMsg(`Certificado ${cert.codigo} emitido correctamente.`)
+      success(`Certificado ${cert.codigo} emitido correctamente.`)
       setSelectedInsc('')
       setNota('')
       const certs = await api.certificados.listar()
       setCertificados(certs)
     } catch (err) {
-      setMsg(`Error: ${err.message}`)
+      error(err.message)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handleDescargar(id) {
+    setDescargando(id)
+    try {
+      await api.certificados.descargar(id)
+    } catch (err) {
+      error(err.message)
+    } finally {
+      setDescargando(null)
     }
   }
 
@@ -46,7 +62,6 @@ export default function AdminCertificados() {
 
       <div className="admin-card">
         <h3>Emitir nuevo certificado</h3>
-        {msg && <div className="alert alert-info">{msg}</div>}
         <form onSubmit={handleEmitir} className="admin-form">
           <div className="form-group">
             <label>Inscripción (curso finalizado)</label>
@@ -65,7 +80,9 @@ export default function AdminCertificados() {
               <input type="number" step="0.01" min="0" max="10" value={nota} onChange={e => setNota(e.target.value)} />
             </div>
             <div className="form-group" style={{ justifyContent: 'flex-end', display: 'flex' }}>
-              <button type="submit" className="btn-primary">Emitir certificado</button>
+              <button type="submit" className="btn-primary" disabled={submitting}>
+                {submitting ? 'Emitiendo...' : 'Emitir certificado'}
+              </button>
             </div>
           </div>
         </form>
@@ -92,14 +109,13 @@ export default function AdminCertificados() {
                 <td>{cert.horas}h</td>
                 <td>{new Date(cert.fecha_emision).toLocaleDateString()}</td>
                 <td>
-                  <a
-                    href={api.certificados.descargar(cert.id)}
+                  <button
+                    onClick={() => handleDescargar(cert.id)}
                     className="btn-small"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    disabled={descargando === cert.id}
                   >
-                    Descargar PDF
-                  </a>
+                    {descargando === cert.id ? 'Descargando...' : 'Descargar PDF'}
+                  </button>
                 </td>
               </tr>
             ))}

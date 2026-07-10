@@ -12,6 +12,6 @@ const Inscripcion = sequelize.define('Inscripcion', {
   fecha_aceptacion: DataTypes.DATE,
   fecha_rechazo: DataTypes.DATE,
   motivo_rechazo: DataTypes.TEXT,
-})
+}, { paranoid: true })
 
 export default Inscripcion

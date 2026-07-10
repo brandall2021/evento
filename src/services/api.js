@@ -15,6 +15,18 @@ async function request(path, options = {}) {
   return data
 }
 
+async function downloadBlob(path) {
+  const token = getToken()
+  const res = await fetch(`${API_URL}${path}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || 'Error al descargar')
+  }
+  return res.blob()
+}
+
 export const api = {
   auth: {
     login: (body) => request('/auth/login', { method: 'POST', body: JSON.stringify(body) }),
@@ -44,7 +56,17 @@ export const api = {
   certificados: {
     listar: () => request('/certificados'),
     emitir: (body) => request('/certificados/emitir', { method: 'POST', body: JSON.stringify(body) }),
-    descargar: (id) => `${API_URL}/certificados/${id}/descargar?token=${getToken()}`,
+    async descargar(id) {
+      const blob = await downloadBlob(`/certificados/${id}/descargar`)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `certificado-${id}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      setTimeout(() => URL.revokeObjectURL(url), 10000)
+    },
     validar: (codigo) => request(`/certificados/validar/${codigo}`),
   },
 }

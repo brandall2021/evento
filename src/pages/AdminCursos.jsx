@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api } from '../services/api'
+import { useNotify } from '../context/NotificationContext'
 
 export default function AdminCursos() {
   const [cursos, setCursos] = useState([])
@@ -11,6 +12,8 @@ export default function AdminCursos() {
     aceptacion_auto: false, estado: 'borrador',
   })
   const [editing, setEditing] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
+  const { success, error } = useNotify()
 
   useEffect(() => { load() }, [])
 
@@ -34,15 +37,19 @@ export default function AdminCursos() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    setSubmitting(true)
     try {
       if (editing) {
         await api.cursos.actualizar(editing, form)
+        success('Curso actualizado')
       } else {
         await api.cursos.crear(form)
+        success('Curso creado')
       }
       resetForm()
       await load()
-    } catch (err) { alert(err.message) }
+    } catch (err) { error(err.message) }
+    finally { setSubmitting(false) }
   }
 
   function editCurso(curso) {
@@ -59,8 +66,11 @@ export default function AdminCursos() {
 
   async function deleteCurso(id) {
     if (!confirm('¿Eliminar curso?')) return
-    await api.cursos.eliminar(id)
-    await load()
+    try {
+      await api.cursos.eliminar(id)
+      success('Curso eliminado')
+      await load()
+    } catch (err) { error(err.message) }
   }
 
   if (loading) return <div className="loading">Cargando...</div>
@@ -142,8 +152,8 @@ export default function AdminCursos() {
               </label>
             </div>
           </div>
-          <button type="submit" className="btn-primary">
-            {editing ? 'Actualizar curso' : 'Crear curso'}
+          <button type="submit" className="btn-primary" disabled={submitting}>
+            {submitting ? 'Guardando...' : (editing ? 'Actualizar curso' : 'Crear curso')}
           </button>
         </form>
       )}

@@ -54,6 +54,21 @@ export async function listar(req, res) {
       })
       where.inscripcion_id = inscr.map(i => i.id)
     }
+
+    if (req.query.page) {
+      const page = parseInt(req.query.page)
+      const pageSize = parseInt(req.query.pageSize) || 20
+      const offset = (page - 1) * pageSize
+      const { count, rows } = await Pago.findAndCountAll({
+        where,
+        include: [{ model: Inscripcion, as: 'inscripcion', include: ['curso'] }],
+        order: [['createdAt', 'DESC']],
+        limit: pageSize,
+        offset,
+      })
+      return res.json({ data: rows, total: count, page, pageSize })
+    }
+
     const pagos = await Pago.findAll({
       where,
       include: [{ model: Inscripcion, as: 'inscripcion', include: ['curso'] }],

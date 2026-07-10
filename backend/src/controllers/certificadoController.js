@@ -157,6 +157,28 @@ export async function listar(req, res) {
       })
       where.inscripcion_id = inscr.map(i => i.id)
     }
+
+    if (req.query.page) {
+      const page = parseInt(req.query.page)
+      const pageSize = parseInt(req.query.pageSize) || 20
+      const offset = (page - 1) * pageSize
+      const { count, rows } = await Certificado.findAndCountAll({
+        where,
+        include: {
+          model: Inscripcion,
+          as: 'inscripcion',
+          include: [
+            { model: Curso, as: 'curso' },
+            { model: User, as: 'estudiante' },
+          ],
+        },
+        order: [['createdAt', 'DESC']],
+        limit: pageSize,
+        offset,
+      })
+      return res.json({ data: rows, total: count, page, pageSize })
+    }
+
     const certs = await Certificado.findAll({
       where,
       include: {

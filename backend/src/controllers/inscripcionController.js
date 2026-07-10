@@ -1,5 +1,14 @@
 import { Inscripcion, Curso, User } from '../models/index.js'
 
+async function verificarCupos(cursoId) {
+  const curso = await Curso.findByPk(cursoId, { attributes: ['cupos'] })
+  if (!curso) throw Object.assign(new Error('Curso no encontrado'), { status: 404 })
+  const count = await Inscripcion.count({
+    where: { curso_id: cursoId, estado: ['aceptado', 'en_curso'] },
+  })
+  return count < curso.cupos
+}
+
 export async function solicitar(req, res) {
   try {
     const { curso_id } = req.body
@@ -12,8 +21,8 @@ export async function solicitar(req, res) {
     })
     if (existente) return res.status(400).json({ error: 'Ya solicitaste este curso' })
 
-    const count = await Inscripcion.count({ where: { curso_id, estado: ['aceptado', 'en_curso'] } })
-    if (count >= curso.cupos) return res.status(400).json({ error: 'Cupos agotados' })
+    const hayCupos = await verificarCupos(curso_id)
+    if (!hayCupos) return res.status(400).json({ error: 'Cupos agotados' })
 
     let estado = 'pendiente'
     if (curso.aceptacion_auto && Number(curso.precio) === 0) {
@@ -58,6 +67,23 @@ export async function listar(req, res) {
       where.curso_id = cursos.map(c => c.id)
     }
 
+    if (req.query.page) {
+      const page = parseInt(req.query.page)
+      const pageSize = parseInt(req.query.pageSize) || 20
+      const offset = (page - 1) * pageSize
+      const { count, rows } = await Inscripcion.findAndCountAll({
+        where,
+        include: [
+          { model: User, as: 'estudiante', attributes: ['id', 'nombre', 'email', 'telefono'] },
+          { model: Curso, as: 'curso' },
+        ],
+        order: [['createdAt', 'DESC']],
+        limit: pageSize,
+        offset,
+      })
+      return res.json({ data: rows, total: count, page, pageSize })
+    }
+
     const insc = await Inscripcion.findAll({
       where,
       include: [
@@ -78,10 +104,8 @@ export async function aprobar(req, res) {
     if (!insc) return res.status(404).json({ error: 'Inscripción no encontrada' })
     if (insc.estado !== 'pendiente') return res.status(400).json({ error: 'Inscripción no está pendiente' })
 
-    const count = await Inscripcion.count({
-      where: { curso_id: insc.curso_id, estado: ['aceptado', 'en_curso'] },
-    })
-    if (count >= insc.curso.cupos) return res.status(400).json({ error: 'Cupos agotados' })
+    const hayCupos = await verificarCupos(insc.curso_id)
+    if (!hayCupos) return res.status(400).json({ error: 'Cupos agotados' })
 
     await insc.update({ estado: 'aceptado', fecha_aceptacion: new Date() })
     res.json(insc)

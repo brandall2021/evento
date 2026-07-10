@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api } from '../services/api'
+import { useNotify } from '../context/NotificationContext'
 
 const estadoColors = {
   pendiente: '#f0a500',
@@ -12,6 +13,8 @@ const estadoColors = {
 export default function MisInscripciones() {
   const [inscripciones, setInscripciones] = useState([])
   const [loading, setLoading] = useState(true)
+  const [descargando, setDescargando] = useState(null)
+  const { error } = useNotify()
 
   useEffect(() => {
     api.inscripciones.mis()
@@ -19,6 +22,17 @@ export default function MisInscripciones() {
       .catch(console.error)
       .finally(() => setLoading(false))
   }, [])
+
+  async function handleDescargar(id) {
+    setDescargando(id)
+    try {
+      await api.certificados.descargar(id)
+    } catch (err) {
+      error(err.message)
+    } finally {
+      setDescargando(null)
+    }
+  }
 
   if (loading) return <div className="loading">Cargando...</div>
 
@@ -50,14 +64,13 @@ export default function MisInscripciones() {
                   <td>{new Date(insc.fecha_solicitud).toLocaleDateString()}</td>
                   <td>
                     {insc.estado === 'finalizado' && (
-                      <a
-                        href={api.certificados.descargar(insc.certificado?.id)}
+                      <button
+                        onClick={() => handleDescargar(insc.certificado?.id)}
                         className="btn-small"
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        disabled={descargando === insc.certificado?.id}
                       >
-                        Descargar certificado
-                      </a>
+                        {descargando === insc.certificado?.id ? 'Descargando...' : 'Descargar certificado'}
+                      </button>
                     )}
                   </td>
                 </tr>

@@ -10,6 +10,6 @@ const Certificado = sequelize.define('Certificado', {
   pdf_url: DataTypes.STRING,
   qr_url: DataTypes.STRING,
   valido: { type: DataTypes.BOOLEAN, defaultValue: true },
-})
+}, { paranoid: true })
 
 export default Certificado

@@ -2,7 +2,7 @@ import { sequelize, User, Curso } from '../models/index.js'
 
 async function seed() {
   try {
-    await sequelize.sync({ force: true })
+    await sequelize.sync({ alter: false })
 
     await User.create({
       nombre: 'Admin',

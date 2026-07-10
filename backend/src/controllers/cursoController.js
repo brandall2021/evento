@@ -8,6 +8,21 @@ export async function listar(req, res) {
       delete where.estado
       where.docente_id = req.user.id
     }
+
+    if (req.query.page) {
+      const page = parseInt(req.query.page)
+      const pageSize = parseInt(req.query.pageSize) || 20
+      const offset = (page - 1) * pageSize
+      const { count, rows } = await Curso.findAndCountAll({
+        where,
+        include: [{ model: User, as: 'docente', attributes: ['id', 'nombre', 'email'] }],
+        order: [['createdAt', 'DESC']],
+        limit: pageSize,
+        offset,
+      })
+      return res.json({ data: rows, total: count, page, pageSize })
+    }
+
     const cursos = await Curso.findAll({
       where,
       include: [{ model: User, as: 'docente', attributes: ['id', 'nombre', 'email'] }],
