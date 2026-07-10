@@ -1,4 +1,9 @@
 import { Curso, User } from '../models/index.js'
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export async function listar(req, res) {
   try {
@@ -48,7 +53,9 @@ export async function obtener(req, res) {
 
 export async function crear(req, res) {
   try {
-    const curso = await Curso.create({ ...req.body, docente_id: req.user.id })
+    const data = { ...req.body, docente_id: req.user.id }
+    if (req.file) data.imagen = req.file.filename
+    const curso = await Curso.create(data)
     res.status(201).json(curso)
   } catch (err) {
     res.status(500).json({ error: err.message })
@@ -62,7 +69,15 @@ export async function actualizar(req, res) {
     if (req.user.rol !== 'admin' && curso.docente_id !== req.user.id) {
       return res.status(403).json({ error: 'No autorizado' })
     }
-    await curso.update(req.body)
+    const data = { ...req.body }
+    if (req.file) {
+      if (curso.imagen) {
+        const oldPath = path.resolve(__dirname, '../uploads/cursos', curso.imagen)
+        if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath)
+      }
+      data.imagen = req.file.filename
+    }
+    await curso.update(data)
     res.json(curso)
   } catch (err) {
     res.status(500).json({ error: err.message })
@@ -73,6 +88,10 @@ export async function eliminar(req, res) {
   try {
     const curso = await Curso.findByPk(req.params.id)
     if (!curso) return res.status(404).json({ error: 'Curso no encontrado' })
+    if (curso.imagen) {
+      const imgPath = path.resolve(__dirname, '../uploads/cursos', curso.imagen)
+      if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath)
+    }
     await curso.destroy()
     res.json({ mensaje: 'Curso eliminado' })
   } catch (err) {

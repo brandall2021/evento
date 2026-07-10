@@ -6,7 +6,8 @@ function getToken() {
 
 async function request(path, options = {}) {
   const token = getToken()
-  const headers = { 'Content-Type': 'application/json', ...options.headers }
+  const isFormData = options.body instanceof FormData
+  const headers = isFormData ? {} : { 'Content-Type': 'application/json', ...options.headers }
   if (token) headers.Authorization = `Bearer ${token}`
 
   const res = await fetch(`${API_URL}${path}`, { ...options, headers })
@@ -37,8 +38,8 @@ export const api = {
   cursos: {
     listar: () => request('/cursos'),
     obtener: (id) => request(`/cursos/${id}`),
-    crear: (body) => request('/cursos', { method: 'POST', body: JSON.stringify(body) }),
-    actualizar: (id, body) => request(`/cursos/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+    crear: (body) => request('/cursos', { method: 'POST', body }),
+    actualizar: (id, body) => request(`/cursos/${id}`, { method: 'PUT', body }),
     eliminar: (id) => request(`/cursos/${id}`, { method: 'DELETE' }),
   },
   inscripciones: {

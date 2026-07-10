@@ -40,6 +40,13 @@ export default function CursoDetail() {
       <button onClick={() => navigate(-1)} className="btn-back">← Volver</button>
       <div className="curso-detail">
         <div className="curso-detail-main">
+          {curso.imagen && (
+            <img
+              src={`/uploads/cursos/${curso.imagen}`}
+              alt={curso.nombre}
+              className="curso-detail-image"
+            />
+          )}
           <span className="curso-modalidad" style={{
             background: curso.modalidad === 'virtual' ? '#4f8cff' : curso.modalidad === 'presencial' ? '#ff6b6b' : '#c9a84c'
           }}>{curso.modalidad}</span>
@@ -61,7 +68,10 @@ export default function CursoDetail() {
           {curso.requisitos && (
             <div className="curso-section">
               <h3>Requisitos</h3>
-              <p>{curso.requisitos}</p>
+              <div
+                className="curso-descripcion-html"
+                dangerouslySetInnerHTML={{ __html: curso.requisitos }}
+              />
             </div>
           )}
           {curso.precio > 0 && (

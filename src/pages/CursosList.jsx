@@ -90,6 +90,13 @@ export default function CursosList() {
         <div className="cursos-grid">
           {filtered.map(curso => (
             <Link to={`/cursos/${curso.id}`} key={curso.id} className="curso-card">
+              {curso.imagen && (
+                <img
+                  src={`/uploads/cursos/${curso.imagen}`}
+                  alt={curso.nombre}
+                  className="curso-card-image"
+                />
+              )}
               <div className="curso-card-header">
                 <span className="curso-modalidad" style={{ background: modalidadColors[curso.modalidad] }}>
                   {curso.modalidad}

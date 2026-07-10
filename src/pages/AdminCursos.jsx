@@ -12,6 +12,8 @@ export default function AdminCursos() {
     duracion_horas: '', modalidad: 'virtual', cupos: '', precio: '', requisitos: '',
     aceptacion_auto: false, estado: 'borrador',
   })
+  const [imagen, setImagen] = useState(null)
+  const [imagenPreview, setImagenPreview] = useState('')
   const [editing, setEditing] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const { success, error } = useNotify()
@@ -32,19 +34,36 @@ export default function AdminCursos() {
       duracion_horas: '', modalidad: 'virtual', cupos: '', precio: '', requisitos: '',
       aceptacion_auto: false, estado: 'borrador',
     })
+    setImagen(null)
+    setImagenPreview('')
     setEditing(null)
     setShowForm(false)
+  }
+
+  function handleImageChange(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    setImagen(file)
+    const reader = new FileReader()
+    reader.onloadend = () => setImagenPreview(reader.result)
+    reader.readAsDataURL(file)
   }
 
   async function handleSubmit(e) {
     e.preventDefault()
     setSubmitting(true)
     try {
+      const formData = new FormData()
+      Object.entries(form).forEach(([key, val]) => {
+        formData.append(key, val)
+      })
+      if (imagen) formData.append('imagen', imagen)
+
       if (editing) {
-        await api.cursos.actualizar(editing, form)
+        await api.cursos.actualizar(editing, formData)
         success('Curso actualizado')
       } else {
-        await api.cursos.crear(form)
+        await api.cursos.crear(formData)
         success('Curso creado')
       }
       resetForm()
@@ -61,6 +80,8 @@ export default function AdminCursos() {
       cupos: curso.cupos, precio: curso.precio, requisitos: curso.requisitos || '',
       aceptacion_auto: curso.aceptacion_auto, estado: curso.estado,
     })
+    setImagenPreview(curso.imagen ? `/uploads/cursos/${curso.imagen}` : '')
+    setImagen(null)
     setEditing(curso.id)
     setShowForm(true)
   }
@@ -86,7 +107,7 @@ export default function AdminCursos() {
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="admin-form">
+        <form onSubmit={handleSubmit} className="admin-form" encType="multipart/form-data">
           <div className="form-row">
             <div className="form-group">
               <label>Nombre del curso</label>
@@ -104,6 +125,23 @@ export default function AdminCursos() {
               onChange={val => setForm({ ...form, descripcion: val })}
               placeholder="Descripción del curso..."
             />
+          </div>
+          <div className="form-group">
+            <label>Imagen del curso</label>
+            <div className="image-upload-area">
+              {imagenPreview && (
+                <img src={imagenPreview} alt="Preview" className="image-preview" />
+              )}
+              <label className="btn-small image-upload-btn">
+                {imagenPreview ? 'Cambiar imagen' : 'Seleccionar imagen'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  style={{ display: 'none' }}
+                />
+              </label>
+            </div>
           </div>
           <div className="form-row">
             <div className="form-group">
@@ -139,7 +177,11 @@ export default function AdminCursos() {
           </div>
           <div className="form-group">
             <label>Requisitos</label>
-            <textarea rows={2} value={form.requisitos} onChange={e => setForm({ ...form, requisitos: e.target.value })} />
+            <RichTextEditor
+              value={form.requisitos}
+              onChange={val => setForm({ ...form, requisitos: val })}
+              placeholder="Requisitos del curso..."
+            />
           </div>
           <div className="form-row">
             <div className="form-group">
