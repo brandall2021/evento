@@ -8,7 +8,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 export async function listar(req, res) {
   try {
     const plantillas = await PlantillaCertificado.findAll({
-      where: { user_id: req.user.id },
       order: [['createdAt', 'DESC']],
     })
     res.json(plantillas)
@@ -19,9 +18,7 @@ export async function listar(req, res) {
 
 export async function obtener(req, res) {
   try {
-    const plantilla = await PlantillaCertificado.findOne({
-      where: { id: req.params.id, user_id: req.user.id },
-    })
+    const plantilla = await PlantillaCertificado.findByPk(req.params.id)
     if (!plantilla) return res.status(404).json({ error: 'Plantilla no encontrada' })
     res.json(plantilla)
   } catch (err) {
@@ -35,7 +32,6 @@ export async function crear(req, res) {
     const data = {
       nombre,
       config: typeof config === 'string' ? JSON.parse(config) : config,
-      user_id: req.user.id,
       is_default: is_default || false,
     }
 
@@ -49,7 +45,7 @@ export async function crear(req, res) {
     if (data.is_default) {
       await PlantillaCertificado.update(
         { is_default: false },
-        { where: { user_id: req.user.id } }
+        {}
       )
     }
 
@@ -62,9 +58,7 @@ export async function crear(req, res) {
 
 export async function actualizar(req, res) {
   try {
-    const plantilla = await PlantillaCertificado.findOne({
-      where: { id: req.params.id, user_id: req.user.id },
-    })
+    const plantilla = await PlantillaCertificado.findByPk(req.params.id)
     if (!plantilla) return res.status(404).json({ error: 'Plantilla no encontrada' })
 
     const data = { ...req.body }
@@ -90,7 +84,7 @@ export async function actualizar(req, res) {
     if (data.is_default) {
       await PlantillaCertificado.update(
         { is_default: false },
-        { where: { user_id: req.user.id, id: { [Symbol.for('ne')]: plantilla.id } } }
+        { where: { id: { [Symbol.for('ne')]: plantilla.id } } }
       )
     }
 
@@ -103,9 +97,7 @@ export async function actualizar(req, res) {
 
 export async function eliminar(req, res) {
   try {
-    const plantilla = await PlantillaCertificado.findOne({
-      where: { id: req.params.id, user_id: req.user.id },
-    })
+    const plantilla = await PlantillaCertificado.findByPk(req.params.id)
     if (!plantilla) return res.status(404).json({ error: 'Plantilla no encontrada' })
 
     if (plantilla.firma_url) {
@@ -127,7 +119,7 @@ export async function eliminar(req, res) {
 export async function obtenerDefault(req, res) {
   try {
     const plantilla = await PlantillaCertificado.findOne({
-      where: { user_id: req.user.id, is_default: true },
+      where: { is_default: true },
     })
     res.json(plantilla || null)
   } catch (err) {

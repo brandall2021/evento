@@ -12,6 +12,26 @@ const defaultConfig = {
   textColor: '#666',
   titleFont: 'Helvetica',
   nameFont: 'Helvetica-Bold',
+  logoX: 60,
+  logoY: 50,
+  logoW: 80,
+  logoH: 80,
+  titleY: 80,
+  codeY: 100,
+  certifyTextY: 145,
+  nameY: 175,
+  courseTextY: 225,
+  courseNameY: 255,
+  hoursY: 295,
+  dateY: 320,
+  firmaX: 0,
+  firmaY: 0,
+  firmaW: 120,
+  firmaH: 60,
+  firmaCentered: true,
+  qrSize: 80,
+  qrCorner: 'bottom-right',
+  validacionY: 0,
 }
 
 export default function AdminPlantillas() {
@@ -300,6 +320,63 @@ export default function AdminPlantillas() {
                 </select>
               </div>
             </div>
+
+            <details style={{ marginTop: 12 }}>
+              <summary style={{ cursor: 'pointer', fontWeight: 600, fontSize: 13, color: 'var(--text-secondary)' }}>
+                Posiciones y tamaños
+              </summary>
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>Logo</div>
+                <div className="form-row">
+                  <div className="form-group"><label>X</label><input type="number" value={config.logoX} onChange={e => handleConfigChange('logoX', +e.target.value)} /></div>
+                  <div className="form-group"><label>Y</label><input type="number" value={config.logoY} onChange={e => handleConfigChange('logoY', +e.target.value)} /></div>
+                  <div className="form-group"><label>Ancho</label><input type="number" value={config.logoW} onChange={e => handleConfigChange('logoW', +e.target.value)} /></div>
+                  <div className="form-group"><label>Alto</label><input type="number" value={config.logoH} onChange={e => handleConfigChange('logoH', +e.target.value)} /></div>
+                </div>
+
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8, marginTop: 8 }}>Elementos (posición Y)</div>
+                <div className="form-row">
+                  <div className="form-group"><label>Título</label><input type="number" value={config.titleY} onChange={e => handleConfigChange('titleY', +e.target.value)} /></div>
+                  <div className="form-group"><label>Código</label><input type="number" value={config.codeY} onChange={e => handleConfigChange('codeY', +e.target.value)} /></div>
+                  <div className="form-group"><label>"Se certifica"</label><input type="number" value={config.certifyTextY} onChange={e => handleConfigChange('certifyTextY', +e.target.value)} /></div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group"><label>Nombre</label><input type="number" value={config.nameY} onChange={e => handleConfigChange('nameY', +e.target.value)} /></div>
+                  <div className="form-group"><label>"ha completado"</label><input type="number" value={config.courseTextY} onChange={e => handleConfigChange('courseTextY', +e.target.value)} /></div>
+                  <div className="form-group"><label>Curso</label><input type="number" value={config.courseNameY} onChange={e => handleConfigChange('courseNameY', +e.target.value)} /></div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group"><label>Horas</label><input type="number" value={config.hoursY} onChange={e => handleConfigChange('hoursY', +e.target.value)} /></div>
+                  <div className="form-group"><label>Fecha</label><input type="number" value={config.dateY} onChange={e => handleConfigChange('dateY', +e.target.value)} /></div>
+                </div>
+
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8, marginTop: 8 }}>Firma</div>
+                <div className="form-row">
+                  <div className="form-group"><label>Ancho</label><input type="number" value={config.firmaW} onChange={e => handleConfigChange('firmaW', +e.target.value)} /></div>
+                  <div className="form-group"><label>Alto</label><input type="number" value={config.firmaH} onChange={e => handleConfigChange('firmaH', +e.target.value)} /></div>
+                  <div className="form-group" style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: 4 }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <input type="checkbox" checked={config.firmaCentered} onChange={e => handleConfigChange('firmaCentered', e.target.checked)} />
+                      Centrada
+                    </label>
+                  </div>
+                </div>
+
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8, marginTop: 8 }}>QR</div>
+                <div className="form-row">
+                  <div className="form-group"><label>Tamaño</label><input type="number" value={config.qrSize} onChange={e => handleConfigChange('qrSize', +e.target.value)} /></div>
+                  <div className="form-group">
+                    <label>Posición</label>
+                    <select value={config.qrCorner} onChange={e => handleConfigChange('qrCorner', e.target.value)} className="font-select">
+                      <option value="bottom-right">Inferior derecha</option>
+                      <option value="bottom-left">Inferior izquierda</option>
+                      <option value="top-right">Superior derecha</option>
+                      <option value="top-left">Superior izquierda</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </details>
 
             <div className="form-row" style={{ justifyContent: 'flex-end', display: 'flex', gap: 8 }}>
               {editing && (

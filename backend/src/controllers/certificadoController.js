@@ -77,6 +77,29 @@ export async function descargar(req, res) {
     const titleFont = config.titleFont || 'Helvetica'
     const nameFont = config.nameFont || 'Helvetica-Bold'
 
+    const logoX = config.logoX ?? 60
+    const logoY = config.logoY ?? 50
+    const logoW = config.logoW ?? 80
+    const logoH = config.logoH ?? 80
+    const titleY = config.titleY ?? 80
+    const codeY = config.codeY ?? 100
+    const certifyTextY = config.certifyTextY ?? 145
+    const nameY = config.nameY ?? 175
+    const courseTextY = config.courseTextY ?? 225
+    const courseNameY = config.courseNameY ?? 255
+    const hoursY = config.hoursY ?? 295
+    const dateY = config.dateY ?? 320
+    const firmaX = config.firmaX ?? 0
+    const firmaY = config.firmaY ?? 0
+    const firmaW = config.firmaW ?? 120
+    const firmaH = config.firmaH ?? 60
+    const firmaCentered = config.firmaCentered ?? true
+    const qrX = config.qrX ?? 0
+    const qrY = config.qrY ?? 0
+    const qrSize = config.qrSize ?? 80
+    const qrCorner = config.qrCorner ?? 'bottom-right'
+    const validacionY = config.validacionY ?? 0
+
     const doc = new PDFDocument({ layout: 'landscape', size: 'A4' })
     res.setHeader('Content-Type', 'application/pdf')
     res.setHeader('Content-Disposition', `attachment; filename=certificado-${cert.codigo}.pdf`)
@@ -90,56 +113,61 @@ export async function descargar(req, res) {
 
     if (plantilla?.logo_url) {
       try {
-        doc.image(`.${plantilla.logo_url}`, 60, 50, { width: 80, height: 80 })
+        doc.image(`.${plantilla.logo_url}`, logoX, logoY, { width: logoW, height: logoH })
       } catch { }
     }
 
     doc.fontSize(14).fillColor(titleColor).font(titleFont)
-      .text('CERTIFICADO N°', 60, 80, { align: 'center' })
+      .text('CERTIFICADO N°', 60, titleY, { align: 'center' })
     doc.fontSize(28).fillColor(codeColor).font('Helvetica-Bold')
-      .text(cert.codigo, 60, 100, { align: 'center' })
+      .text(cert.codigo, 60, codeY, { align: 'center' })
 
-    doc.moveDown(2)
     doc.fontSize(12).fillColor(textColor).font(titleFont)
-      .text('Se certifica que', { align: 'center' })
+      .text('Se certifica que', 60, certifyTextY, { align: 'center' })
 
     doc.fontSize(32).fillColor(nameColor).font(nameFont)
-      .text(cert.inscripcion.estudiante.nombre, { align: 'center' })
+      .text(cert.inscripcion.estudiante.nombre, 60, nameY, { align: 'center' })
 
-    doc.moveDown(0.5)
     doc.fontSize(14).fillColor(textColor).font(titleFont)
-      .text('ha completado el curso', { align: 'center' })
+      .text('ha completado el curso', 60, courseTextY, { align: 'center' })
 
     doc.fontSize(20).fillColor(nameColor).font('Helvetica-Bold')
-      .text(cert.inscripcion.curso.nombre, { align: 'center' })
+      .text(cert.inscripcion.curso.nombre, 60, courseNameY, { align: 'center' })
 
-    doc.moveDown(1)
     doc.fontSize(13).fillColor(textColor).font(titleFont)
-      .text(`${cert.horas} horas académicas`, { align: 'center' })
+      .text(`${cert.horas} horas académicas`, 60, hoursY, { align: 'center' })
 
     const fecha = new Date(cert.fecha_emision).toLocaleDateString('es-AR')
     doc.fontSize(12).fillColor(textColor)
-      .text(`Fecha de emisión: ${fecha}`, { align: 'center' })
+      .text(`Fecha de emisión: ${fecha}`, 60, dateY, { align: 'center' })
 
     if (cert.nota) {
-      doc.text(`Nota: ${cert.nota}`, { align: 'center' })
+      doc.text(`Nota: ${cert.nota}`, 60, dateY + 18, { align: 'center' })
     }
 
     if (plantilla?.firma_url) {
       try {
-        doc.image(`.${plantilla.firma_url}`, pageW / 2 - 60, pageH - 140, { width: 120, height: 60 })
+        const fx = firmaCentered ? pageW / 2 - firmaW / 2 : firmaX
+        const fy = firmaY || pageH - 140
+        doc.image(`.${plantilla.firma_url}`, fx, fy, { width: firmaW, height: firmaH })
       } catch { }
     }
 
     if (cert.qr_url) {
       try {
-        doc.image(`.${cert.qr_url}`, pageW - 150, pageH - 150, { width: 80, height: 80 })
+        let qx, qy
+        if (qrCorner === 'bottom-left') { qx = 60; qy = pageH - 60 - qrSize }
+        else if (qrCorner === 'top-right') { qx = pageW - 60 - qrSize; qy = 60 }
+        else if (qrCorner === 'top-left') { qx = 60; qy = 60 }
+        else { qx = qrX || pageW - 150; qy = qrY || pageH - 150 }
+        doc.image(`.${cert.qr_url}`, qx, qy, { width: qrSize, height: qrSize })
       } catch { }
     }
 
+    const validY = validacionY || pageH - 70
     doc.fontSize(8).fillColor('#999').font('Helvetica')
       .text(`Validar en: ${process.env.API_URL || 'http://localhost:3001'}/api/certificados/validar/${cert.codigo}`,
-        60, pageH - 70, { align: 'center' })
+        60, validY, { align: 'center' })
 
     doc.end()
   } catch (err) {
