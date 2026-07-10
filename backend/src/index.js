@@ -59,7 +59,7 @@ app.get('/api/health', (req, res) => res.json({ ok: true }))
 app.use(errorHandler)
 
 const frontendDist = path.resolve(__dirname, '../../dist')
-app.use(express.static(frontendDist, { index: false }))
+app.use(express.static(frontendDist, { index: false, maxAge: '1y', etag: true }))
 app.get('*', (req, res) => {
   if (!req.path.startsWith('/api')) {
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
