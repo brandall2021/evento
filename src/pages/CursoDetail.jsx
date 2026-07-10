@@ -53,7 +53,10 @@ export default function CursoDetail() {
           </div>
           <div className="curso-section">
             <h3>Descripción</h3>
-            <p>{curso.descripcion}</p>
+            <div
+              className="curso-descripcion-html"
+              dangerouslySetInnerHTML={{ __html: curso.descripcion || '<p>Sin descripción</p>' }}
+            />
           </div>
           {curso.requisitos && (
             <div className="curso-section">

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { api } from '../services/api'
 import { useNotify } from '../context/NotificationContext'
+import RichTextEditor from '../components/RichTextEditor'
 
 export default function AdminCursos() {
   const [cursos, setCursos] = useState([])
@@ -98,7 +99,11 @@ export default function AdminCursos() {
           </div>
           <div className="form-group">
             <label>Descripción</label>
-            <textarea rows={3} value={form.descripcion} onChange={e => setForm({ ...form, descripcion: e.target.value })} />
+            <RichTextEditor
+              value={form.descripcion}
+              onChange={val => setForm({ ...form, descripcion: val })}
+              placeholder="Descripción del curso..."
+            />
           </div>
           <div className="form-row">
             <div className="form-group">

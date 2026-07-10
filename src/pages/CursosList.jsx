@@ -2,6 +2,11 @@ import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../services/api'
 
+function stripHtml(html) {
+  if (!html) return ''
+  return html.replace(/<[^>]*>/g, '').trim()
+}
+
 const modalidadColors = {
   virtual: '#4f8cff',
   presencial: '#ff6b6b',
@@ -92,7 +97,7 @@ export default function CursosList() {
                 <span className="curso-precio">${Number(curso.precio).toLocaleString()}</span>
               </div>
               <h2 className="curso-card-title">{curso.nombre}</h2>
-              <p className="curso-card-desc">{curso.descripcion?.slice(0, 120)}...</p>
+              <p className="curso-card-desc">{stripHtml(curso.descripcion).slice(0, 120)}...</p>
               <div className="curso-card-footer">
                 <span>{curso.fecha_inicio}</span>
                 <span>{curso.duracion_horas}h</span>
