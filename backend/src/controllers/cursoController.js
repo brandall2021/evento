@@ -98,3 +98,21 @@ export async function eliminar(req, res) {
     res.status(500).json({ error: err.message })
   }
 }
+
+export async function cambiarEstado(req, res) {
+  try {
+    const { estado } = req.body
+    if (!['borrador', 'publicado', 'finalizado'].includes(estado)) {
+      return res.status(400).json({ error: 'Estado inválido' })
+    }
+    const curso = await Curso.findByPk(req.params.id)
+    if (!curso) return res.status(404).json({ error: 'Curso no encontrado' })
+    if (req.user.rol !== 'admin' && curso.docente_id !== req.user.id) {
+      return res.status(403).json({ error: 'No autorizado' })
+    }
+    await curso.update({ estado })
+    res.json(curso)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+}

@@ -41,6 +41,7 @@ export const api = {
     crear: (body) => request('/cursos', { method: 'POST', body }),
     actualizar: (id, body) => request(`/cursos/${id}`, { method: 'PUT', body }),
     eliminar: (id) => request(`/cursos/${id}`, { method: 'DELETE' }),
+    cambiarEstado: (id, estado) => request(`/cursos/${id}/estado`, { method: 'PUT', body: JSON.stringify({ estado }) }),
   },
   inscripciones: {
     solicitar: (curso_id) => request('/inscripciones', { method: 'POST', body: JSON.stringify({ curso_id }) }),

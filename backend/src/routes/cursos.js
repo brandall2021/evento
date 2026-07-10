@@ -2,7 +2,7 @@ import { Router } from 'express'
 import multer from 'multer'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { listar, obtener, crear, actualizar, eliminar } from '../controllers/cursoController.js'
+import { listar, obtener, crear, actualizar, eliminar, cambiarEstado } from '../controllers/cursoController.js'
 import { authenticate, authorize } from '../middleware/auth.js'
 import { cursoRules, paginationRules } from '../middleware/validate.js'
 
@@ -34,5 +34,6 @@ router.get('/:id', authenticate, obtener)
 router.post('/', authenticate, authorize('admin', 'docente'), upload.single('imagen'), cursoRules, crear)
 router.put('/:id', authenticate, authorize('admin', 'docente'), upload.single('imagen'), cursoRules, actualizar)
 router.delete('/:id', authenticate, authorize('admin'), eliminar)
+router.put('/:id/estado', authenticate, authorize('admin', 'docente'), cambiarEstado)
 
 export default router

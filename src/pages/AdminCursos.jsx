@@ -95,6 +95,15 @@ export default function AdminCursos() {
     } catch (err) { error(err.message) }
   }
 
+  async function finalizarCurso(id) {
+    if (!confirm('¿Finalizar este curso?')) return
+    try {
+      await api.cursos.cambiarEstado(id, 'finalizado')
+      success('Curso finalizado')
+      await load()
+    } catch (err) { error(err.message) }
+  }
+
   if (loading) return <div className="loading">Cargando...</div>
 
   return (
@@ -229,6 +238,9 @@ export default function AdminCursos() {
                 <td><span className={`status-dot estado-${curso.estado}`}>{curso.estado}</span></td>
                 <td>
                   <button onClick={() => editCurso(curso)} className="btn-small">Editar</button>
+                  {curso.estado !== 'finalizado' && (
+                    <button onClick={() => finalizarCurso(curso.id)} className="btn-small btn-success">Finalizar</button>
+                  )}
                   <button onClick={() => deleteCurso(curso.id)} className="btn-small btn-danger">Eliminar</button>
                 </td>
               </tr>
