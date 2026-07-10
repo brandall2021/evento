@@ -835,62 +835,131 @@
 }
 
 /* ============================================
-   RICH TEXT EDITOR
+   TIPTAP EDITOR
    ============================================ */
 
-.rich-editor .ql-toolbar {
-  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-  border-color: var(--border);
-  background: var(--bg-card);
+.tiptap-wrapper {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
 }
 
-.rich-editor .ql-container {
-  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
-  border-color: var(--border);
-  background: var(--bg);
+.tiptap-menu {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 8px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+}
+
+.tiptap-menu button {
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 4px;
+  color: var(--text);
+  transition: all 0.15s;
+}
+
+.tiptap-menu button:hover {
+  background: var(--bg-glass);
   color: var(--text-h);
+}
+
+.tiptap-menu button.is-active {
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.tiptap-divider {
+  width: 1px;
+  background: var(--border);
+  margin: 4px 6px;
+}
+
+.tiptap-editor {
+  padding: 14px;
+  min-height: 120px;
   font-family: var(--sans);
   font-size: 15px;
-  min-height: 120px;
+  color: var(--text-h);
+  background: var(--bg);
 }
 
-.rich-editor .ql-editor {
-  min-height: 120px;
+.tiptap-editor:focus {
+  outline: none;
 }
 
-.rich-editor .ql-editor.ql-blank::before {
+.tiptap-editor p {
+  margin-bottom: 8px;
+}
+
+.tiptap-editor h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text-h);
+}
+
+.tiptap-editor h3 {
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-h);
+}
+
+.tiptap-editor ul,
+.tiptap-editor ol {
+  padding-left: 24px;
+  margin-bottom: 8px;
+}
+
+.tiptap-editor li {
+  margin-bottom: 4px;
+}
+
+.tiptap-editor blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 16px;
+  margin: 12px 0;
   color: var(--text-muted);
-  font-style: normal;
 }
 
-.rich-editor .ql-toolbar button:hover .ql-stroke,
-.rich-editor .ql-toolbar button:hover {
-  color: var(--accent);
+.tiptap-editor code {
+  background: var(--bg-glass);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 14px;
 }
 
-.rich-editor .ql-toolbar button:hover .ql-stroke {
-  stroke: var(--accent);
+.tiptap-editor pre {
+  background: var(--bg);
+  padding: 12px;
+  border-radius: 4px;
+  overflow-x: auto;
 }
 
-.rich-editor .ql-toolbar button.ql-active .ql-stroke {
-  stroke: var(--accent);
+.tiptap-editor hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 16px 0;
 }
 
-.rich-editor .ql-toolbar button.ql-active {
-  color: var(--accent);
+.tiptap-editor p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--text-muted);
+  pointer-events: none;
+  height: 0;
 }
 
-[data-theme="light"] .rich-editor .ql-toolbar {
+[data-theme="light"] .tiptap-menu {
   background: #ffffff;
-  border-color: rgba(0, 0, 0, 0.1);
+  border-bottom-color: rgba(0, 0, 0, 0.1);
 }
 
-[data-theme="light"] .rich-editor .ql-container {
+[data-theme="light"] .tiptap-editor {
   background: #ffffff;
-  border-color: rgba(0, 0, 0, 0.1);
   color: #1a1a1a;
-}
-
-[data-theme="light"] .rich-editor .ql-editor.ql-blank::before {
-  color: #999999;
 }
