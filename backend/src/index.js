@@ -22,6 +22,7 @@ const corsOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map(s => s.trim())
   : ['http://localhost:5173', 'http://localhost:3001']
 
+app.set('trust proxy', 1)
 app.use(cors({ origin: corsOrigins, credentials: true }))
 app.use(express.json({ limit: '10mb' }))
 
