@@ -5,6 +5,7 @@ import Inscripcion from './Inscripcion.js'
 import Pago from './Pago.js'
 import Asistencia from './Asistencia.js'
 import Certificado from './Certificado.js'
+import PlantillaCertificado from './PlantillaCertificado.js'
 
 User.hasMany(Inscripcion, { foreignKey: 'estudiante_id', as: 'inscripciones' })
 Inscripcion.belongsTo(User, { foreignKey: 'estudiante_id', as: 'estudiante' })
@@ -24,4 +25,7 @@ Asistencia.belongsTo(Inscripcion, { foreignKey: 'inscripcion_id', as: 'inscripci
 Inscripcion.hasOne(Certificado, { foreignKey: 'inscripcion_id', as: 'certificado' })
 Certificado.belongsTo(Inscripcion, { foreignKey: 'inscripcion_id', as: 'inscripcion' })
 
-export { sequelize, User, Curso, Inscripcion, Pago, Asistencia, Certificado }
+User.hasMany(PlantillaCertificado, { foreignKey: 'user_id', as: 'plantillas' })
+PlantillaCertificado.belongsTo(User, { foreignKey: 'user_id', as: 'usuario' })
+
+export { sequelize, User, Curso, Inscripcion, Pago, Asistencia, Certificado, PlantillaCertificado }

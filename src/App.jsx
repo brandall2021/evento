@@ -18,6 +18,8 @@ const Dashboard = lazy(() => import('./pages/Dashboard'))
 const AdminCursos = lazy(() => import('./pages/AdminCursos'))
 const AdminInscripciones = lazy(() => import('./pages/AdminInscripciones'))
 const AdminCertificados = lazy(() => import('./pages/AdminCertificados'))
+const AdminPlantillas = lazy(() => import('./pages/AdminPlantillas'))
+const AdminUsuarios = lazy(() => import('./pages/AdminUsuarios'))
 
 function Loading() {
   return <div className="loading">Cargando...</div>
@@ -43,6 +45,7 @@ function App() {
                     <Route path="/admin/cursos" element={<ProtectedRoute roles={['admin', 'docente']}><AdminCursos /></ProtectedRoute>} />
                     <Route path="/admin/inscripciones" element={<ProtectedRoute roles={['admin']}><AdminInscripciones /></ProtectedRoute>} />
                     <Route path="/admin/certificados" element={<ProtectedRoute roles={['admin']}><AdminCertificados /></ProtectedRoute>} />
+                    <Route path="/admin/plantillas" element={<ProtectedRoute roles={['admin']}><AdminPlantillas /></ProtectedRoute>} />
                   </Route>
                 </Routes>
               </Suspense>

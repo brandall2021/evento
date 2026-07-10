@@ -1,6 +1,6 @@
 import PDFDocument from 'pdfkit'
 import QRCode from 'qrcode'
-import { Certificado, Inscripcion, Curso, User, Asistencia } from '../models/index.js'
+import { Certificado, Inscripcion, Curso, User, Asistencia, PlantillaCertificado } from '../models/index.js'
 
 function generarCodigo(inscripcionId) {
   const year = new Date().getFullYear()
@@ -62,6 +62,21 @@ export async function descargar(req, res) {
     })
     if (!cert) return res.status(404).json({ error: 'Certificado no encontrado' })
 
+    let plantilla = await PlantillaCertificado.findOne({
+      where: { is_default: true },
+    })
+
+    const config = plantilla?.config || {}
+    const bgColor = config.bgColor || '#faf8f5'
+    const borderColor = config.borderColor || '#c9a84c'
+    const borderWidth = config.borderWidth || 2
+    const titleColor = config.titleColor || '#666'
+    const codeColor = config.codeColor || '#c9a84c'
+    const nameColor = config.nameColor || '#1a1a1a'
+    const textColor = config.textColor || '#666'
+    const titleFont = config.titleFont || 'Helvetica'
+    const nameFont = config.nameFont || 'Helvetica-Bold'
+
     const doc = new PDFDocument({ layout: 'landscape', size: 'A4' })
     res.setHeader('Content-Type', 'application/pdf')
     res.setHeader('Content-Disposition', `attachment; filename=certificado-${cert.codigo}.pdf`)
@@ -70,38 +85,50 @@ export async function descargar(req, res) {
     const pageW = doc.page.width
     const pageH = doc.page.height
 
-    doc.rect(0, 0, pageW, pageH).fill('#faf8f5')
-    doc.rect(30, 30, pageW - 60, pageH - 60).lineWidth(2).stroke('#c9a84c')
+    doc.rect(0, 0, pageW, pageH).fill(bgColor)
+    doc.rect(30, 30, pageW - 60, pageH - 60).lineWidth(borderWidth).stroke(borderColor)
 
-    doc.fontSize(14).fillColor('#666').font('Helvetica')
+    if (plantilla?.logo_url) {
+      try {
+        doc.image(`.${plantilla.logo_url}`, 60, 50, { width: 80, height: 80 })
+      } catch { }
+    }
+
+    doc.fontSize(14).fillColor(titleColor).font(titleFont)
       .text('CERTIFICADO N°', 60, 80, { align: 'center' })
-    doc.fontSize(28).fillColor('#c9a84c').font('Helvetica-Bold')
+    doc.fontSize(28).fillColor(codeColor).font('Helvetica-Bold')
       .text(cert.codigo, 60, 100, { align: 'center' })
 
     doc.moveDown(2)
-    doc.fontSize(12).fillColor('#666').font('Helvetica')
+    doc.fontSize(12).fillColor(textColor).font(titleFont)
       .text('Se certifica que', { align: 'center' })
 
-    doc.fontSize(32).fillColor('#1a1a1a').font('Helvetica-Bold')
+    doc.fontSize(32).fillColor(nameColor).font(nameFont)
       .text(cert.inscripcion.estudiante.nombre, { align: 'center' })
 
     doc.moveDown(0.5)
-    doc.fontSize(14).fillColor('#666').font('Helvetica')
+    doc.fontSize(14).fillColor(textColor).font(titleFont)
       .text('ha completado el curso', { align: 'center' })
 
-    doc.fontSize(20).fillColor('#1a1a1a').font('Helvetica-Bold')
+    doc.fontSize(20).fillColor(nameColor).font('Helvetica-Bold')
       .text(cert.inscripcion.curso.nombre, { align: 'center' })
 
     doc.moveDown(1)
-    doc.fontSize(13).fillColor('#666').font('Helvetica')
+    doc.fontSize(13).fillColor(textColor).font(titleFont)
       .text(`${cert.horas} horas académicas`, { align: 'center' })
 
     const fecha = new Date(cert.fecha_emision).toLocaleDateString('es-AR')
-    doc.fontSize(12).fillColor('#666')
+    doc.fontSize(12).fillColor(textColor)
       .text(`Fecha de emisión: ${fecha}`, { align: 'center' })
 
     if (cert.nota) {
       doc.text(`Nota: ${cert.nota}`, { align: 'center' })
+    }
+
+    if (plantilla?.firma_url) {
+      try {
+        doc.image(`.${plantilla.firma_url}`, pageW / 2 - 60, pageH - 140, { width: 120, height: 60 })
+      } catch { }
     }
 
     if (cert.qr_url) {

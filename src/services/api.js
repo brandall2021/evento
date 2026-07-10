@@ -71,4 +71,21 @@ export const api = {
     },
     validar: (codigo) => request(`/certificados/validar/${codigo}`),
   },
+  plantillas: {
+    listar: () => request('/plantillas'),
+    obtener: (id) => request(`/plantillas/${id}`),
+    crear: (formData) => request('/plantillas', { method: 'POST', body: formData }),
+    actualizar: (id, formData) => request(`/plantillas/${id}`, { method: 'PUT', body: formData }),
+    eliminar: (id) => request(`/plantillas/${id}`, { method: 'DELETE' }),
+    default: () => request('/plantillas/default'),
+  },
+  usuarios: {
+    listar: (params = '') => request(`/usuarios${params}`),
+    obtener: (id) => request(`/usuarios/${id}`),
+    crear: (body) => request('/usuarios', { method: 'POST', body: JSON.stringify(body) }),
+    actualizar: (id, body) => request(`/usuarios/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+    eliminar: (id) => request(`/usuarios/${id}`, { method: 'DELETE' }),
+    toggleActivo: (id) => request(`/usuarios/${id}/toggle`, { method: 'PUT' }),
+    estadisticas: () => request('/usuarios/estadisticas'),
+  },
 }

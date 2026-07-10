@@ -11,6 +11,8 @@ import cursoRoutes from './routes/cursos.js'
 import inscripcionRoutes from './routes/inscripciones.js'
 import pagoRoutes from './routes/pagos.js'
 import certificadoRoutes from './routes/certificados.js'
+import plantillaRoutes from './routes/plantillas.js'
+import usuarioRoutes from './routes/usuarios.js'
 
 dotenv.config()
 
@@ -49,6 +51,8 @@ app.use('/api/cursos', cursoRoutes)
 app.use('/api/inscripciones', inscripcionRoutes)
 app.use('/api/pagos', pagoRoutes)
 app.use('/api/certificados', certificadoRoutes)
+app.use('/api/plantillas', plantillaRoutes)
+app.use('/api/usuarios', usuarioRoutes)
 
 app.get('/api/health', (req, res) => res.json({ ok: true }))
 

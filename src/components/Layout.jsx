@@ -22,6 +22,8 @@ export default function Layout() {
               <>
                 {user.rol === 'admin' && <Link to="/admin">Admin</Link>}
                 {user.rol === 'admin' || user.rol === 'docente' ? <Link to="/admin/cursos">Cursos</Link> : null}
+                {user.rol === 'admin' && <Link to="/admin/certificados">Certificados</Link>}
+                {user.rol === 'admin' && <Link to="/admin/plantillas">Plantillas</Link>}
                 <Link to="/cursos">Cursos</Link>
                 <Link to="/mis-inscripciones">Mis Inscripciones</Link>
                 <button onClick={toggleTheme} className="theme-toggle" aria-label="Cambiar tema">
