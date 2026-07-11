@@ -54,6 +54,25 @@ app.use('/api/certificados', certificadoRoutes)
 app.use('/api/plantillas', plantillaRoutes)
 app.use('/api/usuarios', usuarioRoutes)
 
+// Proxy to NestJS (routes prefixed with /api/v2/)
+const NESTJS_URL = process.env.NESTJS_URL || 'http://localhost:3002'
+app.use('/api/v2', async (req, res) => {
+  try {
+    const url = `${NESTJS_URL}/api${req.url}`
+    const headers = { ...req.headers, host: new URL(NESTJS_URL).host }
+    delete headers['content-length']
+    const response = await fetch(url, {
+      method: req.method,
+      headers,
+      body: ['POST', 'PUT', 'PATCH'].includes(req.method) ? JSON.stringify(req.body) : undefined,
+    })
+    const data = await response.text()
+    res.status(response.status).set('Content-Type', response.headers.get('Content-Type') || 'application/json').send(data)
+  } catch {
+    res.status(502).json({ error: 'NestJS no disponible' })
+  }
+})
+
 app.get('/api/health', (req, res) => res.json({ ok: true }))
 
 app.use(errorHandler)
