@@ -16,6 +16,10 @@ import { CredencialesModule } from './credenciales/credenciales.module.js'
 import { PonentesModule } from './ponentes/ponentes.module.js'
 import { ExpositoresModule } from './expositores/expositores.module.js'
 import { PatrocinadoresModule } from './patrocinadores/patrocinadores.module.js'
+import { ChatModule } from './chat/chat.module.js'
+import { NetworkingModule } from './networking/networking.module.js'
+import { ReunionesModule } from './reuniones/reuniones.module.js'
+import { StreamingModule } from './streaming/streaming.module.js'
 import { User } from './users/user.entity.js'
 import { Curso } from './cursos/curso.entity.js'
 import { Inscripcion } from './inscripciones/inscripcion.entity.js'
@@ -35,6 +39,16 @@ import { Expositor } from './expositores/expositor.entity.js'
 import { ProductoExpositor } from './expositores/producto.entity.js'
 import { Patrocinador } from './patrocinadores/patrocinador.entity.js'
 import { BeneficioPatrocinio } from './patrocinadores/beneficio.entity.js'
+import { Conversacion } from './chat/conversacion.entity.js'
+import { MensajeChat } from './chat/mensaje.entity.js'
+import { ParticipanteConversacion } from './chat/participante.entity.js'
+import { MatchNetworking } from './networking/match.entity.js'
+import { Reunion } from './reuniones/reunion.entity.js'
+import { ParticipanteReunion } from './reuniones/participante.entity.js'
+import { SalaStreaming } from './streaming/sala-streaming.entity.js'
+import { EncuestaStreaming } from './streaming/encuesta.entity.js'
+import { RespuestaEncuesta } from './streaming/respuesta-encuesta.entity.js'
+import { PreguntaQA } from './streaming/pregunta-qa.entity.js'
 
 @Module({
   imports: [
@@ -52,6 +66,9 @@ import { BeneficioPatrocinio } from './patrocinadores/beneficio.entity.js'
           User, Curso, Inscripcion, Asistencia, Pago, Certificado, PlantillaCertificado,
           PerfilAsistente, DiaAgenda, Sala, Bloque, Sesion, Checkin, Credencial,
           PerfilPonente, Expositor, ProductoExpositor, Patrocinador, BeneficioPatrocinio,
+          Conversacion, MensajeChat, ParticipanteConversacion, MatchNetworking,
+          Reunion, ParticipanteReunion,
+          SalaStreaming, EncuestaStreaming, RespuestaEncuesta, PreguntaQA,
         ],
         synchronize: true,
       }),
@@ -72,6 +89,10 @@ import { BeneficioPatrocinio } from './patrocinadores/beneficio.entity.js'
     PonentesModule,
     ExpositoresModule,
     PatrocinadoresModule,
+    ChatModule,
+    NetworkingModule,
+    ReunionesModule,
+    StreamingModule,
   ],
 })
 export class AppModule {}
