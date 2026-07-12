@@ -9,6 +9,10 @@ import { AsistenciasModule } from './asistencias/asistencias.module.js'
 import { PagosModule } from './pagos/pagos.module.js'
 import { CertificadosModule } from './certificados/certificados.module.js'
 import { PlantillasModule } from './plantillas/plantillas.module.js'
+import { PerfilModule } from './perfil/perfil.module.js'
+import { AgendaModule } from './agenda/agenda.module.js'
+import { CheckinModule } from './checkin/checkin.module.js'
+import { CredencialesModule } from './credenciales/credenciales.module.js'
 import { User } from './users/user.entity.js'
 import { Curso } from './cursos/curso.entity.js'
 import { Inscripcion } from './inscripciones/inscripcion.entity.js'
@@ -16,6 +20,13 @@ import { Asistencia } from './asistencias/asistencia.entity.js'
 import { Pago } from './pagos/pago.entity.js'
 import { Certificado } from './certificados/certificado.entity.js'
 import { PlantillaCertificado } from './plantillas/plantilla.entity.js'
+import { PerfilAsistente } from './perfil/perfil.entity.js'
+import { DiaAgenda } from './agenda/dia.entity.js'
+import { Sala } from './agenda/sala.entity.js'
+import { Bloque } from './agenda/bloque.entity.js'
+import { Sesion } from './agenda/sesion.entity.js'
+import { Checkin } from './checkin/checkin.entity.js'
+import { Credencial } from './credenciales/credencial.entity.js'
 
 @Module({
   imports: [
@@ -29,7 +40,10 @@ import { PlantillaCertificado } from './plantillas/plantilla.entity.js'
         username: config.get('DB_USER', 'postgres'),
         password: config.get('DB_PASSWORD', 'postgres'),
         database: config.get('DB_NAME', 'evento_web'),
-        entities: [User, Curso, Inscripcion, Asistencia, Pago, Certificado, PlantillaCertificado],
+        entities: [
+          User, Curso, Inscripcion, Asistencia, Pago, Certificado, PlantillaCertificado,
+          PerfilAsistente, DiaAgenda, Sala, Bloque, Sesion, Checkin, Credencial,
+        ],
         synchronize: true,
       }),
       inject: [ConfigService],
@@ -42,6 +56,10 @@ import { PlantillaCertificado } from './plantillas/plantilla.entity.js'
     PagosModule,
     CertificadosModule,
     PlantillasModule,
+    PerfilModule,
+    AgendaModule,
+    CheckinModule,
+    CredencialesModule,
   ],
 })
 export class AppModule {}
