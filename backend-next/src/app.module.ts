@@ -3,7 +3,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { AuthModule } from './auth/auth.module.js'
 import { UsersModule } from './users/users.module.js'
+import { CursosModule } from './cursos/cursos.module.js'
 import { User } from './users/user.entity.js'
+import { Curso } from './cursos/curso.entity.js'
 
 @Module({
   imports: [
@@ -17,13 +19,14 @@ import { User } from './users/user.entity.js'
         username: config.get('DB_USER', 'postgres'),
         password: config.get('DB_PASSWORD', 'postgres'),
         database: config.get('DB_NAME', 'evento_web'),
-        entities: [User],
+        entities: [User, Curso],
         synchronize: true,
       }),
       inject: [ConfigService],
     }),
     AuthModule,
     UsersModule,
+    CursosModule,
   ],
 })
 export class AppModule {}
