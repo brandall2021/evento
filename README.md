@@ -126,6 +126,11 @@ El sistema mantiene Express como backend de producción mientras NestJS se const
 | Validation | class-validator | Decoradores en DTOs |
 | Language | TypeScript 5.8 | Tipado estático |
 | PDF | PDFKit + qrcode | Certificados con plantillas configurables |
+| Cache | ioredis 5.11 | Redis caching con fallback graceful |
+| Storage | MinIO | S3-compatible object storage con fallback local |
+| WebSocket | Socket.IO | Chat en tiempo real (namespace `/chat`) |
+| API Docs | Swagger/OpenAPI | Documentación auto-generada en `/docs` |
+| Testing | Jest + ts-jest | Unit tests con mocks de repositorios |
 
 ### Infraestructura
 
@@ -216,7 +221,15 @@ Todos los módulos están en `backend-next/src/` y se registran en `app.module.t
 | 29 | `OrganizacionesModule` | `organizaciones/` | Multi-tenant: organizaciones, miembros, planes, configuración |
 | 30 | `PermissionsModule` | `permissions/` | Permisos granulares: crear, asignar a roles, verificar |
 
-> **Total: 30 módulos** (incluyendo Auth y Users como base)
+> **Total: 33 módulos** (30 de features + Cache + Storage + WebSocket)
+
+### Módulos de infraestructura
+
+| # | Módulo | Archivos | Descripción |
+|---|--------|----------|-------------|
+| 31 | `CacheModule` | `cache/` | Redis caching global (ioredis) con fallback cuando Redis no está disponible |
+| 32 | `StorageModule` | `storage/` | MinIO S3-compatible storage con fallback a disco local |
+| 33 | `WebsocketModule` | `websocket/` | Gateway WebSocket (socket.io) para chat en tiempo real |
 
 ---
 
@@ -796,7 +809,7 @@ Ver sección detallada en la versión anterior del README o ejecutar `curl /api/
 - Patrocinadores: categorías (Platino/Oro/Plata/Bronce), beneficios
 
 ### Fase 4 — Networking & Streaming
-- Chat privado/grupal con tracking de lectura
+- Chat privado/grupal con tracking de lectura + **WebSocket en tiempo real** (socket.io)
 - Match por intereses con scoring
 - Reuniones con participantes y estados
 - Streaming: salas (Zoom/Teams/YouTube/RTMP/WebRTC), encuestas, Q&A
@@ -822,6 +835,13 @@ Ver sección detallada en la versión anterior del README o ejecutar `curl /api/
 - Audit logs con datos previos/nuevos
 - Organizaciones multi-tenant con miembros y planes
 - Permisos granulares por rol
+
+### Infraestructura adicional
+- **Redis caching** — CacheService global con ioredis, fallback graceful cuando Redis no está disponible
+- **MinIO storage** — StorageService S3-compatible con fallback a disco local para uploads
+- **WebSocket** — ChatGateway (socket.io) con eventos: join/leave, send_message, typing, mark_read, online_users
+- **Swagger/OpenAPI** — Documentación auto-generada en `/docs` con 30 tags de módulos
+- **Unit tests** — Jest + ts-jest, 12 tests pasando (Cursos, Auth, Analytics services)
 
 ---
 
@@ -927,6 +947,7 @@ MINIO_ENDPOINT=localhost
 MINIO_PORT=9000
 MINIO_ACCESS_KEY=minioadmin
 MINIO_SECRET_KEY=minioadmin
+MINIO_BUCKET=evento-files
 
 # Google OAuth2 (opcional)
 GOOGLE_CLIENT_ID=
@@ -1306,17 +1327,19 @@ docker exec -it <CONTAINER_ID> env | grep -E "DB_|JWT_|PORT"
 - [x] **Fase 6** — CMS & Notificaciones: Páginas, Blog, Galería, FAQ, Notificaciones con plantillas
 - [x] **Fase 7** — API Pública, Webhooks, PWA, OAuth2 Google
 - [x] **Fase 8** — Analytics, Export CSV, Audit Logs, Organizaciones multi-tenant, Permisos granulares
+- [x] **Redis caching** — CacheService global con ioredis, fallback graceful
+- [x] **MinIO storage** — StorageService S3-compatible con fallback a disco local
+- [x] **WebSocket chat** — ChatGateway con socket.io (join, send, typing, read)
+- [x] **Swagger/OpenAPI** — Documentación auto-generada en `/docs`
+- [x] **Unit tests** — 12 tests pasando (Cursos, Auth, Analytics)
 
 ### Próximos pasos
 
 - [ ] Desplegar NestJS como servicio separado en Dokploy
 - [ ] Aplicar branding LACDI (colores hex + logo)
-- [ ] Tests unitarios para módulos core
-- [ ] Integración WebSocket (chat en tiempo real)
-- [ ] Integración Redis para caching
-- [ ] MinIO para storage de archivos
+- [ ] Tests de integración (end-to-end)
 - [ ] App móvil (React Native o Flutter)
-- [ ] OpenAPI/Swagger para documentación de API
+- [ ] CI/CD pipeline (GitHub Actions)
 
 ---
 
