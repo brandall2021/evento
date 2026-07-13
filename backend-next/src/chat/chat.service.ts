@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
+import { Injectable, NotFoundException, BadRequestException, Optional } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { Conversacion } from './conversacion.entity.js'
@@ -15,6 +15,12 @@ export class ChatService {
     @InjectRepository(ParticipanteConversacion)
     private readonly partRepo: Repository<ParticipanteConversacion>,
   ) {}
+
+  private chatGateway: any = null
+
+  setGateway(gateway: any) {
+    this.chatGateway = gateway
+  }
 
   async crearConversacion(userId: number, data: { nombre?: string; curso_id?: number; participantes: number[] }) {
     const conv = this.convRepo.create({
@@ -35,7 +41,6 @@ export class ChatService {
     const parts = await this.partRepo.find({ where: { user_id: userId } })
     const convIds = parts.map(p => p.conversacion_id)
     if (convIds.length === 0) return []
-
     return this.convRepo.findByIds(convIds)
   }
 
@@ -49,7 +54,13 @@ export class ChatService {
       contenido,
       tipo: (tipo as TipoMensaje) || TipoMensaje.TEXTO,
     })
-    return this.msgRepo.save(msg)
+    const saved = await this.msgRepo.save(msg)
+
+    if (this.chatGateway) {
+      this.chatGateway.emitToConversation(conversacionId, 'new_message', saved)
+    }
+
+    return saved
   }
 
   async mensajes(conversacionId: number, userId: number, page?: number, pageSize?: number) {

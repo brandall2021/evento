@@ -31,6 +31,9 @@ import { ExportModule } from './export/export.module.js'
 import { AuditLogsModule } from './audit-logs/audit-logs.module.js'
 import { OrganizacionesModule } from './organizaciones/organizaciones.module.js'
 import { PermissionsModule } from './permissions/permissions.module.js'
+import { CacheModule } from './cache/cache.module.js'
+import { StorageModule } from './storage/storage.module.js'
+import { WebsocketModule } from './websocket/websocket.module.js'
 import { User } from './users/user.entity.js'
 import { Curso } from './cursos/curso.entity.js'
 import { Inscripcion } from './inscripciones/inscripcion.entity.js'
@@ -140,6 +143,9 @@ import { Permission, RolePermission } from './permissions/permission.entity.js'
     AuditLogsModule,
     OrganizacionesModule,
     PermissionsModule,
+    CacheModule,
+    StorageModule,
+    WebsocketModule,
   ],
 })
 export class AppModule {}

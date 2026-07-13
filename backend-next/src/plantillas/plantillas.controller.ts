@@ -6,16 +6,16 @@ import {
   Delete,
   Body,
   Param,
-  Query,
   UploadedFiles,
   ParseIntPipe,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common'
 import { FilesInterceptor } from '@nestjs/platform-express'
-import { diskStorage } from 'multer'
+import { memoryStorage } from 'multer'
 import { extname } from 'path'
 import { PlantillasService } from './plantillas.service.js'
+import { StorageService } from '../storage/storage.service.js'
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js'
 import { RolesGuard } from '../common/guards/roles.guard.js'
 import { Roles } from '../common/decorators/roles.decorator.js'
@@ -33,7 +33,10 @@ const imageFilter = (_req: any, file: Express.Multer.File, cb: any) => {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
 export class PlantillasController {
-  constructor(private readonly plantillasService: PlantillasService) {}
+  constructor(
+    private readonly plantillasService: PlantillasService,
+    private readonly storageService: StorageService,
+  ) {}
 
   @Get()
   findAll() {
@@ -53,59 +56,51 @@ export class PlantillasController {
   @Post()
   @UseInterceptors(
     FilesInterceptor('files', 2, {
-      storage: diskStorage({
-        destination: './uploads/firmas',
-        filename: (_req, file, cb) => {
-          const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`
-          cb(null, `${uniqueSuffix}${extname(file.originalname)}`)
-        },
-      }),
+      storage: memoryStorage(),
       limits: { fileSize: 5 * 1024 * 1024 },
       fileFilter: imageFilter,
     }),
   )
-  create(
+  async create(
     @UploadedFiles() files: Express.Multer.File[],
     @Body() body: any,
   ) {
     const firma = files?.find(f => f.fieldname === 'firma')
     const logo = files?.find(f => f.fieldname === 'logo')
+    const firmaUrl = firma ? await this.storageService.upload(firma, 'firmas') : undefined
+    const logoUrl = logo ? await this.storageService.upload(logo, 'logos') : undefined
     return this.plantillasService.create({
       nombre: body.nombre,
       config: body.config,
       is_default: body.is_default === 'true' || body.is_default === true,
-      firma_url: firma ? `/uploads/firmas/${firma.filename}` : undefined,
-      logo_url: logo ? `/uploads/firmas/${logo.filename}` : undefined,
+      firma_url: firmaUrl,
+      logo_url: logoUrl,
     })
   }
 
   @Put(':id')
   @UseInterceptors(
     FilesInterceptor('files', 2, {
-      storage: diskStorage({
-        destination: './uploads/firmas',
-        filename: (_req, file, cb) => {
-          const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`
-          cb(null, `${uniqueSuffix}${extname(file.originalname)}`)
-        },
-      }),
+      storage: memoryStorage(),
       limits: { fileSize: 5 * 1024 * 1024 },
       fileFilter: imageFilter,
     }),
   )
-  update(
+  async update(
     @Param('id', ParseIntPipe) id: number,
     @UploadedFiles() files: Express.Multer.File[],
     @Body() body: any,
   ) {
     const firma = files?.find(f => f.fieldname === 'firma')
     const logo = files?.find(f => f.fieldname === 'logo')
+    const firmaUrl = firma ? await this.storageService.upload(firma, 'firmas') : undefined
+    const logoUrl = logo ? await this.storageService.upload(logo, 'logos') : undefined
     return this.plantillasService.update(id, {
       nombre: body.nombre,
       config: body.config,
       is_default: body.is_default === 'true' || body.is_default === true,
-      firma_url: firma ? `/uploads/firmas/${firma.filename}` : undefined,
-      logo_url: logo ? `/uploads/firmas/${logo.filename}` : undefined,
+      firma_url: firmaUrl,
+      logo_url: logoUrl,
     })
   }
 

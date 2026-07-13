@@ -7,6 +7,7 @@ import { FAQ } from '../cms/faq.entity.js'
 import { Galeria } from '../cms/galeria.entity.js'
 import { PerfilPonente } from '../ponentes/perfil-ponente.entity.js'
 import { PlantillaCertificado } from '../plantillas/plantilla.entity.js'
+import { CacheService } from '../cache/cache.service.js'
 
 @Injectable()
 export class PublicApiService {
@@ -17,34 +18,55 @@ export class PublicApiService {
     @InjectRepository(Galeria) private galeriaRepo: Repository<Galeria>,
     @InjectRepository(PerfilPonente) private ponenteRepo: Repository<PerfilPonente>,
     @InjectRepository(PlantillaCertificado) private plantillaRepo: Repository<PlantillaCertificado>,
+    private readonly cache: CacheService,
   ) {}
 
   async cursos(page = 1, limit = 12) {
+    const key = `pub:cursos:${page}:${limit}`
+    const cached = await this.cache.get<any>(key)
+    if (cached) return cached
     const [items, total] = await this.cursoRepo.findAndCount({
       where: { estado: EstadoCurso.PUBLICADO },
       order: { fecha_inicio: 'ASC' },
       skip: (page - 1) * limit,
       take: limit,
     })
-    return { items, total, page, pageSize: limit, totalPages: Math.ceil(total / limit) }
+    const result = { items, total, page, pageSize: limit, totalPages: Math.ceil(total / limit) }
+    await this.cache.set(key, result, 600)
+    return result
   }
 
   async cursoById(id: number) {
-    return this.cursoRepo.findOne({ where: { id } })
+    const key = `pub:curso:${id}`
+    const cached = await this.cache.get<any>(key)
+    if (cached) return cached
+    const curso = await this.cursoRepo.findOne({ where: { id } })
+    if (curso) await this.cache.set(key, curso, 600)
+    return curso
   }
 
   async blogPosts(page = 1, limit = 10) {
+    const key = `pub:blog:${page}:${limit}`
+    const cached = await this.cache.get<any>(key)
+    if (cached) return cached
     const [items, total] = await this.blogRepo.findAndCount({
       where: { publicado: true },
       order: { createdAt: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
     })
-    return { items, total, page, pageSize: limit, totalPages: Math.ceil(total / limit) }
+    const result = { items, total, page, pageSize: limit, totalPages: Math.ceil(total / limit) }
+    await this.cache.set(key, result, 600)
+    return result
   }
 
   async blogPostBySlug(slug: string) {
-    return this.blogRepo.findOne({ where: { slug } })
+    const key = `pub:blog:slug:${slug}`
+    const cached = await this.cache.get<any>(key)
+    if (cached) return cached
+    const post = await this.blogRepo.findOne({ where: { slug } })
+    if (post) await this.cache.set(key, post, 600)
+    return post
   }
 
   async faqsByCurso(cursoId: number) {
@@ -63,7 +85,11 @@ export class PublicApiService {
   }
 
   async ponentes() {
-    return this.ponenteRepo.find({ order: { createdAt: 'DESC' } })
+    const cached = await this.cache.get<any>('pub:ponentes')
+    if (cached) return cached
+    const result = await this.ponenteRepo.find({ order: { createdAt: 'DESC' } })
+    await this.cache.set('pub:ponentes', result, 600)
+    return result
   }
 
   async ponenteById(id: number) {

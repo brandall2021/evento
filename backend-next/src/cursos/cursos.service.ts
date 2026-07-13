@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { Curso, EstadoCurso } from './curso.entity.js'
 import { User, UserRole } from '../users/user.entity.js'
+import { CacheService } from '../cache/cache.service.js'
 
 @Injectable()
 export class CursosService {
@@ -11,12 +12,17 @@ export class CursosService {
     private readonly cursoRepo: Repository<Curso>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    private readonly cache: CacheService,
   ) {}
 
   async findAll(
     user: any,
     filters?: { page?: number; pageSize?: number },
   ) {
+    const cacheKey = `cursos:${user.rol}:${filters?.page || 'all'}:${filters?.pageSize || 20}`
+    const cached = await this.cache.get<any>(cacheKey)
+    if (cached) return cached
+
     const qb = this.cursoRepo.createQueryBuilder('curso')
     qb.leftJoinAndSelect('curso.docente', 'docente')
       .select([
@@ -35,6 +41,7 @@ export class CursosService {
       qb.andWhere('curso.docente_id = :docenteId', { docenteId: user.id })
     }
 
+    let result: any
     if (filters?.page) {
       const page = filters.page
       const pageSize = filters.pageSize || 20
@@ -42,18 +49,25 @@ export class CursosService {
         .take(pageSize)
         .skip((page - 1) * pageSize)
         .getManyAndCount()
-      return { data, total, page, pageSize }
+      result = { data, total, page, pageSize }
+    } else {
+      result = await qb.getMany()
     }
 
-    return qb.getMany()
+    await this.cache.set(cacheKey, result, 120)
+    return result
   }
 
   async findById(id: number) {
+    const cached = await this.cache.get<Curso>(`curso:${id}`)
+    if (cached) return cached
+
     const curso = await this.cursoRepo.findOne({
       where: { id },
       relations: ['docente'],
     })
     if (!curso) throw new NotFoundException('Curso no encontrado')
+    await this.cache.set(`curso:${id}`, curso, 120)
     return curso
   }
 
@@ -99,12 +113,16 @@ export class CursosService {
       aceptacion_auto: data.aceptacion_auto !== undefined ? data.aceptacion_auto : curso.aceptacion_auto,
     })
 
+    await this.cache.del(`curso:${id}`)
+    await this.cache.del('cursos:*')
     return this.cursoRepo.save(curso)
   }
 
   async remove(id: number) {
     const curso = await this.findById(id)
     await this.cursoRepo.remove(curso)
+    await this.cache.del(`curso:${id}`)
+    await this.cache.del('cursos:*')
     return { mensaje: 'Curso eliminado' }
   }
 
@@ -120,6 +138,8 @@ export class CursosService {
     }
 
     curso.estado = estado
+    await this.cache.del(`curso:${id}`)
+    await this.cache.del('cursos:*')
     return this.cursoRepo.save(curso)
   }
 }
