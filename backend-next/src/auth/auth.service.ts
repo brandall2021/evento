@@ -44,6 +44,21 @@ export class AuthService {
     return this.usersService.update(userId, data)
   }
 
+  async googleLogin(googleUser: { googleId: string; email: string; nombre: string; avatar?: string }) {
+    let user = await this.usersService.findByEmail(googleUser.email)
+    if (!user) {
+      user = await this.usersService.create({
+        nombre: googleUser.nombre,
+        email: googleUser.email,
+        password: Math.random().toString(36).slice(2),
+        rol: UserRole.ATTENDEE,
+      })
+    }
+    const token = this.generateToken(user)
+    const { password: _, ...userWithoutPassword } = user
+    return { token, user: userWithoutPassword }
+  }
+
   private generateToken(user: any) {
     return this.jwtService.sign({ id: user.id, email: user.email, rol: user.rol })
   }

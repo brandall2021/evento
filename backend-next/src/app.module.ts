@@ -24,6 +24,8 @@ import { GamificacionModule } from './gamificacion/gamificacion.module.js'
 import { InteraccionModule } from './interaccion/interaccion.module.js'
 import { CmsModule } from './cms/cms.module.js'
 import { NotificacionesModule } from './notificaciones/notificaciones.module.js'
+import { PublicApiModule } from './public-api/public-api.module.js'
+import { WebhooksModule } from './webhooks/webhooks.module.js'
 import { User } from './users/user.entity.js'
 import { Curso } from './cursos/curso.entity.js'
 import { Inscripcion } from './inscripciones/inscripcion.entity.js'
@@ -66,6 +68,7 @@ import { Galeria } from './cms/galeria.entity.js'
 import { FAQ } from './cms/faq.entity.js'
 import { Notificacion } from './notificaciones/notificacion.entity.js'
 import { PlantillaNotificacion } from './notificaciones/plantilla-notificacion.entity.js'
+import { Webhook, WebhookEvent } from './webhooks/webhook.entity.js'
 
 @Module({
   imports: [
@@ -90,6 +93,7 @@ import { PlantillaNotificacion } from './notificaciones/plantilla-notificacion.e
           Comentario, Like, Trivia, RespuestaTrivia,
           Pagina, BlogPost, Galeria, FAQ,
           Notificacion, PlantillaNotificacion,
+          Webhook, WebhookEvent,
         ],
         synchronize: true,
       }),
@@ -118,6 +122,8 @@ import { PlantillaNotificacion } from './notificaciones/plantilla-notificacion.e
     InteraccionModule,
     CmsModule,
     NotificacionesModule,
+    PublicApiModule,
+    WebhooksModule,
   ],
 })
 export class AppModule {}
