@@ -2,7 +2,9 @@
 
 Plataforma completa para la administración integral de eventos presenciales, virtuales e híbridos. Permite crear eventos, vender entradas, administrar asistentes, generar acreditaciones, controlar accesos, networking, streaming, certificados y más.
 
-En **migración activa** de Express/Sequelize a NestJS/TypeORM para evolucionar hacia un SaaS multi-tenant.
+**Backend:** NestJS 28 módulos + Express legacy (proxy)  
+**Frontend:** React 19 + Vite 8  
+**Infra:** PostgreSQL 16 + Redis 7 + MinIO (S3)
 
 **Repo:** `https://github.com/brandall2021/evento.git`
 
@@ -10,67 +12,81 @@ En **migración activa** de Express/Sequelize a NestJS/TypeORM para evolucionar 
 
 ## Tabla de contenidos
 
+- [Resumen del sistema](#resumen-del-sistema)
 - [Arquitectura](#arquitectura)
 - [Stack tecnológico](#stack-tecnológico)
+- [Módulos NestJS (28)](#módulos-nestjs-28)
 - [Estructura del proyecto](#estructura-del-proyecto)
 - [Modelo de datos](#modelo-de-datos)
 - [Roles](#roles)
-- [API Endpoints](#api-endpoints)
-- [Funcionalidades](#funcionalidades)
+- [API Endpoints — Express (`/api/*`)](#api-endpoints--express-apio)
+- [API Endpoints — NestJS (`/api/v2/*`)](#api-endpoints--nestjs-apiv2)
+- [Funcionalidades por fase](#funcionalidades-por-fase)
 - [Instalación local](#instalación-local)
 - [Variables de entorno](#variables-de-entorno)
 - [Despliegue con Docker](#despliegue-con-docker)
-- [Despliegue con Dokploy (paso a paso)](#despliegue-con-dokploy)
+- [Despliegue con Dokploy](#despliegue-con-dokploy)
 - [Troubleshooting](#troubleshooting)
-- [Roadmap de migración](#roadmap-de-migración)
+- [Roadmap](#roadmap)
+
+---
+
+## Resumen del sistema
+
+| Componente | Stack | Estado |
+|------------|-------|--------|
+| Frontend React | React 19, Vite 8, Tiptap, dark/light mode | Producción |
+| Backend Express | Node.js 20, Sequelize, JWT, PDFKit | Producción (legacy) |
+| Backend NestJS | NestJS 11, TypeORM 0.3, Passport, TypeScript 5.8 | **28 módulos completos** |
+| Base de datos | PostgreSQL 16 | Docker / Dokploy |
+| Cache / Colas | Redis 7 | Docker / Dokploy |
+| Storage S3 | MinIO | Docker / Dokploy |
+| Despliegue | Docker multi-stage (~40MB) + Dokploy | Producción |
+
+El frontend se compila a `dist/` y se sirve estáticamente desde Express en `:3001`. Express redirige `/api/v2/*` a NestJS en `:3002`, permitiendo migración incremental sin downtime.
 
 ---
 
 ## Arquitectura
 
 ```
-                                    INTERNET
-                                       │
-                                       ▼
-                              ┌─────────────────┐
-                              │   Nginx / SSL    │
-                              │  (Dokploy proxy) │
-                              └────────┬────────┘
-                                       │
-                              ┌────────▼────────┐
-                              │  Express :3001   │◀──── Frontend React (dist/)
-                              │  API legacy      │      servido estáticamente
-                              │                  │
-                              │  /api/*  ────────┼──── Módulos legacy
-                              │  /api/v2/* ──────┼──┐  Proxy a NestJS
-                              │                  │  │
-                              └──────────────────┘  │
-                                       │            │
-                    ┌──────────────────┐│   ┌───────▼────────┐
-                    │   PostgreSQL     ││   │  NestJS :3002   │
-                    │   :5432          │◀┘   │  API nueva      │
-                    │                  │     │  TypeScript      │
-                    └──────────────────┘     │  TypeORM         │
-                                             └───────┬────────┘
-                                             ┌───────┼────────┐
-                                        ┌────▼───┐ ┌─▼──────┐ │
-                                        │ Redis  │ │ MinIO  │ │
-                                        │ :6379  │ │ :9000  │ │
-                                        │ Cache  │ │ S3     │ │
-                                        └────────┘ └────────┘ │
+                              INTERNET
+                                 │
+                                 ▼
+                        ┌─────────────────┐
+                        │   Nginx / SSL    │
+                        │  (Dokploy proxy) │
+                        └────────┬────────┘
+                                 │
+                        ┌────────▼────────┐
+                        │  Express :3001   │◀──── Frontend React (dist/)
+                        │  API legacy      │      servido estáticamente
+                        │                  │
+                        │  /api/*  ────────┼──── Módulos legacy
+                        │  /api/v2/* ──────┼──┐  Proxy a NestJS
+                        │                  │  │
+                        └──────────────────┘  │
+                                 │            │
+                  ┌──────────────┐│   ┌───────▼────────┐
+                  │   PostgreSQL ││   │  NestJS :3002   │
+                  │   :5432      │◀┘   │  28 módulos     │
+                  │              │     │  TypeORM         │
+                  └──────────────┘     └───────┬────────┘
+                                        ┌──────┼──────┐
+                                   ┌────▼──┐ ┌─▼────┐ │
+                                   │ Redis │ │MinIO │ │
+                                   │ :6379 │ │:9000 │ │
+                                   └───────┘ └──────┘ │
 ```
 
 ### ¿Por qué dos backends?
 
-| Backend | Rol | Puerto | Estado |
-|---------|-----|--------|--------|
-| **Express** | Backend original, sirve frontend + API legacy | `:3001` | Producción activa |
-| **NestJS** | Backend nuevo, migración incremental | `:3002` | Desarrollo |
+El sistema mantiene Express como backend de producción mientras NestJS se construye y valida. El proxy en Express (`/api/v2/*`) redirige a NestJS, lo que permite:
 
-El proxy en Express (`/api/v2/*`) redirige peticiones a NestJS. Esto permite:
 - Migrar módulo por módulo sin downtime
 - Mantener la app funcionando durante la migración
 - Testing comparativo entre ambos backends
+- Cuando todo esté validado, NestJS reemplaza a Express directamente
 
 ---
 
@@ -83,47 +99,124 @@ El proxy en Express (`/api/v2/*`) redirige peticiones a NestJS. Esto permite:
 | Framework | React | 19 | UI library con hooks |
 | Bundler | Vite | 8 | Build tool ultrarrápido |
 | Routing | React Router | 7 | Client-side routing con lazy loading |
-| Editor WYSIWYG | Tiptap | 3.27 | Editor rich-text compatible con React 19 |
+| Editor WYSIWYG | Tiptap | 3.27 | Rich-text compatible con React 19 |
 | Estilos | CSS custom properties | — | Variables CSS + dark/light mode |
+| PWA | Service Worker | — | Manifest + sw.js (network-first) |
 | HTTP Client | Fetch API | nativo | Con interceptor JWT manual |
-| Despliegue | Docker | multi-stage | ~40MB en producción |
 
-### Backend Express (legacy) — Puerto `:3001`
+### Backend Express (`:3001`)
 
-| Capa | Tecnología | Versión | Descripción |
-|------|-----------|---------|-------------|
-| Runtime | Node.js | 20+ | JavaScript runtime |
-| Framework | Express | 4 | HTTP framework minimalista |
-| ORM | Sequelize | 6 | ORM para PostgreSQL |
-| Auth | JWT | jsonwebtoken | Tokens Bearer + bcryptjs |
-| PDF | PDFKit | — | Generación de certificados |
-| QR | qrcode | — | Códigos de validación de certificados |
-| Upload | Multer | — | Subida de imágenes (5MB máx) |
-| Validación | express-validator | — | Schemas de validación |
-| Rate Limit | express-rate-limit | — | 200 req/15min global, 20 en auth |
-| CORS | cors | — | Configurable por orígenes |
+| Capa | Tecnología | Descripción |
+|------|-----------|-------------|
+| Framework | Express 4 | HTTP minimalista |
+| ORM | Sequelize 6 | PostgreSQL con soft delete |
+| Auth | JWT + bcryptjs | Bearer tokens |
+| PDF | PDFKit | Generación de certificados |
+| QR | qrcode | Códigos de validación |
+| Upload | Multer | Imágenes (5MB max) |
+| Rate Limit | express-rate-limit | 200 req/15min, 20 en auth |
 
-### Backend NestJS (nuevo) — Puerto `:3002`
+### Backend NestJS (`:3002`)
 
-| Capa | Tecnología | Versión | Descripción |
-|------|-----------|---------|-------------|
-| Runtime | Node.js | 20+ | JavaScript runtime |
-| Framework | NestJS | 11 | Framework modular con DI |
-| ORM | TypeORM | 0.3 | ORM con decoradores TypeScript |
-| Auth | Passport + JWT | — | Strategy pattern para auth |
-| Cache | ioredis | 5.6 | Cliente Redis para caching |
-| Storage | MinIO | 8.0 | S3-compatible object storage |
-| Validación | class-validator | 0.15 | Decoradores de validación |
-| Transform | class-transformer | 0.5 | Transformación de DTOs |
-| Language | TypeScript | 5.8 | Tipado estático |
+| Capa | Tecnología | Descripción |
+|------|-----------|-------------|
+| Framework | NestJS 11 | Modular con DI, Guards, Interceptors |
+| ORM | TypeORM 0.3 | Entities + repositorios |
+| Auth | Passport + JWT | Strategy pattern (local + Google OAuth2) |
+| Validation | class-validator | Decoradores en DTOs |
+| Language | TypeScript 5.8 | Tipado estático |
+| PDF | PDFKit + qrcode | Certificados con plantillas configurables |
 
-### Infraestructura (Docker Compose)
+### Infraestructura
 
 | Servicio | Imagen | Puerto | Descripción |
 |----------|--------|--------|-------------|
 | PostgreSQL | `postgres:16-alpine` | `5432` | Base de datos principal |
-| Redis | `redis:7-alpine` | `6379` | Cache + sesiones + colas |
-| MinIO | `minio/minio` | `9000` (API) / `9001` (console) | Almacenamiento de archivos S3 |
+| Redis | `redis:7-alpine` | `6379` | Cache + sesiones |
+| MinIO | `minio/minio` | `9000`/`9001` | S3-compatible storage |
+
+---
+
+## Módulos NestJS (28)
+
+Todos los módulos están en `backend-next/src/` y se registran en `app.module.ts`.
+
+### Fase 0 — Auth & Usuarios
+
+| # | Módulo | Archivos | Descripción |
+|---|--------|----------|-------------|
+| 1 | `AuthModule` | `auth/` | Register, login, me, profile (JWT + Passport) + Google OAuth2 |
+| 2 | `UsersModule` | `users/` | CRUD, 12 roles, toggleActivo, estadísticas |
+
+### Fase 1 — Core
+
+| # | Módulo | Archivos | Descripción |
+|---|--------|----------|-------------|
+| 3 | `CursosModule` | `cursos/` | CRUD + paginación + imagen upload + estado (borrador/publicado/finalizado) |
+| 4 | `InscripcionesModule` | `inscripciones/` | Solicitar, misInscripciones, aprobar, rechazar, cupos, auto-accept |
+| 5 | `AsistenciasModule` | `asistencias/` | Registrar asistencia, contar presentes |
+| 6 | `PagosModule` | `pagos/` | Crear, confirmar, listar, auto-accept inscripción |
+| 7 | `CertificadosModule` | `certificados/` | Emitir (80% asistencia, QR), descargar PDF, validar |
+| 8 | `PlantillasModule` | `plantillas/` | CRUD plantillas certificado, config posiciones, firma/logo upload |
+
+### Fase 2 — Asistentes & Agenda
+
+| # | Módulo | Archivos | Descripción |
+|---|--------|----------|-------------|
+| 9 | `PerfilModule` | `perfil/` | Perfil asistente (1:1 con User), empresa, cargo, bio, intereses, redes |
+| 10 | `AgendaModule` | `agenda/` | Días, Salas, Bloques, Sesiones — árbol jerárquico completo |
+| 11 | `CheckinModule` | `checkin/` | QR/manual/geolocalización, por sesión o general, estadísticas |
+| 12 | `CredencialesModule` | `credenciales/` | Emitir credencial PDF con QR, validar, misCredenciales |
+
+### Fase 3 — Ponentes, Expositores, Patrocinadores
+
+| # | Módulo | Archivos | Descripción |
+|---|--------|----------|-------------|
+| 13 | `PonentesModule` | `ponentes/` | Perfil ponente: CV, especialidad, calificación, experiencia |
+| 14 | `ExpositoresModule` | `expositores/` | Expositor + Productos (empresa, stand, catálogo con precios) |
+| 15 | `PatrocinadoresModule` | `patrocinadores/` | Patrocinador + Beneficios (Platino/Oro/Plata/Bronce, banners, popups) |
+
+### Fase 4 — Networking & Streaming
+
+| # | Módulo | Archivos | Descripción |
+|---|--------|----------|-------------|
+| 16 | `ChatModule` | `chat/` | Conversaciones privadas/grupales, mensajes con tipos, tracking lectura |
+| 17 | `NetworkingModule` | `networking/` | Match por intereses, sugerencias con scoring, solicitudes |
+| 18 | `ReunionesModule` | `reuniones/` | Reuniones con participantes, estados, programación |
+| 19 | `StreamingModule` | `streaming/` | Salas (Zoom/Teams/YouTube/RTMP/WebRTC), encuestas, Q&A con votos |
+
+### Fase 5 — Gamificación & Interacción
+
+| # | Módulo | Archivos | Descripción |
+|---|--------|----------|-------------|
+| 20 | `GamificacionModule` | `gamificacion/` | Puntos (8 fuentes), badges con thresholds, ranking global |
+| 21 | `InteraccionModule` | `interaccion/` | Comentarios (anidados), likes (toggle), trivias con scoring |
+
+### Fase 6 — CMS & Notificaciones
+
+| # | Módulo | Archivos | Descripción |
+|---|--------|----------|-------------|
+| 22 | `CmsModule` | `cms/` | Páginas, Blog Posts, Galería, FAQs |
+| 23 | `NotificacionesModule` | `notificaciones/` | Enviar, masivas, leídas/no-leídas, plantillas |
+
+### Fase 7 — API Pública, Webhooks, PWA, OAuth2
+
+| # | Módulo | Archivos | Descripción |
+|---|--------|----------|-------------|
+| 24 | `PublicApiModule` | `public-api/` | Endpoints públicos (sin auth): cursos, blog, ponentes, validar certificados |
+| 25 | `WebhooksModule` | `webhooks/` | CRUD webhooks + dispatch con HMAC-SHA256, reintento |
+
+### Fase 8 — Analytics, Export, Admin
+
+| # | Módulo | Archivos | Descripción |
+|---|--------|----------|-------------|
+| 26 | `AnalyticsModule` | `analytics/` | Dashboard, métricas por mes, top cursos, asistencia, usuario stats |
+| 27 | `ExportModule` | `export/` | CSV export: cursos, inscripciones, pagos, asistencias, certificados |
+| 28 | `AuditLogsModule` | `audit-logs/` | Logs de auditoría: acción, entidad, datos previos/nuevos, IP |
+| 29 | `OrganizacionesModule` | `organizaciones/` | Multi-tenant: organizaciones, miembros, planes, configuración |
+| 30 | `PermissionsModule` | `permissions/` | Permisos granulares: crear, asignar a roles, verificar |
+
+> **Total: 30 módulos** (incluyendo Auth y Users como base)
 
 ---
 
@@ -131,76 +224,61 @@ El proxy en Express (`/api/v2/*`) redirige peticiones a NestJS. Esto permite:
 
 ```
 evento-web/
-├── docker-compose.yml                  # Infra: PostgreSQL + Redis + MinIO
-├── Dockerfile                          # Multi-stage build (Express + frontend)
-├── .dockerignore
-├── .gitignore
-├── .oxlintrc.json
+├── docker-compose.yml                  # PostgreSQL + Redis + MinIO
+├── Dockerfile                          # Multi-stage: Express + frontend (~40MB)
 ├── index.html                          # Entry HTML (Vite)
-├── vite.config.js                      # Configuración de Vite
+├── vite.config.js                      # Config Vite
 ├── package.json                        # Dependencias frontend
 │
-├── backend/                            # ═══ EXPRESS LEGACY ( :3001 ) ═══
+├── backend/                            # ═══ EXPRESS LEGACY :3001 ═══
 │   ├── src/
-│   │   ├── config/
-│   │   │   └── database.js             # Conexión PostgreSQL (Sequelize)
-│   │   ├── models/
-│   │   │   ├── index.js                # Asociaciones entre modelos
-│   │   │   ├── User.js                 # Usuarios (3 roles)
-│   │   │   ├── Curso.js                # Cursos con soft delete
-│   │   │   ├── Inscripcion.js          # Solicitudes, estados, cupos
-│   │   │   ├── Pago.js                 # Pagos por cuota
-│   │   │   ├── Asistencia.js           # Control de asistencia
-│   │   │   ├── Certificado.js          # PDF + QR + validación
-│   │   │   └── PlantillaCertificado.js # Plantilla certificado (JSONB)
-│   │   ├── controllers/
-│   │   │   ├── authController.js       # Registro, login, perfil
-│   │   │   ├── cursoController.js      # CRUD con paginación
-│   │   │   ├── inscripcionController.js# Solicitud, aprobar/rechazar
-│   │   │   ├── pagoController.js       # Crear, confirmar (auto-unlock)
-│   │   │   ├── certificadoController.js# Emitir, PDF, validar
-│   │   │   ├── plantillaController.js  # CRUD plantillas + archivos
-│   │   │   └── usuarioController.js    # CRUD usuarios + stats
-│   │   ├── routes/
-│   │   │   ├── auth.js
-│   │   │   ├── cursos.js               # Multer para imágenes
-│   │   │   ├── inscripciones.js
-│   │   │   ├── pagos.js
-│   │   │   ├── certificados.js         # /validar/:codigo ANTES de /:id
-│   │   │   ├── plantillas.js           # Multer para firma/logo
-│   │   │   └── usuarios.js             # Solo admin
-│   │   ├── middleware/
-│   │   │   ├── auth.js                 # JWT + roles + query token
-│   │   │   ├── validate.js             # express-validator schemas
-│   │   │   └── errorHandler.js         # Error handler centralizado
-│   │   ├── seeders/
-│   │   │   └── seed.js                 # 5 usuarios + 5 cursos de prueba
-│   │   └── index.js                    # Entry + proxy → NestJS
-│   ├── uploads/                        # QR, firmas, logos (volumen persistente)
+│   │   ├── index.js                    # Entry + proxy → NestJS (/api/v2/*)
+│   │   ├── config/database.js          # Conexión PostgreSQL (Sequelize)
+│   │   ├── models/                     # Sequelize models (7 modelos)
+│   │   ├── controllers/                # Controllers (7)
+│   │   ├── routes/                     # Rutas REST
+│   │   ├── middleware/                 # Auth JWT, validación, errorHandler
+│   │   └── seeders/seed.js            # Datos de prueba
+│   ├── uploads/                        # QR, firmas, logos (volumen)
 │   └── .env
 │
-├── backend-next/                       # ═══ NESTJS NUEVO ( :3002 ) ═══
+├── backend-next/                       # ═══ NESTJS NUEVO :3002 ═══
 │   ├── src/
-│   │   ├── main.ts                     # Entry point (NestFactory)
-│   │   ├── app.module.ts               # Root module (TypeORM + Auth + Users)
-│   │   ├── auth/
-│   │   │   ├── auth.module.ts          # JWT + Passport config
-│   │   │   ├── auth.controller.ts      # POST register/login, GET me, PUT profile
-│   │   │   ├── auth.service.ts         # Lógica: register, login, generateToken
-│   │   │   └── jwt.strategy.ts         # Passport JWT strategy
-│   │   ├── users/
-│   │   │   ├── user.entity.ts          # TypeORM entity (12 roles enum)
-│   │   │   ├── users.module.ts
-│   │   │   ├── users.service.ts        # CRUD + toggleActivo + estadísticas
-│   │   │   └── users.controller.ts     # Endpoints admin con @Roles guard
+│   │   ├── main.ts                     # NestFactory bootstrap
+│   │   ├── app.module.ts               # Root: 30 entidades + 30 módulos
 │   │   ├── common/
-│   │   │   ├── guards/
-│   │   │   │   ├── jwt-auth.guard.ts   # AuthGuard('jwt')
-│   │   │   │   └── roles.guard.ts      # CanActivate con reflector
-│   │   │   └── decorators/
-│   │   │       └── roles.decorator.ts  # @Roles() SetMetadata
-│   │   └── config/
-│   │       └── config.module.ts        # ConfigModule.forRoot
+│   │   │   ├── guards/                 # JwtAuthGuard, RolesGuard
+│   │   │   └── decorators/             # @Roles() decorator
+│   │   ├── auth/                       # JWT + Google OAuth2
+│   │   ├── users/                      # CRUD + 12 roles
+│   │   ├── cursos/                     # CRUD + paginación + imagen
+│   │   ├── inscripciones/              # Solicitud + aprobación + cupos
+│   │   ├── asistencias/                # Control de asistencia
+│   │   ├── pagos/                      # Pagos + confirmación
+│   │   ├── certificados/               # PDF + QR + validación
+│   │   ├── plantillas/                 # Plantilla certificado (configurable)
+│   │   ├── perfil/                     # Perfil asistente
+│   │   ├── agenda/                     # Días + Salas + Bloques + Sesiones
+│   │   ├── checkin/                    # QR/manual/geolocalización
+│   │   ├── credenciales/               # Credencial PDF
+│   │   ├── ponentes/                   # Perfil ponente
+│   │   ├── expositores/                # Expositor + Productos
+│   │   ├── patrocinadores/             # Patrocinador + Beneficios
+│   │   ├── chat/                       # Conversaciones + Mensajes
+│   │   ├── networking/                 # Match por intereses
+│   │   ├── reuniones/                  # Reuniones + Participantes
+│   │   ├── streaming/                  # Salas + Encuestas + Q&A
+│   │   ├── gamificacion/               # Puntos + Badges + Ranking
+│   │   ├── interaccion/                # Comentarios + Likes + Trivias
+│   │   ├── cms/                        # Páginas + Blog + Galería + FAQ
+│   │   ├── notificaciones/             # Notificaciones + Plantillas
+│   │   ├── public-api/                 # API pública (sin auth)
+│   │   ├── webhooks/                   # Webhooks + dispatch
+│   │   ├── analytics/                  # Dashboard + métricas
+│   │   ├── export/                     # CSV export
+│   │   ├── audit-logs/                 # Logs de auditoría
+│   │   ├── organizaciones/             # Multi-tenant
+│   │   └── permissions/                # Permisos granulares
 │   ├── .env.example
 │   ├── tsconfig.json
 │   ├── nest-cli.json
@@ -208,33 +286,28 @@ evento-web/
 │
 └── src/                                # ═══ FRONTEND REACT ═══
     ├── components/
-    │   ├── Layout.jsx                  # Header + nav responsive + theme toggle
-    │   ├── ProtectedRoute.jsx          # Guard por auth y roles
-    │   ├── ErrorBoundary.jsx           # Captura errores de React
-    │   └── RichTextEditor.jsx          # Tiptap (reemplaza react-quill)
+    │   ├── Layout.jsx                  # Header + nav + theme toggle
+    │   ├── ProtectedRoute.jsx          # Guard por auth/roles
+    │   └── RichTextEditor.jsx          # Tiptap editor
     ├── context/
-    │   ├── AuthContext.jsx             # Estado de auth global (JWT)
-    │   ├── ThemeContext.jsx            # Dark/light mode (localStorage)
-    │   └── NotificationContext.jsx     # Sistema de toasts
+    │   ├── AuthContext.jsx             # JWT auth global
+    │   ├── ThemeContext.jsx            # Dark/light mode
+    │   └── NotificationContext.jsx     # Toast notifications
     ├── pages/
-    │   ├── Landing.jsx                 # Hero + features + cursos + CTA + footer
-    │   ├── Login.jsx                   # Formulario de login
-    │   ├── Register.jsx                # Formulario de registro
-    │   ├── CursosList.jsx              # Grid + búsqueda + filtro categoría
-    │   ├── CursoDetail.jsx             # Detalle + inscripción + HTML render
-    │   ├── MisInscripciones.jsx        # Estado inscripciones + descarga cert
-    │   ├── Dashboard.jsx               # Admin panel con estadísticas
-    │   ├── AdminCursos.jsx             # CRUD cursos + imágenes + estados
-    │   ├── AdminInscripciones.jsx      # Aprobar/rechazar solicitudes
-    │   ├── AdminCertificados.jsx       # Emitir + listar certificados
-    │   ├── AdminPlantillas.jsx         # Editor visual plantillas (preview)
-    │   └── AdminUsuarios.jsx           # CRUD usuarios + stats + filtros
-    ├── services/
-    │   └── api.js                      # Cliente HTTP (fetch + JWT auto)
-    ├── App.jsx                         # Router con lazy loading por ruta
-    ├── App.css                         # Estilos del sistema + plantillas
-    ├── index.css                       # CSS variables + dark mode + reset
-    └── main.jsx                        # ReactDOM.createRoot
+    │   ├── Landing.jsx                 # Hero + features + cursos + CTA
+    │   ├── Login.jsx / Register.jsx    # Auth forms
+    │   ├── CursosList.jsx / CursoDetail.jsx
+    │   ├── MisInscripciones.jsx        # Estado + descarga cert
+    │   ├── Dashboard.jsx               # Admin panel
+    │   ├── AdminCursos.jsx             # CRUD cursos
+    │   ├── AdminInscripciones.jsx      # Aprobar/rechazar
+    │   ├── AdminCertificados.jsx       # Emitir + listar
+    │   ├── AdminPlantillas.jsx         # Editor visual plantillas
+    │   └── AdminUsuarios.jsx           # CRUD usuarios
+    ├── services/api.js                 # HTTP client (fetch + JWT)
+    ├── App.jsx                         # Router lazy loading
+    ├── index.css                       # CSS variables + dark mode
+    └── main.jsx
 ```
 
 ---
@@ -244,35 +317,56 @@ evento-web/
 ```
 ┌──────────┐     ┌──────────────┐     ┌──────────┐
 │   User   │─1:N─│ Inscripcion  │─N:1─│  Curso   │
-│          │     │              │     │          │
-│ id       │     │ id           │     │ id       │
-│ nombre   │     │ estado       │     │ nombre   │
-│ email    │     │ fecha_soli   │     │ descrip. │
-│ password │     │ motivo_rech  │     │modalidad │
-│ rol      │     └──────┬───────┘     │ estado   │
-│ telefono │            │             │ categor. │
-│ avatar   │       ┌────┼────┐        │ imagen   │
-│ activo   │       │    │    │        └──────────┘
-└──────────┘     1:N  1:N  1:1
+│ (12 roles)│     │              │     │(3 estados)│
+│          │     │ estudiante_id│     │          │
+│ nombre   │     │ curso_id     │     │ nombre   │
+│ email    │     │ estado       │     │descripción│
+│ password │     └──────┬───────┘     │modalidad │
+│ activo   │            │             │ categor. │
+└──────────┘       ┌────┼────┐        └──────────┘
                    │    │    │
               ┌────▼┐ ┌▼────┐ ┌▼────────────┐
               │Pago │ │Asist│ │ Certificado  │
               │     │ │encia│ │              │
-              │ monto│ │pres.│ │ codigo       │
-              │ cuota│ │     │ │ qr_url       │
-              │confirm│     │ │ horas        │
+              │monto│ │pres.│ │ codigo       │
+              │cuota│ │     │ │ qr_url       │
+              │metodo│     │ │ horas        │
               └─────┘ └─────┘ │ fecha_emis.  │
                               └──────┬───────┘
-                                     │ N:1
+                                     │
                               ┌──────▼───────┐
                               │  Plantilla   │
                               │  Certificado │
                               │              │
                               │ config (JSONB)│
-                              │ firma_url    │
-                              │ logo_url     │
-                              │ is_default   │
+                              │ posiciones   │
+                              │ firma/logo   │
                               └──────────────┘
+
+┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+│  Agenda      │  │  Chat        │  │  Streaming   │
+│              │  │              │  │              │
+│ Dia→Bloque→  │  │ Conversacion │  │ SalaStream   │
+│   Sesion     │  │ Mensaje      │  │ Encuesta     │
+│ Sala (indep) │  │ Participante │  │ Respuesta    │
+└──────────────┘  └──────────────┘  │ PreguntaQA   │
+                                    └──────────────┘
+
+┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+│  Gamificacion│  │  CMS         │  │  Admin       │
+│              │  │              │  │              │
+│ PuntosHist   │  │ Pagina       │  │ AuditLog     │
+│ Badge        │  │ BlogPost     │  │ Organizacion │
+│ UsuarioBadge │  │ Galeria      │  │ Permission   │
+│              │  │ FAQ          │  │ RolePerm     │
+└──────────────┘  └──────────────┘  │ Webhook      │
+                                    │ WebhookEvent │
+┌──────────────┐  ┌──────────────┐  └──────────────┘
+│  Reuniones   │  │  Notificac.  │
+│              │  │              │
+│ Reunion      │  │ Notificacion │
+│ Participante │  │ PlantillaNot │
+└──────────────┘  └──────────────┘
 ```
 
 ---
@@ -287,186 +381,447 @@ evento-web/
 | **Docente** | CRUD propios | Ver los suyos | — | — | — | — |
 | **Estudiante** | Ver | Solicitar/ver | — | Descargar | — | — |
 
-### NestJS (12 roles — SaaS futuro)
+### NestJS (12 roles — SaaS)
 
-| Rol | Valor | Descripción |
-|-----|-------|------------|
-| Admin | `admin` | Administrador global del sistema |
-| Organizador | `organizador` | Crea y gestiona eventos |
-| Coordinador | `coordinador` | Coordina actividades del evento |
-| Ponente | `ponente` | Speaker que dicta sesiones |
-| Expositor | `expositor` | Exhibidor con stand propio |
-| Patrocinador | `patrocinador` | Sponsor con beneficios |
-| Asistente | `asistente` | Participante general |
-| Invitado | `invitado` | Guest list |
-| Check-in | `checkin` | Personal de acreditación |
-| Moderador | `moderador` | Modera sesiones y chat |
-| Docente | `docente` | Compatibilidad con Express |
-| Estudiante | `estudiante` | Compatibilidad con Express |
+| Rol | Valor | Descripción | Permisos típicos |
+|-----|-------|------------|-----------------|
+| Admin | `admin` | Administrador global | Todo |
+| Organizador | `organizador` | Crea/gestiona eventos | CRUD eventos, inscripciones |
+| Coordinador | `coordinador` | Coordina actividades | Ver todo, gestionar agenda |
+| Ponente | `ponente` | Speaker | Ver sus sesiones, asistentes |
+| Expositor | `expositor` | Exhibidor | CRUD productos, stand |
+| Patrocinador | `patrocinador` | Sponsor | Ver beneficios, estadísticas |
+| Asistente | `asistente` | Participante | Inscribirse, ver agenda |
+| Invitado | `invitado` | Guest list | Ver agenda, check-in |
+| Check-in | `checkin` | Acreditación | Escanear QR, registrar asistencia |
+| Moderador | `moderador` | Modera sesiones | Chat, Q&A, encuestas |
+| Docente | `docente` | Compat. Express | CRUD cursos propios |
+| Estudiante | `estudiante` | Compat. Express | Inscribirse, ver certificados |
+
+### Sistema de permisos granulares
+
+```
+PermissionsModule permite:
+  - Crear permisos: { nombre, clave, categoria }
+  - Asignar a roles: POST /permissions/rol/admin { permission_id: 5 }
+  - Verificar: permissionsService.tienePermiso('admin', 'cursos.create')
+  - Consultar: GET /permissions/rol/admin → lista de permisos
+```
 
 ---
 
-## API Endpoints
+## API Endpoints — Express (`/api/*`)
 
-### Express — `/api/*` (producción activa)
+Producción activa. Frontend consume estos endpoints.
 
-#### Auth (público + autenticado)
+### Auth
 
 | Método | Ruta | Auth | Body | Respuesta |
 |--------|------|------|------|-----------|
 | POST | `/api/auth/register` | No | `{ nombre, email, password, rol? }` | `{ token, user }` |
 | POST | `/api/auth/login` | No | `{ email, password }` | `{ token, user }` |
-| GET | `/api/auth/me` | JWT | — | `user` (sin password) |
+| GET | `/api/auth/me` | JWT | — | `user` |
 | PUT | `/api/auth/profile` | JWT | `{ nombre?, telefono? }` | `user` |
 
-#### Cursos
+### Cursos
 
 | Método | Ruta | Auth | Descripción |
 |--------|------|------|-------------|
-| GET | `/api/cursos` | Sí | Listar (paginación: `?page=1&pageSize=20`) |
+| GET | `/api/cursos` | Sí | Listar (`?page=1&pageSize=20`) |
 | GET | `/api/cursos/:id` | Sí | Detalle con docente |
 | POST | `/api/cursos` | Admin/Docente | Crear (FormData: imagen + JSON) |
-| PUT | `/api/cursos/:id` | Admin/Docente | Actualizar (dueño o admin) |
+| PUT | `/api/cursos/:id` | Admin/Docente | Actualizar |
 | DELETE | `/api/cursos/:id` | Admin | Soft delete |
-| PUT | `/api/cursos/:id/estado` | Admin | Cambiar estado rápido (`{ estado }`) |
+| PUT | `/api/cursos/:id/estado` | Admin | Cambiar estado |
 
-#### Inscripciones
+### Inscripciones
 
 | Método | Ruta | Auth | Descripción |
 |--------|------|------|-------------|
-| POST | `/api/inscripciones` | Estudiante | Solicitar (`{ curso_id }`) |
+| POST | `/api/inscripciones` | Estudiante | Solicitar |
 | GET | `/api/inscripciones/mis` | Estudiante | Mis inscripciones |
-| GET | `/api/inscripciones` | Admin/Docente | Listar todas (paginación) |
-| PUT | `/api/inscripciones/:id/aprobar` | Admin | Aprobar inscripción |
-| PUT | `/api/inscripciones/:id/rechazar` | Admin | Rechazar (`{ motivo }`) |
+| GET | `/api/inscripciones` | Admin/Docente | Listar todas |
+| PUT | `/api/inscripciones/:id/aprobar` | Admin | Aprobar |
+| PUT | `/api/inscripciones/:id/rechazar` | Admin | Rechazar |
 
-#### Pagos
+### Pagos / Certificados / Plantillas / Usuarios
 
-| Método | Ruta | Auth | Descripción |
-|--------|------|------|-------------|
-| POST | `/api/pagos` | Sí | Crear pago |
-| GET | `/api/pagos` | Sí | Listar (paginación) |
-| PUT | `/api/pagos/:id/confirmar` | Admin | Confirmar (desbloquea inscripción) |
-
-#### Certificados
-
-| Método | Ruta | Auth | Descripción |
-|--------|------|------|-------------|
-| GET | `/api/certificados` | Sí | Listar (paginación) |
-| POST | `/api/certificados/emitir` | Admin | Emitir (verifica 80% asistencia) |
-| GET | `/api/certificados/validar/:codigo` | **No** | Validación pública de certificado |
-| GET | `/api/certificados/:id/descargar` | Sí | Descargar PDF (usa plantilla activa) |
-
-#### Plantillas de certificado
-
-| Método | Ruta | Auth | Descripción |
-|--------|------|------|-------------|
-| GET | `/api/plantillas` | Admin | Listar todas |
-| GET | `/api/plantillas/default` | Admin | Obtener plantilla por defecto |
-| GET | `/api/plantillas/:id` | Admin | Detalle |
-| POST | `/api/plantillas` | Admin | Crear (FormData: config JSON + firma + logo) |
-| PUT | `/api/plantillas/:id` | Admin | Actualizar |
-| DELETE | `/api/plantillas/:id` | Admin | Eliminar |
-
-#### Usuarios (solo admin)
-
-| Método | Ruta | Auth | Descripción |
-|--------|------|------|-------------|
-| GET | `/api/usuarios` | Admin | Listar (filtros: `?rol=&activo=&page=&pageSize=`) |
-| GET | `/api/usuarios/estadisticas` | Admin | `{ total, activos, inactivos, porRol[] }` |
-| GET | `/api/usuarios/:id` | Admin | Detalle |
-| POST | `/api/usuarios` | Admin | Crear (`{ nombre, email, password, rol, telefono? }`) |
-| PUT | `/api/usuarios/:id` | Admin | Actualizar |
-| DELETE | `/api/usuarios/:id` | Admin | Hard delete |
-| PUT | `/api/usuarios/:id/toggle` | Admin | Activar/desactivar |
-
-#### Health
-
-| Método | Ruta | Auth | Respuesta |
-|--------|------|------|-----------|
-| GET | `/api/health` | No | `{ "ok": true }` |
-
-### NestJS — `/api/v2/*` (via proxy Express)
-
-Mismos endpoints que Express, migrados a NestJS + TypeScript.
-
-| Método | Ruta | Auth | Descripción |
-|--------|------|------|-------------|
-| POST | `/api/v2/auth/register` | No | Registro |
-| POST | `/api/v2/auth/login` | No | Login → JWT |
-| GET | `/api/v2/auth/me` | JWT | Perfil |
-| PUT | `/api/v2/auth/profile` | JWT | Actualizar perfil |
-| GET | `/api/v2/usuarios` | Admin | Listar |
-| GET | `/api/v2/usuarios/estadisticas` | Admin | Estadísticas |
-| GET | `/api/v2/usuarios/:id` | Admin | Detalle |
-| POST | `/api/v2/usuarios` | Admin | Crear |
-| PUT | `/api/v2/usuarios/:id` | Admin | Actualizar |
-| DELETE | `/api/v2/usuarios/:id` | Admin | Eliminar |
-| PUT | `/api/v2/usuarios/:id/toggle` | Admin | Toggle activo |
+Ver sección detallada en la versión anterior del README o ejecutar `curl /api/health` para verificar el servidor.
 
 ---
 
-## Funcionalidades
+## API Endpoints — NestJS (`/api/v2/*`)
 
-### Core
-- **12 roles jerárquicos** (NestJS) / 3 roles (Express)
-- **JWT auth** con Bearer token, bcrypt hashing, protección automática de password
-- **Soft delete** en todos los modelos (paranoid en Sequelize, DeleteDateColumn en TypeORM)
-- **Paginación** `?page=1&pageSize=20` en todos los listados
-- **Rate limiting:** 200 req/15min global, 20 req/15min en login/register
-- **Validación** de entrada: express-validator (Express) + class-validator (NestJS)
-- **CORS** configurable por orígenes
+**28 módulos, 100+ endpoints.** Accesibles vía proxy Express o directamente en `:3002` (desarrollo).
 
-### Eventos / Cursos
-- CRUD completo con modalidades (virtual/presencial/híbrido)
-- Estados: `borrador` → `publicado` → `finalizado`
-- Finalización rápida desde admin (botón directo)
-- Subida de imágenes (jpg/png/webp, 5MB máx, multer)
-- Editor enriquecido Tiptap para descripción y requisitos
-- Búsqueda y filtros por categoría
+### Auth (`/api/v2/auth`)
 
-### Inscripciones
-- Flujo: `pendiente` → `aceptado` / `rechazado`
-- Verificación de cupos y aceptación automática configurable
-- Motivo de rechazo
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| POST | `/auth/register` | No | Registro con nombre, email, password |
+| POST | `/auth/login` | No | Login → JWT token |
+| GET | `/auth/me` | JWT | Perfil del usuario actual |
+| PUT | `/auth/profile` | JWT | Actualizar nombre, teléfono |
+| GET | `/auth/google` | No | Redirect a Google OAuth2 |
+| GET | `/auth/google/callback` | No | Callback de Google |
 
-### Pagos
-- Pagos por cuota
-- Confirmación manual con desbloqueo automático al completar
+### Users (`/api/v2/usuarios`) — Admin
 
-### Certificados
-- PDF generado con código único + QR de validación pública
-- Validación sin autenticación (endpoint público)
-- Plantillas personalizables:
-  - **Colores:** fondo, borde, título, código, nombre, texto (color pickers)
-  - **Fuentes:** Helvetica, Times Roman, Courier (+ bold variants)
-  - **Posiciones configurables:** logo (X/Y/w/h), título Y, código Y, nombre Y, curso Y, horas Y, fecha Y
-  - **Firma:** ancho, alto, centrada o posición custom
-  - **QR:** tamaño + posición en 4 esquinas (superior/inferior × izquierda/derecha)
-  - **Upload:** firma electrónica + logo institucional (jpg/png/webp, 5MB)
-  - **Plantilla por defecto** con toggle
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET | `/usuarios` | Listar (`?rol=&activo=&page=&pageSize=`) |
+| GET | `/usuarios/estadisticas` | `{ total, activos, inactivos, porRol[] }` |
+| GET | `/usuarios/:id` | Detalle |
+| POST | `/usuarios` | Crear |
+| PUT | `/usuarios/:id` | Actualizar |
+| DELETE | `/usuarios/:id` | Eliminar |
+| PUT | `/usuarios/:id/toggle` | Activar/desactivar |
 
-### Plantillas
-- Editor visual con preview en tiempo real
-- Sección colapsable "Posiciones y tamaños" con controles numéricos
-- Upload de firma y logo con preview
-- Tabla de gestión con acciones: editar, predeterminar, eliminar
+### Cursos (`/api/v2/cursos`)
 
-### Usuarios
-- CRUD completo con activar/desactivar
-- Estadísticas: total, activos, inactivos, por rol
-- Filtros: rol, estado activo
-- Protección: no se puede desactivar el último admin
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| GET | `/cursos` | Sí | Listar (paginación) |
+| GET | `/cursos/:id` | Sí | Detalle |
+| POST | `/cursos` | Admin/Docente | Crear (FormData) |
+| PUT | `/cursos/:id` | Admin/Docente | Actualizar |
+| DELETE | `/cursos/:id` | Admin | Soft delete |
 
-### UI/UX
-- **Dark/light mode** con persistencia en `localStorage`
-- **Lazy loading** de todas las rutas (`React.lazy`)
-- **Skeleton loaders** durante carga
-- **Notificaciones toast** (éxito/error)
-- **Error boundary** para capturar errores de React
-- **Responsive** adaptado a mobile, tablet y desktop
-- **Landing page** con hero, características, cursos destacados, CTA y footer
-- **Navegación condicional** según rol (admin ve panel, estudiante ve cursos)
+### Inscripciones (`/api/v2/inscripciones`)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/inscripciones` | Solicitar inscripción |
+| GET | `/inscripciones/mis` | Mis inscripciones |
+| GET | `/inscripciones` | Listar todas |
+| PUT | `/inscripciones/:id/aprobar` | Aprobar |
+| PUT | `/inscripciones/:id/rechazar` | Rechazar |
+
+### Asistencias (`/api/v2/asistencias`)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/asistencias` | Registrar asistencia |
+| GET | `/asistencias/:cursoId/contar` | Contar presentes por curso |
+
+### Pagos (`/api/v2/pagos`)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/pagos` | Crear pago |
+| GET | `/pagos` | Listar |
+| PUT | `/pagos/:id/confirmar` | Confirmar |
+
+### Certificados (`/api/v2/certificados`)
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| POST | `/certificados/emitir` | Admin | Emitir (verifica 80% asistencia) |
+| GET | `/certificados` | Sí | Listar |
+| GET | `/certificados/validar/:codigo` | **No** | Validación pública |
+| GET | `/certificados/:id/descargar` | Sí | Descargar PDF |
+
+### Plantillas (`/api/v2/plantillas`)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET | `/plantillas` | Listar todas |
+| GET | `/plantillas/default` | Plantilla por defecto |
+| POST | `/plantillas` | Crear (FormData: config + firma + logo) |
+| PUT | `/plantillas/:id` | Actualizar |
+| DELETE | `/plantillas/:id` | Eliminar |
+
+### Perfil Asistente (`/api/v2/perfil`)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET | `/perfil/mi-perfil` | Mi perfil completo |
+| PUT | `/perfil/mi-perfil` | Actualizar perfil |
+| GET | `/perfil/publico/:userId` | Perfil público |
+| GET | `/perfil/admin/todos` | Todos (admin) |
+
+### Agenda (`/api/v2/agenda`)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/agenda/dias` | Crear día |
+| POST | `/agenda/salas` | Crear sala |
+| POST | `/agenda/bloques` | Crear bloque |
+| POST | `/agenda/sesiones` | Crear sesión |
+| GET | `/agenda/completa/:cursoId` | Árbol completo (día→bloque→sesión) |
+| CRUD | `/agenda/dias/:id`, `/agenda/salas/:id`, etc. | Actualizar/eliminar |
+
+### Check-in (`/api/v2/checkin`)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/checkin/qr` | Generar datos QR |
+| POST | `/checkin/scan` | Escanear QR |
+| POST | `/checkin/manual` | Check-in manual |
+| GET | `/checkin/sesion/:id` | Check-ins por sesión |
+| GET | `/checkin/estadisticas/:cursoId` | Estadísticas |
+
+### Credenciales (`/api/v2/credenciales`)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/credenciales/emitir` | Emitir credencial |
+| GET | `/credenciales/:id/descargar` | Descargar PDF con QR |
+| GET | `/credenciales/validar/:codigo` | Validar credencial |
+| GET | `/credenciales/mis` | Mis credenciales |
+
+### Ponentes (`/api/v2/ponentes`)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET | `/ponentes/mi-perfil` | Mi perfil de ponente |
+| PUT | `/ponentes/mi-perfil` | Actualizar |
+| GET | `/ponentes` | Listar todos |
+| GET | `/ponentes/:id` | Detalle |
+
+### Expositores (`/api/v2/expositores`)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/expositores/curso/:cursoId` | Crear expositor |
+| GET | `/expositores/curso/:cursoId` | Listar por curso |
+| POST | `/expositores/:id/productos` | Agregar producto |
+| GET | `/expositores/:id/productos` | Listar productos |
+
+### Patrocinadores (`/api/v2/patrocinadores`)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/patrocinadores/curso/:cursoId` | Crear (categoria: platino/oro/plata/bronce) |
+| GET | `/patrocinadores/curso/:cursoId` | Listar por curso |
+| POST | `/patrocinadores/:id/beneficios` | Agregar beneficio |
+| GET | `/patrocinadores/:id/beneficios` | Listar beneficios |
+
+### Chat (`/api/v2/chat`)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/chat/conversaciones` | Crear conversación |
+| POST | `/chat/mensajes` | Enviar mensaje |
+| GET | `/chat/mensajes/:convId` | Mensajes paginados |
+| PUT | `/chat/mensajes/:convId/leer` | Marcar como leído |
+
+### Networking (`/api/v2/networking`)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET | `/networking/sugerencias` | Sugerencias por intereses |
+| POST | `/networking/solicitudes` | Enviar solicitud |
+| PUT | `/networking/solicitudes/:id` | Aceptar/rechazar |
+
+### Reuniones (`/api/v2/reuniones`)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/reuniones` | Crear con participantes |
+| GET | `/reuniones/mis` | Mis reuniones |
+| PUT | `/reuniones/:id/estado` | Cambiar estado |
+
+### Streaming (`/api/v2/streaming`)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/streaming/salas` | Crear sala (zoom/teams/youtube/rtmp/webrtc) |
+| POST | `/streaming/encuestas` | Crear encuesta |
+| POST | `/streaming/encuestas/:id/votar` | Votar |
+| GET | `/streaming/encuestas/:id/resultados` | Resultados |
+| POST | `/streaming/preguntas` | Pregunta Q&A |
+| POST | `/streaming/preguntas/:id/votar` | Votar pregunta |
+
+### Gamificación (`/api/v2/gamificacion`)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/gamificacion/puntos` | Agregar puntos (auto-badge) |
+| GET | `/gamificacion/puntos/totales/:userId` | Total puntos |
+| GET | `/gamificacion/puntos/historial/:userId` | Historial |
+| GET | `/gamificacion/ranking` | Top usuarios |
+| GET | `/gamificacion/badges` | Todos los badges |
+| POST | `/gamificacion/badges` | Crear badge |
+
+### Interacción (`/api/v2/interaccion`)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/interaccion/comentarios` | Crear comentario |
+| GET | `/interaccion/comentarios/:cursoId` | Listar por curso |
+| DELETE | `/interaccion/comentarios/:id` | Eliminar |
+| POST | `/interaccion/likes` | Toggle like |
+| POST | `/interaccion/trivias` | Crear trivia |
+| POST | `/interaccion/trivias/:id/responder` | Responder |
+
+### CMS (`/api/v2/cms`) — Admin
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/cms/paginas` | Crear página |
+| GET | `/cms/paginas` | Listar |
+| PUT | `/cms/paginas/:id` | Actualizar |
+| DELETE | `/cms/paginas/:id` | Eliminar |
+| POST | `/cms/blog` | Crear post |
+| GET | `/cms/blog` | Listar |
+| PUT | `/cms/blog/:id` | Actualizar |
+| DELETE | `/cms/blog/:id` | Eliminar |
+| POST | `/cms/galeria` | Agregar media |
+| GET | `/cms/galeria/curso/:cursoId` | Galería por curso |
+| POST | `/cms/faqs` | Crear FAQ |
+| PUT | `/cms/faqs/:id` | Actualizar |
+| DELETE | `/cms/faqs/:id` | Eliminar |
+
+### Notificaciones (`/api/v2/notificaciones`)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/notificaciones/enviar` | Enviar a usuario |
+| POST | `/notificaciones/enviar-masiva` | Enviar a varios |
+| GET | `/notificaciones/mis` | Mis notificaciones |
+| PUT | `/notificaciones/:id/leer` | Marcar leída |
+| PUT | `/notificaciones/leer-todas` | Marcar todas |
+| GET | `/notificaciones/no-leidas` | Conteo no leídas |
+| POST | `/notificaciones/plantillas` | Crear plantilla |
+| GET | `/notificaciones/plantillas` | Listar plantillas |
+
+### API Pública (`/api/public`) — Sin auth
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET | `/public/cursos` | Cursos publicados |
+| GET | `/public/cursos/:id` | Detalle curso |
+| GET | `/public/blog` | Blog posts publicados |
+| GET | `/public/blog/:slug` | Post por slug |
+| GET | `/public/faq/curso/:cursoId` | FAQs por curso |
+| GET | `/public/faq/globales` | FAQs globales |
+| GET | `/public/galeria/curso/:cursoId` | Galería por curso |
+| GET | `/public/ponentes` | Directorio ponentes |
+| GET | `/public/ponentes/:id` | Detalle ponente |
+| GET | `/public/certificados/validar/:codigo` | Validar certificado |
+| GET | `/public/plantilla-certificado` | Plantilla por defecto |
+
+### Webhooks (`/api/v2/webhooks`) — Admin
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/webhooks` | Crear webhook |
+| GET | `/webhooks` | Listar |
+| PUT | `/webhooks/:id` | Actualizar |
+| DELETE | `/webhooks/:id` | Eliminar |
+| POST | `/webhooks/disparar` | Disparar evento manual |
+| GET | `/webhooks/eventos` | Últimos 50 eventos |
+
+### Analytics (`/api/v2/analytics`) — Admin
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET | `/analytics/dashboard` | Resumen completo |
+| GET | `/analytics/cursos-por-estado` | Conteo por estado |
+| GET | `/analytics/inscripciones-por-mes` | Inscripciones históricas |
+| GET | `/analytics/pagos-por-mes` | Ingresos por mes |
+| GET | `/analytics/top-cursos` | Top cursos por inscripciones |
+| GET | `/analytics/asistencia-curso/:id` | % asistencia por curso |
+| GET | `/analytics/usuario/:id` | Stats de un usuario |
+
+### Export (`/api/v2/export`) — Admin (CSV)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET | `/export/cursos` | CSV cursos |
+| GET | `/export/inscripciones` | CSV inscripciones |
+| GET | `/export/inscripciones/curso/:id` | CSV inscripciones por curso |
+| GET | `/export/pagos` | CSV pagos |
+| GET | `/export/asistencias/curso/:id` | CSV asistencias por curso |
+| GET | `/export/certificados` | CSV certificados |
+
+### Audit Logs (`/api/v2/audit-logs`) — Admin
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET | `/audit-logs` | Todos (paginado) |
+| GET | `/audit-logs/entidad/:entidad` | Por entidad |
+| GET | `/audit-logs/usuario/:id` | Por usuario |
+
+### Organizaciones (`/api/v2/organizaciones`) — Multi-tenant
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/organizaciones` | Crear (admin) |
+| GET | `/organizaciones` | Listar |
+| GET | `/organizaciones/mis` | Mis organizaciones |
+| GET | `/organizaciones/:id` | Detalle con miembros |
+| PUT | `/organizaciones/:id` | Actualizar |
+| POST | `/organizaciones/:id/miembros` | Agregar miembro |
+| DELETE | `/organizaciones/:id/miembros/:userId` | Remover miembro |
+| GET | `/organizaciones/:id/miembros` | Listar miembros |
+
+### Permissions (`/api/v2/permissions`) — Admin
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/permissions` | Crear permiso |
+| GET | `/permissions` | Listar todos |
+| POST | `/permissions/rol/:rol` | Asignar permiso a rol |
+| DELETE | `/permissions/rol/:rol/:permissionId` | Remover de rol |
+| GET | `/permissions/rol/:rol` | Permisos de un rol |
+
+---
+
+## Funcionalidades por fase
+
+### Fase 0 — Infraestructura
+- Docker Compose (PostgreSQL 16, Redis 7, MinIO)
+- NestJS scaffold con TypeScript
+- Auth (register/login/me) + Users (CRUD, 12 roles)
+- Proxy Express → NestJS (`/api/v2/*`)
+
+### Fase 1 — Core
+- Cursos CRUD + paginación + imagen upload + estados
+- Inscripciones: solicitud, aprobación, cupos, auto-accept
+- Pagos: crear, confirmar, desbloqueo automático
+- Certificados: emitir (80% asistencia), PDF + QR, validar
+- Plantillas: editor visual, posiciones configurables, firma/logo
+
+### Fase 2 — Asistentes & Agenda
+- Perfil asistente: empresa, cargo, bio, intereses, redes sociales
+- Agenda jerárquica: día → bloque → sesión, salas independientes
+- Check-in: QR, manual, geolocalización, estadísticas
+- Credenciales: PDF con QR, validación
+
+### Fase 3 — Ponentes, Expositores, Patrocinadores
+- Perfil ponente: CV, especialidad, calificación
+- Expositores: empresa, stand, productos con precios
+- Patrocinadores: categorías (Platino/Oro/Plata/Bronce), beneficios
+
+### Fase 4 — Networking & Streaming
+- Chat privado/grupal con tracking de lectura
+- Match por intereses con scoring
+- Reuniones con participantes y estados
+- Streaming: salas (Zoom/Teams/YouTube/RTMP/WebRTC), encuestas, Q&A
+
+### Fase 5 — Gamificación & Interacción
+- Puntos (8 fuentes) + badges automáticos + ranking
+- Comentarios anidados + likes toggle
+- Trivias con scoring y ranking por trivia
+
+### Fase 6 — CMS & Notificaciones
+- Páginas, Blog Posts, Galería, FAQs
+- Notificaciones: enviar, masivas, leídas, plantillas
+
+### Fase 7 — API Pública, Webhooks, PWA, OAuth2
+- API pública sin auth (cursos, blog, ponentes, validación certificados)
+- Webhooks con HMAC-SHA256 y reintento
+- PWA: manifest.json + service worker
+- OAuth2: Google login
+
+### Fase 8 — Analytics, Export, Admin
+- Dashboard: usuarios, cursos, inscripciones, pagos, certificados
+- CSV export de todas las entidades
+- Audit logs con datos previos/nuevos
+- Organizaciones multi-tenant con miembros y planes
+- Permisos granulares por rol
 
 ---
 
@@ -477,98 +832,62 @@ Mismos endpoints que Express, migrados a NestJS + TypeScript.
 - Node.js 20+
 - npm
 - Docker + Docker Compose (recomendado)
-- PostgreSQL 14+ (si no usás Docker)
 
-### Paso 1 — Clonar el repo
+### Paso 1 — Clonar
 
 ```bash
 git clone https://github.com/brandall2021/evento.git
 cd evento-web
 ```
 
-### Paso 2 — Infraestructura (Docker)
+### Paso 2 — Infraestructura
 
 ```bash
-# Levantar PostgreSQL, Redis y MinIO
 docker compose up -d
 
-# Verificar que están corriendo
+# Verificar
 docker compose ps
-
-# Salida esperada:
 # NAME                    STATUS
 # evento-web-postgres-1   Up (healthy)
 # evento-web-redis-1      Up
 # evento-web-minio-1      Up
 ```
 
-Si preferís PostgreSQL local (sin Docker):
-
-```bash
-createdb evento_web
-# Asegurate de que PostgreSQL corra en :5432 con usuario postgres/postgres
-```
-
 ### Paso 3 — Backend Express
 
 ```bash
 cd backend
-
-# Instalar dependencias
 npm install
-
-# Configurar variables de entorno
-# (copiar del .env de ejemplo o crear manualmente — ver sección Variables)
-
-# Sembrar datos de prueba (5 usuarios + 5 cursos)
-npm run seed
-
-# Iniciar en desarrollo
+npm run seed   # 5 usuarios + 5 cursos de prueba
 npm run dev
-
-# Salida: Server running on http://localhost:3001
+# → http://localhost:3001
 ```
 
 ### Paso 4 — Backend NestJS
 
 ```bash
 cd ../backend-next
-
-# Instalar dependencias
 npm install
-
-# Copiar variables de entorno
 cp .env.example .env
-
-# Iniciar en desarrollo (watch mode)
 npm run start:dev
-
-# Salida: NestJS running on http://localhost:3002
+# → http://localhost:3002
 ```
 
 ### Paso 5 — Frontend
 
 ```bash
-# Volver a la raíz
 cd ..
-
-# Instalar dependencias (usar --legacy-peer-deps por Tiptap + React 19)
 npm install --legacy-peer-deps
-
-# Iniciar en desarrollo
 npm run dev
-
-# Salida: Vite dev server running at http://localhost:5173
+# → http://localhost:5173
 ```
 
 ### Verificación
 
-Abrir `http://localhost:5173` y:
-1. Ver la landing page
-2. Registrarse con un email nuevo
-3. Loguearse
-4. Explorar cursos
-5. Como admin (`admin@evento.com` / `admin123`): admin, certificados, plantillas, usuarios
+1. Abrir `http://localhost:5173` → landing page
+2. Registrarse con email nuevo
+3. Login → explorar cursos
+4. Como admin (`admin@evento.com` / `admin123`): admin, certificados, plantillas, usuarios
 
 ---
 
@@ -577,66 +896,49 @@ Abrir `http://localhost:5173` y:
 ### Backend Express (`backend/.env`)
 
 ```env
-# Servidor
 PORT=3001
-
-# PostgreSQL
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=evento_web
 DB_USER=postgres
 DB_PASSWORD=postgres
-
-# JWT
 JWT_SECRET=evento-web-secret-key-2026
 JWT_EXPIRES_IN=7d
-
-# URLs
 API_URL=http://localhost:3001
 CORS_ORIGIN=http://localhost:5173,http://localhost:3001
-
-# NestJS proxy
 NESTJS_URL=http://localhost:3002
 ```
 
 ### Backend NestJS (`backend-next/.env`)
 
 ```env
-# Servidor
 PORT=3002
-
-# PostgreSQL (misma DB que Express)
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=evento_web
 DB_USER=postgres
 DB_PASSWORD=postgres
-
-# JWT (MISMO secret que Express para compatibilidad)
-JWT_SECRET=evento-web-secret-key-2026
+JWT_SECRET=evento-web-secret-key-2026    # MISMO que Express
 JWT_EXPIRES_IN=7d
-
-# CORS
 CORS_ORIGIN=http://localhost:5173,http://localhost:3001
-
-# Redis
 REDIS_HOST=localhost
 REDIS_PORT=6379
-
-# MinIO (S3)
 MINIO_ENDPOINT=localhost
 MINIO_PORT=9000
 MINIO_ACCESS_KEY=minioadmin
 MINIO_SECRET_KEY=minioadmin
+
+# Google OAuth2 (opcional)
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_CALLBACK_URL=http://localhost:3002/api/auth/google/callback
 ```
 
-### Frontend (solo desarrollo, `evento-web/.env`)
+### Frontend (solo desarrollo)
 
 ```env
 VITE_API_URL=http://localhost:3001/api
 ```
-
-> En producción el frontend se sirve desde Express (`dist/`), usa `/api` por defecto.
 
 ### Usuarios de prueba (seed)
 
@@ -655,10 +957,8 @@ VITE_API_URL=http://localhost:3001/api
 ### Build y run
 
 ```bash
-# Build de la imagen
 docker build -t evento-web:latest .
 
-# Ejecutar
 docker run -d \
   --name evento-web \
   -p 3001:3001 \
@@ -671,64 +971,73 @@ docker run -d \
   -e JWT_EXPIRES_IN=7d \
   -e API_URL=https://tu-dominio.com \
   -e CORS_ORIGIN=https://tu-dominio.com \
+  -e NESTJS_URL=http://nestjs-interno:3002 \
   evento-web:latest
 
-# Seed dentro del contenedor
+# Seed
 docker exec evento-web sh -c "cd /app/backend && npm run seed"
 ```
 
-### Dockerfile explicado
+### Dockerfile
 
 ```dockerfile
-# ═══ Stage 1: Builder ═══
+# Stage 1: Builder
 FROM node:20-alpine AS builder
 WORKDIR /app
-
-# Copiar manifests primero (cache de capas)
 COPY package*.json ./
 COPY backend/package*.json ./backend/
-
-# Instalar dependencias
-RUN npm ci --legacy-peer-deps          # Frontend (React 19 + Tiptap)
-RUN cd backend && npm ci               # Backend Express
-
-# Copiar código fuente
+RUN npm ci --legacy-peer-deps
+RUN cd backend && npm ci
 COPY . .
-
-# Compilar frontend (genera dist/)
 RUN npm run build
 
-# ═══ Stage 2: Production ═══
+# Stage 2: Production (~40MB)
 FROM node:20-alpine
 WORKDIR /app
-
-# Copiar solo lo necesario del builder
 COPY --from=builder /app/backend ./backend
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/backend/node_modules ./backend/node_modules
-
-# Crear directorio para uploads
 RUN mkdir -p /app/backend/uploads/cursos
-
 WORKDIR /app/backend
-
 ENV NODE_ENV=production
 ENV PORT=3001
-
 EXPOSE 3001
-
 VOLUME ["/app/backend/uploads"]
-
 CMD ["node", "src/index.js"]
 ```
-
-**Resultado:** imagen de ~40MB con Node.js + Express + frontend compilado.
 
 ---
 
 ## Despliegue con Dokploy
 
-Guía paso a paso completa para desplegar en Dokploy.
+Guía completa paso a paso para desplegar en un VPS con Dokploy.
+
+### Arquitectura en Dokploy
+
+```
+┌─────────────────────────────────────────────────────┐
+│                    Dokploy (VPS)                     │
+│                                                      │
+│  ┌──────────────┐    ┌──────────────────────────┐   │
+│  │  evento-web  │    │       evento-db           │   │
+│  │  (App)       │────│  (PostgreSQL 16)          │   │
+│  │  Express:3001│    │  :5432                    │   │
+│  │  + frontend  │    │                           │   │
+│  │  en dist/    │    │  DB: evento_web           │   │
+│  └──────┬───────┘    └──────────────────────────┘   │
+│         │                                           │
+│  ┌──────▼───────┐    ┌──────────────────────────┐   │
+│  │  Domain      │    │  Volume: uploads          │   │
+│  │  SSL (LE)    │    │  /app/backend/uploads     │   │
+│  │  HTTPS       │    │  (persiste reinicios)     │   │
+│  └──────────────┘    └──────────────────────────┘   │
+│                                                      │
+│  ┌──────────────┐  (Opcional — futuro)              │
+│  │  NestJS      │  Deploy como segundo servicio     │
+│  │  :3002       │  Conectado a mismo DB             │
+│  └──────────────┘                                   │
+└─────────────────────────────────────────────────────┘
+```
 
 ### Requisitos previos
 
@@ -736,147 +1045,128 @@ Guía paso a paso completa para desplegar en Dokploy.
 |-----------|---------|
 | Servidor VPS | Ubuntu 22.04+, mínimo 2GB RAM, 20GB SSD |
 | Docker | Instalado en el servidor |
-| Dokploy | Instalado ([guía oficial](https://dokploy.com/docs/install)) |
-| Dominio | Un dominio con DNS apuntando al servidor |
-| GitHub | Repo en `https://github.com/brandall2021/evento` |
+| Dokploy | [Guía de instalación](https://dokploy.com/docs/install) |
+| Dominio | DNS apuntando al servidor |
+| GitHub | Repo: `https://github.com/brandall2012/evento` |
 
 ### Paso 1 — Instalar Dokploy
 
 ```bash
-# Conectarse al servidor por SSH
 ssh root@IP_DEL_SERVIDOR
-
-# Instalar Dokploy (Ubuntu/Debian)
 curl -fsSL https://dokploy.com/install.sh | sh
-
-# El instalador imprime la URL del panel
-# Generalmente: https://IP_DEL_SERVIDOR:3000
 ```
 
-Acceder al panel desde el navegador con la URL impresa.
+El instalador imprime la URL del panel (generalmente `https://IP:3000`).
 
-**Configuración inicial de Dokploy:**
+**Configuración inicial:**
 1. Crear usuario admin (email + password)
-2. Conectar un proveedor de cloud (opcional, para crear servidores)
-3. Ir a **Settings** → verificar que Docker está funcionando
+2. Ir a Settings → verificar Docker
 
-### Paso 2 — Crear el proyecto
+### Paso 2 — Crear proyecto
 
-1. En el menú lateral, ir a **Dokploy** → **Projects**
-2. Hacer clic en **Create Project**
-3. Completar:
-   - **Project Name:** `evento-web`
-   - **Description:** `Plataforma de gestión de eventos`
-4. Hacer clic en **Create**
+1. Menú lateral → **Projects** → **Create Project**
+2. **Name:** `evento-web`
+3. **Description:** `Plataforma de gestión de eventos`
+4. Create
 
-### Paso 3 — Conectar repositorio de GitHub
+### Paso 3 — Conectar repositorio GitHub
 
-1. Dentro del proyecto `evento-web`, ir a la pestaña **Configuration**
-2. En la sección **Git**:
+1. Dentro del proyecto → pestaña **Configuration** → sección **Git**
+2. Completar:
    - **Repository URL:** `https://github.com/brandall2021/evento.git`
    - **Branch:** `master`
-3. Si el repo es **público**, no necesita credenciales
-4. Si el repo es **privado**:
-   - Ir a **GitHub** → Settings → Developer settings → **Personal access tokens**
+3. Si el repo es **privado**:
+   - GitHub → Settings → Developer settings → **Personal access tokens**
    - Crear token con permiso `repo`
-   - En Dokploy, seleccionar **Auth Type:** `Token`
-   - Pegar el token
-5. Hacer clic en **Save**
-6. Verificar: Dokploy muestra los commits recientes del repo
+   - En Dokploy: **Auth Type** → `Token` → pegar el token
+4. **Save** → verificar que muestra los commits recientes
 
-### Paso 4 — Configurar el dominio
+### Paso 4 — Configurar dominio
 
-1. Dentro del proyecto, ir a la pestaña **Domains**
-2. Hacer clic en **Add Domain**
-3. Completar:
-   - **Service Name:** `evento-web` (seleccionar el servicio creado)
+1. Pestaña **Domains** → **Add Domain**
+2. Completar:
+   - **Service Name:** `evento-web`
    - **Host:** `evento.tudominio.com`
-   - **HTTPS:** ✅ Activar (Let's Encrypt automático)
-4. Hacer clic en **Add**
-5. Dokploy muestra los registros DNS que necesitás configurar
+   - **HTTPS:** Activar (Let's Encrypt automático)
+3. **Add**
 
-**Configurar DNS en tu proveedor** (Cloudflare, Namecheap, etc.):
+**Configurar DNS** (Cloudflare, Namecheap, etc.):
 
 ```
-Tipo:    A (recomendado) o CNAME
-Nombre:  evento (subdominio)
-Valor:   IP_DEL_SERVIDOR (para A record)
-         o IP_DEL_SERVIDOR.yourdomain.com (para CNAME)
-TTL:     Auto (o 300 segundos)
+Tipo:    A
+Nombre:  evento
+Valor:   IP_DEL_SERVIDOR
+TTL:     Auto
 ```
 
-**Si usás Cloudflare:**
-- Modo: **DNS Only** (el icono nube en GRIS, no naranja)
-- SSL/TLS: **Full (strict)** en la pestaña SSL/TLS
-- **NO** usar proxy de Cloudflare al principio (puede causar problemas con WebSocket)
+**Cloudflare importante:**
+- Modo: **DNS Only** (icono nube en GRIS, no naranja)
+- SSL/TLS: **Full (strict)**
+- NO activar proxy Cloudflare al inicio
 
-Esperar ~5 minutos a que la propagación DNS surta efecto. Verificar con:
+Verificar DNS:
 ```bash
 dig evento.tudominio.com
-# Debe devolver la IP de tu servidor
+# Debe devolver la IP del servidor
 ```
 
 ### Paso 5 — Agregar servicio PostgreSQL
 
-1. En el menú lateral de Dokploy, ir a **PostgreSQL**
-2. Hacer clic en **Create PostgreSQL**
-3. Completar:
+1. Menú lateral → **PostgreSQL** → **Create PostgreSQL**
+2. Completar:
    - **Service Name:** `evento-db`
    - **Database Name:** `evento_web`
    - **Database User:** `postgres`
-   - **Password:** *(generar una segura)*
+   - **Password:** generar segura:
      ```bash
-     # En tu terminal local:
      openssl rand -hex 16
      # Ejemplo: a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6
      ```
    - **Database Port:** `5432`
-4. Hacer clic en **Create**
-5. **Anotar los datos de conexión:**
+3. **Create**
 
-   | Dato | Valor |
-   |------|-------|
-   | Host interno | `evento-db` |
-   | Puerto | `5432` |
-   | Usuario | `postgres` |
-   | Contraseña | *(la que generaste)* |
-   | Database | `evento_web` |
+**Anotar credenciales:**
 
-6. Vincular al proyecto:
-   - Ir al proyecto `evento-web` → **Service Links** (o **Linked Services**)
-   - H clic en **Link Service**
-   - Seleccionar `evento-db`
-   - Esto hace que `evento-db` esté disponible como hostname dentro del contenedor
+| Dato | Valor |
+|------|-------|
+| Host | `evento-db` |
+| Puerto | `5432` |
+| Usuario | `postgres` |
+| Password | *(la que generaste)* |
+| Database | `evento_web` |
+
+**Vincular al proyecto:**
+1. Dentro del proyecto → **Service Links** o **Linked Services**
+2. **Link Service** → seleccionar `evento-db`
+3. Esto hace que `evento-db` esté disponible como hostname dentro del contenedor
 
 ### Paso 6 — Variables de entorno
 
-Dentro del proyecto `evento-web`, ir a la pestaña **Environment**.
-
-Agregar cada variable haciendo clic en **Add Variable**:
+Pestaña **Environment** → **Add Variable** por cada una:
 
 | # | Variable | Valor | Notas |
 |---|----------|-------|-------|
-| 1 | `PORT` | `3001` | Puerto del contenedor Express |
+| 1 | `PORT` | `3001` | Puerto del contenedor |
 | 2 | `DB_HOST` | `evento-db` | **NO** usar `localhost`. Usar el nombre del servicio |
-| 3 | `DB_PORT` | `5432` | Puerto de PostgreSQL |
-| 4 | `DB_NAME` | `evento_web` | Nombre de la base de datos |
-| 5 | `DB_USER` | `postgres` | Usuario de PostgreSQL |
-| 6 | `DB_PASSWORD` | *(tu contraseña)* | La misma que configuraste en el servicio PostgreSQL |
-| 7 | `JWT_SECRET` | *(generar nuevo)* | `openssl rand -hex 32` — NUNCA usar el de desarrollo |
-| 8 | `JWT_EXPIRES_IN` | `7d` | Duración de los tokens JWT |
-| 9 | `API_URL` | `https://evento.tudominio.com` | URL pública (con `https://`) |
+| 3 | `DB_PORT` | `5432` | Puerto PostgreSQL |
+| 4 | `DB_NAME` | `evento_web` | Nombre de la base |
+| 5 | `DB_USER` | `postgres` | Usuario PostgreSQL |
+| 6 | `DB_PASSWORD` | *(tu contraseña)* | La misma del paso 5 |
+| 7 | `JWT_SECRET` | *(generar)* | `openssl rand -hex 32` — **NUNCA** usar el de desarrollo |
+| 8 | `JWT_EXPIRES_IN` | `7d` | Duración tokens |
+| 9 | `API_URL` | `https://evento.tudominio.com` | URL pública con `https://` |
 | 10 | `CORS_ORIGIN` | `https://evento.tudominio.com` | Mismo que API_URL |
 | 11 | `NESTJS_URL` | *(vacío por ahora)* | Se configura cuando NestJS esté en producción |
 
-**Tip importante:** El `JWT_SECRET` debe ser **exactamente el mismo** en todos los reinicios del contenedor. Si cambia, todos los tokens existentes se invalidan. Usar `openssl rand -hex 32` una vez y reusarlo.
+> **Importante:** El `JWT_SECRET` debe ser **exactamente el mismo** en cada reinicio. Si cambia, todos los tokens se invalidan. Generarlo una vez con `openssl rand -hex 32` y reusarlo.
 
 ### Paso 7 — Puerto y health check
 
-1. Ir a la pestaña **Configuration** del proyecto
-2. En **Ports / Expose:**
+1. Pestaña **Configuration**
+2. **Ports / Expose:**
    - **Container Port:** `3001`
    - **Protocol:** TCP
-3. En **Health Check** (si Dokploy lo soporta):
+3. **Health Check:**
    - **Path:** `/api/health`
    - **Port:** `3001`
    - **Interval:** `30`
@@ -885,229 +1175,148 @@ Agregar cada variable haciendo clic en **Add Variable**:
 
 ### Paso 8 — Volumen para uploads
 
-Los archivos generados (QR de certificados, firmas, logos) se guardan en `backend/uploads/`. Sin un volumen persistente, se pierden al reiniciar el contenedor.
+Los archivos (QR, firmas, logos) se guardan en `backend/uploads/`. Sin volumen persistente se pierden al reiniciar.
 
-1. Ir a la pestaña **Advanced** (o **Volumes**)
-2. En **Docker Compose** o **Volumes**, agregar:
+1. Pestaña **Advanced** → **Volumes**
+2. Agregar:
    - **Mount Path:** `/app/backend/uploads`
-   - **Type:** `Volume` (recomendado, persiste en el servidor)
-   - **Name:** `evento-uploads` (Dokploy crea el volumen automáticamente)
+   - **Type:** `Volume`
+   - **Name:** `evento-uploads`
 
-Si preferís una ruta específica en el servidor:
+O con ruta específica:
    - **Type:** `Bind`
    - **Host Path:** `/opt/evento-uploads`
 
 ### Paso 9 — Desplegar
 
-1. Ir a la pestaña **Deployments**
-2. Hacer clic en **Deploy** (o **Deploy Latest**)
-3. Esperar el build (~2-5 minutos dependiendo del servidor)
-4. Verificar los logs en tiempo real:
+1. Pestaña **Deployments** → **Deploy**
+2. Esperar build (~2-5 min)
+3. Verificar logs en tiempo real:
    - Buscar: `Server running on http://localhost:3001`
    - Buscar: `DB connected`
-5. Si hay errores, revisar la pestaña **Build Logs**
+4. Si hay errores → **Build Logs**
 
 ### Paso 10 — Seed de datos iniciales
 
-Después del primer deploy exitoso, insertar los datos de prueba:
-
-**Opción A — Desde el panel de Dokploy:**
-1. Ir a la pestaña **Terminal** (o **SSH** dentro del contenedor)
+**Desde Dokploy:**
+1. Pestaña **Terminal** → servicio `evento-web`
 2. Ejecutar:
    ```bash
    cd /app/backend && npm run seed
    ```
 
-**Opción B — Desde SSH en el servidor:**
+**Desde SSH:**
 ```bash
-# Encontrar el contenedor
 docker ps --filter "name=evento-web"
-
-# Ejecutar seed
 docker exec -it <CONTAINER_ID> sh -c "cd /app/backend && npm run seed"
 ```
 
-**Opción A — Desde Dokploy (si tiene terminal):**
-1. En el proyecto, ir a **Terminal**
-2. Seleccionar el servicio `evento-web`
-3. Ejecutar:
-   ```bash
-   cd /app/backend && npm run seed
-   ```
-
-### Paso 11 — Verificar el deploy
+### Paso 11 — Verificar
 
 ```bash
-# 1. Health check
+# Health check
 curl https://evento.tudominio.com/api/health
-# Esperado: {"ok":true}
+# → {"ok":true}
 
-# 2. Login
+# Login
 curl -X POST https://evento.tudominio.com/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@evento.com","password":"admin123"}'
-# Esperado: {"token":"eyJ...","user":{...}}
+# → {"token":"eyJ...","user":{...}}
 
-# 3. Cursos (con token del login anterior)
-curl https://evento.tudominio.com/api/cursos \
-  -H "Authorization: Bearer eyJ..."
-# Esperado: [{"id":1,"nombre":"..."}, ...]
-
-# 4. Frontend
-# Abrir https://evento.tudominio.com en el navegador
-# Debería mostrar la landing page
+# Frontend
+# Abrir https://evento.tudominio.com → landing page
 ```
 
 ### Paso 12 — Auto-deploy (push to deploy)
 
-Para que cada push a `master` despliegue automáticamente:
+**Opción A — Dokploy SSH Key:**
+1. Dokploy → Settings → SSH Keys → copiar public key
+2. GitHub → Settings → Deploy keys → agregar con permiso lectura
+3. Activar **Auto Deploy** en el proyecto
 
-1. En Dokploy, dentro del proyecto → **Configuration**
-2. Activar **Auto Deploy:** ✅
+**Opción B — GitHub Webhook:**
+1. GitHub → Settings → Webhooks → Add webhook
+2. **Payload URL:** `https://TU-SERVIDOR:3000/api/deploy-webhook?token=TU_TOKEN`
+3. **Content type:** `application/json`
+4. **Events:** `Just the push event`
 
-3. En **Dokploy** → **Settings** → **SSH Keys**:
-   - Copiar la public key que Dokploy muestra
-   - Agregarla en GitHub → Settings → Deploy keys (con permiso de lectura)
+### Desplegar NestJS (futuro)
 
-4. **O usar GitHub Webhooks:**
-   - En GitHub → Settings → Webhooks → Add webhook
-   - **Payload URL:** `https://TU-SERVIDOR:3000/api/deploy-webhook?token=TU_TOKEN_DOKPLOY`
-   - **Content type:** `application/json`
-   - **Secret:** *(dejar vacío)*
-   - **Events:** `Just the push event`
+Cuando NestJS esté listo para producción, desplegar como segundo servicio:
 
-### Arquitectura final en Dokploy
-
-```
-┌─────────────────────────────────────────────┐
-│                 Dokploy                      │
-│                                              │
-│  ┌──────────────┐  ┌──────────────────────┐ │
-│  │  evento-web  │  │     evento-db        │ │
-│  │  (Express)   │──│  (PostgreSQL 16)     │ │
-│  │  :3001       │  │  :5432               │ │
-│  │              │  │                      │ │
-│  │  Frontend    │  │  DB: evento_web      │ │
-│  │  compilado   │  │  User: postgres      │ │
-│  │  en dist/    │  │                      │ │
-│  └──────┬───────┘  └──────────────────────┘ │
-│         │                                    │
-│  ┌──────▼───────┐  ┌──────────────────────┐ │
-│  │   Domain     │  │   Volume: uploads    │ │
-│  │  SSL (LE)    │  │   /app/backend/      │ │
-│  │  HTTPS       │  │   uploads/           │ │
-│  └──────────────┘  └──────────────────────┘ │
-└─────────────────────────────────────────────┘
-```
+1. **Create Service** → `evento-api`
+2. **Repository:** mismo repo
+3. **Build Command:** `cd backend-next && npm ci && npx nest build`
+4. **Start Command:** `cd backend-next && node dist/main.js`
+5. **Port:** `3002`
+6. **Variables de entorno:** las mismas que Express (mismo DB, mismo JWT_SECRET)
+7. Vincular al mismo `evento-db`
+8. Actualizar `NESTJS_URL` en el servicio `evento-web` → `http://evento-api:3002`
 
 ---
 
 ## Troubleshooting
 
-### Problemas comunes
-
 | # | Problema | Causa | Solución |
 |---|----------|-------|----------|
-| 1 | Build falla: `npm ERR! peer dep` | React 19 incompatible con Tiptap peers | Verificar `--legacy-peer-deps` en Dockerfile |
-| 2 | `ECONNREFUSED 127.0.0.1:5432` | `DB_HOST=localhost` en Dokploy | Cambiar a `DB_HOST=evento-db` (nombre del servicio) |
-| 3 | `ECONNREFUSED` Redis/MinIO | Estos servicios no están en producción | Ignorar por ahora, se integrarán en Fase 1 |
-| 4 | Frontend muestra 404 | Build de Vite falló silenciosamente | Revisar build logs, verificar `npm run build` |
-| 5 | `CORS error` en navegador | Dominio no está en `CORS_ORIGIN` | Agregar `https://evento.tudominio.com` a CORS_ORIGIN |
-| 6 | `jwt malformed` / token inválido | `JWT_SECRET` cambió entre reinicios | Usar el MISMO secret en todas las variables |
-| 7 | Archivos (QR, firmas) se pierden | No hay volumen persistente | Configurar volumen para `/app/backend/uploads` |
-| 8 | Build muy lento (>10min) | Servidor con poca RAM | Mínimo 2GB RAM recomendado para Docker build |
-| 9 | `Cannot find module` en NestJS | Dependencias no instaladas | Ejecutar `npm install` en `backend-next/` |
-| 10 | Proxy `/api/v2/*` retorna 502 | NestJS no está corriendo | Verificar que NestJS esté en `:3002` (solo desarrollo por ahora) |
-| 11 | SSL no funciona | DNS no propagado o Cloudflare proxy activo | Esperar 5-10 min, verificar DNS con `dig`, desactivar proxy Cloudflare |
-| 12 | Seed no funciona | Contenedor no tiene el script | Verificar que `backend/src/seeders/seed.js` existe |
+| 1 | Build falla: `peer dep` | React 19 vs Tiptap | Verificar `--legacy-peer-deps` en Dockerfile |
+| 2 | `ECONNREFUSED 127.0.0.1:5432` | `DB_HOST=localhost` | Usar `DB_HOST=evento-db` (nombre servicio) |
+| 3 | Frontend muestra 404 | Build de Vite falló | Revisar build logs, `npm run build` local |
+| 4 | `CORS error` | Dominio no en CORS_ORIGIN | Agregar `https://evento.tudominio.com` |
+| 5 | `jwt malformed` | JWT_SECRET cambió | Usar el MISMO secret siempre |
+| 6 | Archivos se pierden | Sin volumen persistente | Configurar volumen `/app/backend/uploads` |
+| 7 | Build lento (>10min) | Poca RAM | Mínimo 2GB RAM para Docker build |
+| 8 | `ECONNREFUSED` Redis/MinIO | No están en Dokploy | Ignorar (solo desarrollo por ahora) |
+| 9 | Proxy `/api/v2/*` retorna 502 | NestJS no corriendo | Solo desarrollo por ahora |
+| 10 | SSL no funciona | DNS no propagado | Esperar 5-10 min, verificar con `dig` |
 
-### Cómo revisar logs en Dokploy
+### Revisar logs en Dokploy
 
-1. Ir al proyecto → pestaña **Logs**
-2. Seleccionar servicio `evento-web`
-3. Buscar mensajes clave:
-   - ✅ `DB connected` — PostgreSQL conectado
-   - ✅ `Server running on http://localhost:3001` — Express funcionando
-   - ❌ `Startup error:` — Error al iniciar (revisar variables de entorno)
-   - ❌ `ECONNREFUSED` — No puede conectar a PostgreSQL
+1. Proyecto → pestaña **Logs**
+2. Mensajes clave:
+   - `DB connected` — PostgreSQL OK
+   - `Server running on http://localhost:3001` — Express OK
+   - `Startup error:` — Revisar variables de entorno
+   - `ECONNREFUSED` — No puede conectar a PostgreSQL
 
-### Cómo reiniciar el contenedor
+### Reiniciar
 
-En Dokploy: **Deployments** → **Redeploy** (rebuild + restart)
+- Dokploy: **Deployments** → **Redeploy**
+- SSH: `docker restart <CONTAINER_ID>`
 
-O desde SSH:
-```bash
-docker restart <CONTAINER_ID>
-```
-
-### Cómo verificar variables de entorno
+### Verificar variables
 
 ```bash
-# Desde SSH en el servidor
 docker exec -it <CONTAINER_ID> env | grep -E "DB_|JWT_|PORT"
 ```
 
 ---
 
-## Roadmap de migración
+## Roadmap
 
-### Fase 0 — Infraestructura ✅
-- [x] Docker Compose (PostgreSQL + Redis + MinIO)
-- [x] NestJS scaffold con TypeScript
-- [x] Módulo Auth migrado (register/login/me/profile)
-- [x] Módulo Users migrado (CRUD + 12 roles + stats)
-- [x] Proxy Express → NestJS (`/api/v2/*`)
+### Completado
 
-### Fase 1 — Migrar módulos core
-- [ ] Eventos (CRUD + modalidad + configuración)
-- [ ] Inscripciones (registro + estados + cupos)
-- [ ] Pagos (Stripe/MercadoPago + cupones)
-- [ ] Certificados (PDF + QR + plantillas)
+- [x] **Fase 0** — Infraestructura: Docker Compose, NestJS scaffold, Auth + Users, proxy
+- [x] **Fase 1** — Core: Cursos, Inscripciones, Pagos, Certificados, Plantillas
+- [x] **Fase 2** — Asistentes & Agenda: Perfil, Agenda jerárquica, Check-in, Credenciales
+- [x] **Fase 3** — Ponentes, Expositores, Patrocinadores con beneficios
+- [x] **Fase 4** — Networking & Streaming: Chat, Match, Reuniones, Salas + Encuestas + Q&A
+- [x] **Fase 5** — Gamificación & Interacción: Puntos, Badges, Ranking, Comentarios, Likes, Trivias
+- [x] **Fase 6** — CMS & Notificaciones: Páginas, Blog, Galería, FAQ, Notificaciones con plantillas
+- [x] **Fase 7** — API Pública, Webhooks, PWA, OAuth2 Google
+- [x] **Fase 8** — Analytics, Export CSV, Audit Logs, Organizaciones multi-tenant, Permisos granulares
 
-### Fase 2 — Asistentes & Agenda
-- [ ] Perfil de asistente (empresa, cargo, foto, intereses, redes)
-- [ ] Agenda jerárquica (día/bloque/sala/sesión)
-- [ ] Check-in QR (escaneo, control de salas, modo offline)
-- [ ] Credenciales PDF/Wallet (Apple/Google Wallet)
+### Próximos pasos
 
-### Fase 3 — Ponentes, Expositores, Patrocinadores
-- [ ] Perfiles de ponente con CV, sesiones, calificación
-- [ ] Stands de expositor con productos, catálogos, chat
-- [ ] Patrocinadores con categorías (Platino/Oro/Plata/Bronce)
-- [ ] Beneficios de patrocinio (banners, popups, videos)
-
-### Fase 4 — Networking & Streaming
-- [ ] Chat privado/grupal (Socket.IO)
-- [ ] Match por intereses
-- [ ] Videollamadas
-- [ ] Agenda de reuniones
-- [ ] Streaming integrado (Zoom/Teams/YouTube/RTMP)
-- [ ] Sala de streaming con chat, encuestas, Q&A
-
-### Fase 5 — Interacción & Gamificación
-- [ ] Encuestas y votaciones en sesiones
-- [ ] Preguntas al ponente (Q&A)
-- [ ] Trivia, ranking, puntos, badges
-- [ ] Comentarios, likes
-
-### Fase 6 — CMS & Noticias
-- [ ] Editor visual de contenido
-- [ ] Blog, galerías, videos, FAQ
-- [ ] Páginas libres
-- [ ] Push/Email/SMS/WhatsApp
-
-### Fase 7 — Móvil & API
-- [ ] PWA (service worker, modo offline)
-- [ ] App Android/iOS (React Native o Flutter)
-- [ ] API REST pública con OAuth2 + OpenAPI
-- [ ] Webhooks para integraciones
-
-### Fase 8 — Analytics & Admin
-- [ ] Estadísticas avanzadas (visitantes, embudo, no-show)
-- [ ] Exportación Excel/PDF
-- [ ] Logs de auditoría
-- [ ] Multi-tenant (dominio por evento)
-- [ ] Gestión de roles y permisos granulares
+- [ ] Desplegar NestJS como servicio separado en Dokploy
+- [ ] Aplicar branding LACDI (colores hex + logo)
+- [ ] Tests unitarios para módulos core
+- [ ] Integración WebSocket (chat en tiempo real)
+- [ ] Integración Redis para caching
+- [ ] MinIO para storage de archivos
+- [ ] App móvil (React Native o Flutter)
+- [ ] OpenAPI/Swagger para documentación de API
 
 ---
 
