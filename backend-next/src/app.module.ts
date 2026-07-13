@@ -22,6 +22,8 @@ import { ReunionesModule } from './reuniones/reuniones.module.js'
 import { StreamingModule } from './streaming/streaming.module.js'
 import { GamificacionModule } from './gamificacion/gamificacion.module.js'
 import { InteraccionModule } from './interaccion/interaccion.module.js'
+import { CmsModule } from './cms/cms.module.js'
+import { NotificacionesModule } from './notificaciones/notificaciones.module.js'
 import { User } from './users/user.entity.js'
 import { Curso } from './cursos/curso.entity.js'
 import { Inscripcion } from './inscripciones/inscripcion.entity.js'
@@ -58,6 +60,12 @@ import { Comentario } from './interaccion/comentario.entity.js'
 import { Like } from './interaccion/like.entity.js'
 import { Trivia } from './interaccion/trivia.entity.js'
 import { RespuestaTrivia } from './interaccion/respuesta-trivia.entity.js'
+import { Pagina } from './cms/pagina.entity.js'
+import { BlogPost } from './cms/blog-post.entity.js'
+import { Galeria } from './cms/galeria.entity.js'
+import { FAQ } from './cms/faq.entity.js'
+import { Notificacion } from './notificaciones/notificacion.entity.js'
+import { PlantillaNotificacion } from './notificaciones/plantilla-notificacion.entity.js'
 
 @Module({
   imports: [
@@ -80,6 +88,8 @@ import { RespuestaTrivia } from './interaccion/respuesta-trivia.entity.js'
           SalaStreaming, EncuestaStreaming, RespuestaEncuesta, PreguntaQA,
           PuntosHistorial, Badge, UsuarioBadge,
           Comentario, Like, Trivia, RespuestaTrivia,
+          Pagina, BlogPost, Galeria, FAQ,
+          Notificacion, PlantillaNotificacion,
         ],
         synchronize: true,
       }),
@@ -106,6 +116,8 @@ import { RespuestaTrivia } from './interaccion/respuesta-trivia.entity.js'
     StreamingModule,
     GamificacionModule,
     InteraccionModule,
+    CmsModule,
+    NotificacionesModule,
   ],
 })
 export class AppModule {}
