@@ -20,6 +20,8 @@ import { ChatModule } from './chat/chat.module.js'
 import { NetworkingModule } from './networking/networking.module.js'
 import { ReunionesModule } from './reuniones/reuniones.module.js'
 import { StreamingModule } from './streaming/streaming.module.js'
+import { GamificacionModule } from './gamificacion/gamificacion.module.js'
+import { InteraccionModule } from './interaccion/interaccion.module.js'
 import { User } from './users/user.entity.js'
 import { Curso } from './cursos/curso.entity.js'
 import { Inscripcion } from './inscripciones/inscripcion.entity.js'
@@ -49,6 +51,13 @@ import { SalaStreaming } from './streaming/sala-streaming.entity.js'
 import { EncuestaStreaming } from './streaming/encuesta.entity.js'
 import { RespuestaEncuesta } from './streaming/respuesta-encuesta.entity.js'
 import { PreguntaQA } from './streaming/pregunta-qa.entity.js'
+import { PuntosHistorial } from './gamificacion/puntos-historial.entity.js'
+import { Badge } from './gamificacion/badge.entity.js'
+import { UsuarioBadge } from './gamificacion/usuario-badge.entity.js'
+import { Comentario } from './interaccion/comentario.entity.js'
+import { Like } from './interaccion/like.entity.js'
+import { Trivia } from './interaccion/trivia.entity.js'
+import { RespuestaTrivia } from './interaccion/respuesta-trivia.entity.js'
 
 @Module({
   imports: [
@@ -69,6 +78,8 @@ import { PreguntaQA } from './streaming/pregunta-qa.entity.js'
           Conversacion, MensajeChat, ParticipanteConversacion, MatchNetworking,
           Reunion, ParticipanteReunion,
           SalaStreaming, EncuestaStreaming, RespuestaEncuesta, PreguntaQA,
+          PuntosHistorial, Badge, UsuarioBadge,
+          Comentario, Like, Trivia, RespuestaTrivia,
         ],
         synchronize: true,
       }),
@@ -93,6 +104,8 @@ import { PreguntaQA } from './streaming/pregunta-qa.entity.js'
     NetworkingModule,
     ReunionesModule,
     StreamingModule,
+    GamificacionModule,
+    InteraccionModule,
   ],
 })
 export class AppModule {}
