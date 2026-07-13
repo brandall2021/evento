@@ -26,6 +26,11 @@ import { CmsModule } from './cms/cms.module.js'
 import { NotificacionesModule } from './notificaciones/notificaciones.module.js'
 import { PublicApiModule } from './public-api/public-api.module.js'
 import { WebhooksModule } from './webhooks/webhooks.module.js'
+import { AnalyticsModule } from './analytics/analytics.module.js'
+import { ExportModule } from './export/export.module.js'
+import { AuditLogsModule } from './audit-logs/audit-logs.module.js'
+import { OrganizacionesModule } from './organizaciones/organizaciones.module.js'
+import { PermissionsModule } from './permissions/permissions.module.js'
 import { User } from './users/user.entity.js'
 import { Curso } from './cursos/curso.entity.js'
 import { Inscripcion } from './inscripciones/inscripcion.entity.js'
@@ -69,6 +74,9 @@ import { FAQ } from './cms/faq.entity.js'
 import { Notificacion } from './notificaciones/notificacion.entity.js'
 import { PlantillaNotificacion } from './notificaciones/plantilla-notificacion.entity.js'
 import { Webhook, WebhookEvent } from './webhooks/webhook.entity.js'
+import { AuditLog } from './audit-logs/audit-log.entity.js'
+import { Organizacion, OrganizacionMiembro } from './organizaciones/organizacion.entity.js'
+import { Permission, RolePermission } from './permissions/permission.entity.js'
 
 @Module({
   imports: [
@@ -94,6 +102,9 @@ import { Webhook, WebhookEvent } from './webhooks/webhook.entity.js'
           Pagina, BlogPost, Galeria, FAQ,
           Notificacion, PlantillaNotificacion,
           Webhook, WebhookEvent,
+          AuditLog,
+          Organizacion, OrganizacionMiembro,
+          Permission, RolePermission,
         ],
         synchronize: true,
       }),
@@ -124,6 +135,11 @@ import { Webhook, WebhookEvent } from './webhooks/webhook.entity.js'
     NotificacionesModule,
     PublicApiModule,
     WebhooksModule,
+    AnalyticsModule,
+    ExportModule,
+    AuditLogsModule,
+    OrganizacionesModule,
+    PermissionsModule,
   ],
 })
 export class AppModule {}
