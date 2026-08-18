@@ -2,19 +2,26 @@
   --bg: #0a0a0a;
   --bg-elevated: #111111;
   --bg-card: #161616;
+  --bg-secondary: #1e1e1e;
   --bg-glass: rgba(255, 255, 255, 0.04);
   --text: #a0a0a0;
   --text-h: #f0ede8;
   --text-muted: #666666;
+  --text-secondary: #8a8a8a;
   --accent: #c9a84c;
   --accent-dim: rgba(201, 168, 76, 0.15);
   --accent-hover: #dbc163;
   --border: rgba(255, 255, 255, 0.08);
   --border-light: rgba(255, 255, 255, 0.04);
+  --radius: 16px;
   --radius-sm: 8px;
   --radius-md: 16px;
   --radius-lg: 24px;
   --radius-xl: 32px;
+  --error: #f44336;
+  --success: #4caf50;
+  --warning: #f0a500;
+  --info: #4f8cff;
   --sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   --ease-out: cubic-bezier(0.32, 0.72, 0, 1);
   --ease-in-out: cubic-bezier(0.76, 0, 0.24, 1);
@@ -100,6 +107,23 @@ input, textarea, select {
   font-family: var(--sans);
   font-size: 16px;
   outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 .sr-only {
@@ -207,10 +231,12 @@ button:disabled {
   --bg: #f5f5f5;
   --bg-elevated: #ffffff;
   --bg-card: #ffffff;
+  --bg-secondary: #f0f0f0;
   --bg-glass: rgba(0, 0, 0, 0.04);
   --text: #555555;
   --text-h: #1a1a1a;
   --text-muted: #999999;
+  --text-secondary: #777777;
   --accent: #b8942e;
   --accent-dim: rgba(184, 148, 46, 0.12);
   --accent-hover: #c9a84c;

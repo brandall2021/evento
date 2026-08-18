@@ -47,15 +47,38 @@
   gap: 20px;
 }
 
-.app-nav a {
+.app-nav-link {
   font-size: 14px;
   font-weight: 500;
   color: var(--text);
   transition: color 0.2s;
+  position: relative;
 }
 
-.app-nav a:hover {
+.app-nav-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -6px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.25s var(--ease-out);
+}
+
+.app-nav-link:hover {
   color: var(--text-h);
+}
+
+.app-nav-link-active {
+  color: var(--text-h);
+}
+
+.app-nav-link-active::after {
+  transform: scaleX(1);
 }
 
 .nav-user {
@@ -92,6 +115,120 @@
 
 .app-main {
   flex: 1;
+}
+
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 200;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 14px;
+  font-weight: 600;
+  transform: translateY(-200%);
+  transition: transform 0.2s var(--ease-out);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.menu-toggle {
+  display: none;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-h);
+  font-size: 18px;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.menu-toggle:hover {
+  border-color: var(--accent-dim);
+  color: var(--accent);
+}
+
+.mobile-menu {
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 24px 20px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  animation: menuFadeIn 0.25s var(--ease-out);
+}
+
+.mobile-menu .app-nav-link {
+  padding: 12px 8px;
+  font-size: 15px;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+}
+
+.mobile-menu .app-nav-link::after {
+  display: none;
+}
+
+.mobile-menu .app-nav-link-active {
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.mobile-menu-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.mobile-menu-actions .btn-primary,
+.mobile-menu-actions .btn-outline {
+  flex: 1;
+  justify-content: center;
+}
+
+.mobile-menu-actions .btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes menuFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 900px) {
+  .app-nav .app-nav-link,
+  .app-nav .nav-user,
+  .app-nav .btn-logout,
+  .app-nav .btn-register,
+  .app-nav > a.app-nav-link {
+    display: none;
+  }
+
+  .menu-toggle {
+    display: inline-flex;
+  }
+
+  .mobile-menu {
+    display: flex;
+  }
 }
 
 /* ============================================
@@ -301,11 +438,34 @@
 
 .btn-primary:hover {
   background: var(--accent-hover);
+  box-shadow: 0 0 24px var(--accent-dim);
+}
+
+.btn-primary:active {
+  transform: scale(0.97);
 }
 
 .btn-primary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn-primary,
+.btn-outline,
+.btn-small,
+.btn-logout,
+.btn-register,
+.theme-toggle {
+  transition: all 0.2s;
+}
+
+.btn-outline:active,
+.btn-small:active,
+.btn-logout:active,
+.btn-register:active,
+.theme-toggle:active {
+  transform: scale(0.96);
 }
 
 .btn-full {
@@ -478,6 +638,14 @@
   border-color: var(--accent-dim);
   transform: translateY(-4px);
   box-shadow: var(--shadow-glow);
+}
+
+.curso-card:hover .curso-card-image {
+  filter: brightness(1.08);
+}
+
+.curso-card-image {
+  transition: filter 0.3s var(--ease-out);
 }
 
 .curso-card-header {
@@ -715,9 +883,44 @@
    ADMIN
    ============================================ */
 
-.admin-nav-links {
+.admin-nav {
   display: flex;
-  gap: 10px;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 32px;
+  padding: 6px;
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  width: fit-content;
+  max-width: 100%;
+}
+
+.admin-nav-link {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.admin-nav-link:hover {
+  color: var(--text-h);
+}
+
+.admin-nav-link-active {
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+@media (max-width: 640px) {
+  .admin-nav {
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
 }
 
 .admin-card {

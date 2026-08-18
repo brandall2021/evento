@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { api } from '../services/api'
 import { useNotify } from '../context/NotificationContext'
+import AdminNav from '../components/AdminNav'
 
 const defaultConfig = {
   bgColor: '#faf8f5',
@@ -155,6 +156,7 @@ export default function AdminPlantillas() {
   return (
     <div className="page-container">
       <h1 className="page-title">Plantillas de Certificado</h1>
+      <AdminNav />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
         <div className="admin-card">

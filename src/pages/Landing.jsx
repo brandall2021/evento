@@ -74,7 +74,7 @@ export default function Landing() {
             <div className="feature-card">
               <div className="feature-icon">🎯</div>
               <h3>Cursos especializados</h3>
-              <p>Contenido diseñado por expertos del行业 con enfoque práctico y actualizado.</p>
+              <p>Contenido diseñado por expertos del sector con enfoque práctico y actualizado.</p>
             </div>
             <div className="feature-card">
               <div className="feature-icon">📜</div>
@@ -82,7 +82,7 @@ export default function Landing() {
               <p>Certificados digitales válidos con código QR de verificación pública.</p>
             </div>
             <div className="feature-card">
-              <div className="feature-icon"> flexible</div>
+              <div className="feature-icon">🗓️</div>
               <h3>Modalidad flexible</h3>
               <p>Cursos virtuales, presenciales o híbridos que se adaptan a tu horario.</p>
             </div>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { api } from '../services/api'
 import { useNotify } from '../context/NotificationContext'
 import RichTextEditor from '../components/RichTextEditor'
+import AdminNav from '../components/AdminNav'
 
 export default function AdminCursos() {
   const [cursos, setCursos] = useState([])
@@ -114,6 +115,7 @@ export default function AdminCursos() {
           {showForm ? 'Cancelar' : 'Nuevo curso'}
         </button>
       </div>
+      <AdminNav />
 
       {showForm && (
         <form onSubmit={handleSubmit} className="admin-form" encType="multipart/form-data">

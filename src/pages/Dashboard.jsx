@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
 import { api } from '../services/api'
+import AdminNav from '../components/AdminNav'
 
 export default function Dashboard() {
   const [stats, setStats] = useState({})
@@ -36,12 +36,8 @@ export default function Dashboard() {
     <div className="page-container">
       <div className="page-header">
         <h1 className="page-title">Panel de Administración</h1>
-        <div className="admin-nav-links">
-          <Link to="/admin/cursos" className="btn-outline">Gestionar Cursos</Link>
-          <Link to="/admin/inscripciones" className="btn-outline">Inscripciones</Link>
-          <Link to="/admin/certificados" className="btn-outline">Certificados</Link>
-        </div>
       </div>
+      <AdminNav />
       <div className="stats-grid">
         {cards.map((card, i) => (
           <div key={i} className="stat-card-lg" style={{ borderTop: `3px solid ${card.color}` }}>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api } from '../services/api'
+import AdminNav from '../components/AdminNav'
 
 const estadoColors = {
   pendiente: '#f0a500',
@@ -54,6 +55,7 @@ export default function AdminInscripciones() {
           </select>
         </div>
       </div>
+      <AdminNav />
       <div className="table-container">
         <table className="table">
           <thead>

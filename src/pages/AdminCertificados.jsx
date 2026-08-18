@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { api } from '../services/api'
 import { useNotify } from '../context/NotificationContext'
+import AdminNav from '../components/AdminNav'
 
 export default function AdminCertificados() {
   const [certificados, setCertificados] = useState([])
@@ -59,6 +60,7 @@ export default function AdminCertificados() {
   return (
     <div className="page-container">
       <h1 className="page-title">Certificados</h1>
+      <AdminNav />
 
       <div className="admin-card">
         <h3>Emitir nuevo certificado</h3>
