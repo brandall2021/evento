@@ -28,7 +28,7 @@ export async function emitir(req, res) {
     if (pct < 80) return res.status(400).json({ error: 'Asistencia menor al 80%' })
 
     const codigo = generarCodigo(insc.id)
-    const qrData = `${process.env.API_URL || 'http://localhost:3001'}/api/certificados/validar/${codigo}`
+    const qrData = `${process.env.API_URL || 'http://localhost:3001'}/validar/${codigo}`
     const qrPath = `uploads/qr-${codigo}.png`
     await QRCode.toFile(qrPath, qrData)
 
@@ -172,7 +172,7 @@ export async function descargar(req, res) {
 
     const validY = validacionY || pageH - 70
     doc.fontSize(8).fillColor('#999').font('Helvetica')
-      .text(`Validar en: ${process.env.API_URL || 'http://localhost:3001'}/api/certificados/validar/${cert.codigo}`,
+      .text(`Validar en: ${process.env.API_URL || 'http://localhost:3001'}/validar/${cert.codigo}`,
         60, validY, { align: 'center' })
 
     doc.end()

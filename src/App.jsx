@@ -21,6 +21,8 @@ const AdminCertificados = lazy(() => import('./pages/AdminCertificados'))
 const AdminPlantillas = lazy(() => import('./pages/AdminPlantillas'))
 const AdminUsuarios = lazy(() => import('./pages/AdminUsuarios'))
 const AdminPagos = lazy(() => import('./pages/AdminPagos'))
+const Perfil = lazy(() => import('./pages/Perfil'))
+const ValidarCertificado = lazy(() => import('./pages/ValidarCertificado'))
 
 function Loading() {
   return <div className="loading">Cargando...</div>
@@ -42,6 +44,9 @@ function App() {
                     <Route path="/cursos" element={<ProtectedRoute><CursosList /></ProtectedRoute>} />
                     <Route path="/cursos/:id" element={<ProtectedRoute><CursoDetail /></ProtectedRoute>} />
                     <Route path="/mis-inscripciones" element={<ProtectedRoute><MisInscripciones /></ProtectedRoute>} />
+                    <Route path="/perfil" element={<ProtectedRoute><Perfil /></ProtectedRoute>} />
+                    <Route path="/validar/:codigo" element={<ValidarCertificado />} />
+                    <Route path="/validar" element={<ValidarCertificado />} />
                     <Route path="/admin" element={<ProtectedRoute roles={['admin']}><Dashboard /></ProtectedRoute>} />
                     <Route path="/admin/cursos" element={<ProtectedRoute roles={['admin', 'docente']}><AdminCursos /></ProtectedRoute>} />
                     <Route path="/admin/inscripciones" element={<ProtectedRoute roles={['admin']}><AdminInscripciones /></ProtectedRoute>} />

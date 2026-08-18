@@ -44,6 +44,7 @@ export default function Layout() {
               <span className="sidebar-group">General</span>
               <NavLink to="/cursos" className={sidebarLinkClass}>Explorar cursos</NavLink>
               <NavLink to="/mis-inscripciones" className={sidebarLinkClass}>Mis inscripciones</NavLink>
+              <NavLink to="/perfil" className={sidebarLinkClass}>Mi perfil</NavLink>
               {user.rol === 'docente' && (
                 <NavLink to="/admin/cursos" className={sidebarLinkClass}>Mis cursos</NavLink>
               )}

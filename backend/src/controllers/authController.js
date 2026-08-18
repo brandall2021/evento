@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken'
+import bcrypt from 'bcryptjs'
 import { User } from '../models/index.js'
 
 function generateToken(user) {
@@ -47,9 +48,15 @@ export async function me(req, res) {
 
 export async function updateProfile(req, res) {
   try {
-    const { nombre, telefono } = req.body
-    req.user.nombre = nombre || req.user.nombre
-    req.user.telefono = telefono || req.user.telefono
+    const { nombre, telefono, password } = req.body
+    if (nombre) req.user.nombre = nombre
+    if (telefono !== undefined) req.user.telefono = telefono
+    if (password) {
+      if (String(password).length < 6) {
+        return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' })
+      }
+      req.user.password = await bcrypt.hash(password, 10)
+    }
     await req.user.save()
     res.json(req.user)
   } catch (err) {

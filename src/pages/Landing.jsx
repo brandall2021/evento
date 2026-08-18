@@ -156,6 +156,7 @@ export default function Landing() {
         <div className="landing-container">
           <div className="landing-footer-inner">
             <span className="app-logo">Nexus<span> Summit</span></span>
+            <Link to="/validar" className="landing-footer-link">Validar certificado</Link>
             <p className="landing-footer-text">&copy; 2026 Nexus Summit. Todos los derechos reservados.</p>
           </div>
         </div>
