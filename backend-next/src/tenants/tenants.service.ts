@@ -22,12 +22,12 @@ export class TenantsService {
   }
 
   async findAll(): Promise<Tenant[]> {
-    return this.tenantRepo.find({ where: { deleted_at: null as any } })
+    return this.tenantRepo.find()
   }
 
   async findOne(id: string): Promise<Tenant> {
     const tenant = await this.tenantRepo.findOne({ where: { id } })
-    if (!tenant || tenant.deleted_at) {
+    if (!tenant) {
       throw new NotFoundException(`Tenant ${id} not found`)
     }
     return tenant
@@ -35,7 +35,7 @@ export class TenantsService {
 
   async findBySlug(slug: string): Promise<Tenant> {
     const tenant = await this.tenantRepo.findOne({ where: { slug } })
-    if (!tenant || tenant.deleted_at) {
+    if (!tenant) {
       throw new NotFoundException(`Tenant with slug "${slug}" not found`)
     }
     return tenant
@@ -45,7 +45,7 @@ export class TenantsService {
     const tenant = await this.findOne(id)
     if (dto.slug && dto.slug !== tenant.slug) {
       const exists = await this.tenantRepo.findOne({ where: { slug: dto.slug } })
-      if (exists) {
+      if (exists && exists.id !== id) {
         throw new ConflictException(`Tenant with slug "${dto.slug}" already exists`)
       }
     }
@@ -54,9 +54,8 @@ export class TenantsService {
   }
 
   async remove(id: string): Promise<{ message: string }> {
-    const tenant = await this.findOne(id)
-    tenant.deleted_at = new Date()
-    await this.tenantRepo.save(tenant)
+    await this.findOne(id)
+    await this.tenantRepo.softDelete(id)
     return { message: 'Tenant deleted' }
   }
 }

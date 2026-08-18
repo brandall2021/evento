@@ -6,20 +6,27 @@ import { ConflictException, NotFoundException } from '@nestjs/common'
 
 describe('TenantsService', () => {
   let service: TenantsService
-
-  const mockRepo = () => ({
-    find: jest.fn().mockResolvedValue([]),
-    findOne: jest.fn(),
-    create: jest.fn((dto: any) => ({ id: 'uuid-1', ...dto })),
-    save: jest.fn((t: any) => Promise.resolve(t)),
-    remove: jest.fn(),
-  })
+  let repo: {
+    find: jest.Mock
+    findOne: jest.Mock
+    create: jest.Mock
+    save: jest.Mock
+    softDelete: jest.Mock
+  }
 
   beforeEach(async () => {
+    repo = {
+      find: jest.fn().mockResolvedValue([]),
+      findOne: jest.fn(),
+      create: jest.fn((dto: any) => ({ id: 'uuid-1', ...dto })),
+      save: jest.fn((t: any) => Promise.resolve(t)),
+      softDelete: jest.fn(),
+    }
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TenantsService,
-        { provide: getRepositoryToken(Tenant), useFactory: mockRepo },
+        { provide: getRepositoryToken(Tenant), useValue: repo },
       ],
     }).compile()
 
@@ -32,17 +39,15 @@ describe('TenantsService', () => {
 
   describe('create', () => {
     it('should create a tenant', async () => {
-      const repo = { findOne: jest.fn().mockResolvedValue(null), create: jest.fn((d: any) => ({ id: 'u1', ...d })), save: jest.fn((t: any) => Promise.resolve(t)) }
-      const svc = new TenantsService(repo as any)
-      const result = await svc.create({ name: 'Test', slug: 'test' })
+      repo.findOne.mockResolvedValue(null)
+      const result = await service.create({ name: 'Test', slug: 'test' })
       expect(result).toHaveProperty('id')
       expect(result.name).toBe('Test')
     })
 
     it('should throw ConflictException for duplicate slug', async () => {
-      const repo = { findOne: jest.fn().mockResolvedValue({ slug: 'test' }), create: jest.fn(), save: jest.fn() }
-      const svc = new TenantsService(repo as any)
-      await expect(svc.create({ name: 'Test', slug: 'test' })).rejects.toThrow(ConflictException)
+      repo.findOne.mockResolvedValue({ slug: 'test' })
+      await expect(service.create({ name: 'Test', slug: 'test' })).rejects.toThrow(ConflictException)
     })
   })
 
@@ -50,51 +55,52 @@ describe('TenantsService', () => {
     it('should return an array of tenants', async () => {
       const result = await service.findAll()
       expect(Array.isArray(result)).toBe(true)
+      expect(repo.find).toHaveBeenCalled()
     })
   })
 
   describe('findOne', () => {
     it('should return a tenant by id', async () => {
-      const repo = { findOne: jest.fn().mockResolvedValue({ id: 'u1', name: 'Test', deleted_at: null }) }
-      const svc = new TenantsService(repo as any)
-      const result = await svc.findOne('u1')
+      repo.findOne.mockResolvedValue({ id: 'u1', name: 'Test' })
+      const result = await service.findOne('u1')
       expect(result.id).toBe('u1')
     })
 
     it('should throw NotFoundException for missing tenant', async () => {
-      const repo = { findOne: jest.fn().mockResolvedValue(null) }
-      const svc = new TenantsService(repo as any)
-      await expect(svc.findOne('nonexistent')).rejects.toThrow(NotFoundException)
+      repo.findOne.mockResolvedValue(null)
+      await expect(service.findOne('nonexistent')).rejects.toThrow(NotFoundException)
     })
   })
 
   describe('update', () => {
     it('should update a tenant', async () => {
-      const existing = { id: 'u1', slug: 'old', name: 'Old', deleted_at: null }
-      const repo = {
-        findOne: jest.fn()
-          .mockResolvedValueOnce(existing)
-          .mockResolvedValueOnce(null),
-        create: jest.fn(),
-        save: jest.fn((t: any) => Promise.resolve(t)),
-      }
-      const svc = new TenantsService(repo as any)
-      const result = await svc.update('u1', { name: 'New' })
+      const existing = { id: 'u1', slug: 'old', name: 'Old' }
+      repo.findOne
+        .mockResolvedValueOnce(existing)   // findOne(id)
+        .mockResolvedValueOnce(null)        // slug uniqueness check
+      const result = await service.update('u1', { name: 'New' })
+      expect(result.name).toBe('New')
+    })
+
+    it('should allow keeping the same slug', async () => {
+      const existing = { id: 'u1', slug: 'my-slug', name: 'Old' }
+      repo.findOne.mockResolvedValueOnce(existing)
+      const result = await service.update('u1', { slug: 'my-slug', name: 'New' })
       expect(result.name).toBe('New')
     })
   })
 
   describe('remove', () => {
     it('should soft delete a tenant', async () => {
-      const existing = { id: 'u1', name: 'Test', deleted_at: null }
-      const repo = {
-        findOne: jest.fn().mockResolvedValue(existing),
-        create: jest.fn(),
-        save: jest.fn((t: any) => Promise.resolve(t)),
-      }
-      const svc = new TenantsService(repo as any)
-      const result = await svc.remove('u1')
+      repo.findOne.mockResolvedValue({ id: 'u1', name: 'Test' })
+      const result = await service.remove('u1')
       expect(result.message).toBe('Tenant deleted')
+      expect(repo.softDelete).toHaveBeenCalledWith('u1')
+    })
+
+    it('should throw NotFoundException if tenant not found', async () => {
+      repo.findOne.mockResolvedValue(null)
+      await expect(service.remove('nonexistent')).rejects.toThrow(NotFoundException)
     })
   })
 })
