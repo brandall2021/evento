@@ -1,43 +1,38 @@
-import { Controller, Post, Get, Put, Body, UseGuards, Request, Res, Query } from '@nestjs/common'
+import { Controller, Post, Get, Body, UseGuards, Request } from '@nestjs/common'
 import { AuthService } from './auth.service.js'
+import { RegisterDto } from './dto/register.dto.js'
+import { LoginDto } from './dto/login.dto.js'
+import { RefreshDto } from './dto/refresh.dto.js'
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js'
-import { UserRole } from '../users/user.entity.js'
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  register(@Body() body: { nombre: string; email: string; password: string; rol?: UserRole }) {
-    return this.authService.register(body)
+  register(@Body() dto: RegisterDto) {
+    return this.authService.register(dto)
   }
 
   @Post('login')
-  login(@Body() body: { email: string; password: string }) {
-    return this.authService.login(body.email, body.password)
+  login(@Body() dto: LoginDto) {
+    return this.authService.login(dto.email, dto.password)
+  }
+
+  @Post('refresh')
+  refresh(@Body() dto: RefreshDto) {
+    return this.authService.refresh(dto.refresh_token)
+  }
+
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  logout(@Body() dto: RefreshDto) {
+    return this.authService.logout(dto.refresh_token)
   }
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
   me(@Request() req: any) {
-    return req.user
-  }
-
-  @Put('profile')
-  @UseGuards(JwtAuthGuard)
-  updateProfile(@Request() req: any, @Body() body: { nombre?: string; telefono?: string }) {
-    return this.authService.updateProfile(req.user.id, body)
-  }
-
-  @Get('google')
-  googleAuth() {
-    // Handled by Passport redirect — this endpoint triggers the Google OAuth flow
-  }
-
-  @Get('google/callback')
-  async googleCallback(@Query('code') code: string, @Res() res: any) {
-    // Passport handles the token exchange; in production use @UseGuards(GoogleOAuthGuard)
-    // For simplicity, the callback is handled client-side via the Google API SDK
-    return res.redirect(`/auth/google/success?code=${code}`)
+    return this.authService.getMe(req.user.id)
   }
 }

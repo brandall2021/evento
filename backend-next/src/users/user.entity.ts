@@ -24,10 +24,10 @@ export enum UserRole {
   ESTUDIANTE = 'estudiante',
 }
 
-@Entity('users')
+@Entity('users', { schema: 'evento' })
 export class User {
-  @PrimaryGeneratedColumn()
-  id: number
+  @PrimaryGeneratedColumn('uuid')
+  id: string
 
   @Column()
   nombre: string

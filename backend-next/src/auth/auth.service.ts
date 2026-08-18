@@ -1,65 +1,234 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common'
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+  GoneException,
+} from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 import * as bcrypt from 'bcryptjs'
-import { UsersService } from '../users/users.service.js'
-import { UserRole } from '../users/user.entity.js'
+import { createHash, randomBytes } from 'node:crypto'
+import { User } from '../users/user.entity.js'
+import { RefreshToken } from './entities/refresh-token.entity.js'
+import { UserTenant } from './entities/user-tenant.entity.js'
+import { UserRoleAssignment } from './entities/user-role-assignment.entity.js'
+import { Role } from '../roles/entities/role.entity.js'
+import { AuthResponseDto } from './dto/auth-response.dto.js'
+import { JwtPayload } from './jwt.strategy.js'
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly usersService: UsersService,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
+    @InjectRepository(RefreshToken)
+    private readonly refreshTokenRepo: Repository<RefreshToken>,
+    @InjectRepository(UserTenant)
+    private readonly userTenantRepo: Repository<UserTenant>,
+    @InjectRepository(UserRoleAssignment)
+    private readonly userRoleRepo: Repository<UserRoleAssignment>,
+    @InjectRepository(Role)
+    private readonly roleRepo: Repository<Role>,
     private readonly jwtService: JwtService,
   ) {}
 
-  async register(data: { nombre: string; email: string; password: string; rol?: UserRole }) {
-    const user = await this.usersService.create({
-      nombre: data.nombre,
+  async register(data: {
+    email: string
+    password: string
+    firstName: string
+    lastName: string
+  }): Promise<AuthResponseDto> {
+    const existing = await this.userRepo.findOne({ where: { email: data.email } })
+    if (existing) {
+      throw new ConflictException('El email ya está registrado')
+    }
+
+    const hashedPassword = await bcrypt.hash(data.password, 10)
+    const user = this.userRepo.create({
       email: data.email,
-      password: data.password,
-      rol: data.rol || UserRole.ATTENDEE,
+      password: hashedPassword,
+      nombre: `${data.firstName} ${data.lastName}`,
+    })
+    const saved = await this.userRepo.save(user)
+
+    return this.buildAuthResponse(saved)
+  }
+
+  async login(email: string, password: string): Promise<AuthResponseDto> {
+    const user = await this.userRepo.findOne({
+      where: { email },
+      select: ['id', 'email', 'password', 'nombre', 'activo'],
     })
 
-    const token = this.generateToken(user)
-    const { password: _, ...userWithoutPassword } = user
-    return { token, user: userWithoutPassword }
-  }
+    if (!user) {
+      throw new UnauthorizedException('Credenciales inválidas')
+    }
 
-  async login(email: string, password: string) {
-    const user = await this.usersService.findByEmail(email)
-    if (!user) throw new UnauthorizedException('Credenciales inválidas')
+    if (!user.activo) {
+      throw new UnauthorizedException('Usuario inactivo')
+    }
 
     const match = await bcrypt.compare(password, user.password)
-    if (!match) throw new UnauthorizedException('Credenciales inválidas')
-
-    const token = this.generateToken(user)
-    const { password: _, ...userWithoutPassword } = user
-    return { token, user: userWithoutPassword }
-  }
-
-  async validateUser(userId: number) {
-    return this.usersService.findById(userId)
-  }
-
-  async updateProfile(userId: number, data: { nombre?: string; telefono?: string }) {
-    return this.usersService.update(userId, data)
-  }
-
-  async googleLogin(googleUser: { googleId: string; email: string; nombre: string; avatar?: string }) {
-    let user = await this.usersService.findByEmail(googleUser.email)
-    if (!user) {
-      user = await this.usersService.create({
-        nombre: googleUser.nombre,
-        email: googleUser.email,
-        password: Math.random().toString(36).slice(2),
-        rol: UserRole.ATTENDEE,
-      })
+    if (!match) {
+      throw new UnauthorizedException('Credenciales inválidas')
     }
-    const token = this.generateToken(user)
-    const { password: _, ...userWithoutPassword } = user
-    return { token, user: userWithoutPassword }
+
+    return this.buildAuthResponse(user)
   }
 
-  private generateToken(user: any) {
-    return this.jwtService.sign({ id: user.id, email: user.email, rol: user.rol })
+  async refresh(refreshToken: string): Promise<AuthResponseDto> {
+    const tokenHash = this.hashToken(refreshToken)
+
+    const stored = await this.refreshTokenRepo.findOne({
+      where: { token_hash: tokenHash },
+      relations: ['user'],
+    })
+
+    if (!stored || stored.revoked_at) {
+      throw new UnauthorizedException('Refresh token inválido o revocado')
+    }
+
+    if (new Date() > stored.expires_at) {
+      throw new GoneException('Refresh token expirado')
+    }
+
+    stored.revoked_at = new Date()
+    await this.refreshTokenRepo.save(stored)
+
+    return this.buildAuthResponse(stored.user)
+  }
+
+  async logout(refreshToken: string): Promise<{ message: string }> {
+    const tokenHash = this.hashToken(refreshToken)
+
+    const stored = await this.refreshTokenRepo.findOne({
+      where: { token_hash: tokenHash },
+    })
+
+    if (stored && !stored.revoked_at) {
+      stored.revoked_at = new Date()
+      await this.refreshTokenRepo.save(stored)
+    }
+
+    return { message: 'Sesión cerrada' }
+  }
+
+  async getMe(userId: string) {
+    const user = await this.userRepo.findOne({
+      where: { id: userId },
+    })
+
+    if (!user) {
+      throw new UnauthorizedException('Usuario no encontrado')
+    }
+
+    const tenants = await this.userTenantRepo.find({
+      where: { user_id: userId, is_active: true },
+      relations: ['tenant'],
+    })
+
+    const tenantIds = tenants.map(t => t.tenant_id)
+
+    const assignments = await this.userRoleRepo.find({
+      where: tenantIds.map(tid => ({ user_id: userId, tenant_id: tid })),
+      relations: ['role', 'role.rolePermissions', 'role.rolePermissions.permission', 'tenant'],
+    })
+
+    const tenantsWithRoles = tenants.map(t => {
+      const tenantAssignments = assignments.filter(a => a.tenant_id === t.tenant_id)
+      const roles = [...new Set(tenantAssignments.map(a => a.role.name))]
+      const permissions = [
+        ...new Set(
+          tenantAssignments.flatMap(a =>
+            a.role.rolePermissions.map((rp: any) => rp.permission.code),
+          ),
+        ),
+      ]
+      return {
+        tenant_id: t.tenant_id,
+        tenant_name: t.tenant.name,
+        roles,
+        permissions,
+      }
+    })
+
+    return {
+      id: user.id,
+      email: user.email,
+      firstName: user.nombre,
+      avatarUrl: user.avatar,
+      tenants: tenantsWithRoles,
+    }
+  }
+
+  private async buildAuthResponse(user: User): Promise<AuthResponseDto> {
+    const firstTenant = await this.userTenantRepo.findOne({
+      where: { user_id: user.id, is_active: true },
+    })
+
+    const tenantId = firstTenant?.tenant_id ?? ''
+
+    const assignments = await this.userRoleRepo.find({
+      where: { user_id: user.id, tenant_id: tenantId },
+      relations: ['role', 'role.rolePermissions', 'role.rolePermissions.permission'],
+    })
+
+    const roleNames = [...new Set(assignments.map(a => a.role.name))]
+    const permissions = [
+      ...new Set(
+        assignments.flatMap(a =>
+          a.role.rolePermissions.map((rp: any) => rp.permission.code),
+        ),
+      ),
+    ]
+
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email,
+      tenant_id: tenantId,
+      roles: roleNames,
+      permissions,
+    }
+
+    const accessToken = this.jwtService.sign(payload)
+    const refreshToken = await this.createRefreshToken(user)
+
+    const names = (user.nombre ?? '').split(' ')
+    const firstName = names[0] ?? ''
+    const lastName = names.slice(1).join(' ')
+
+    return {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName,
+        lastName,
+        avatarUrl: user.avatar ?? null,
+      },
+    }
+  }
+
+  private async createRefreshToken(user: User): Promise<string> {
+    const raw = randomBytes(40).toString('hex')
+    const tokenHash = this.hashToken(raw)
+
+    const expiresAt = new Date()
+    expiresAt.setDate(expiresAt.getDate() + 7)
+
+    const entity = this.refreshTokenRepo.create({
+      user_id: user.id,
+      token_hash: tokenHash,
+      expires_at: expiresAt,
+    })
+    await this.refreshTokenRepo.save(entity)
+
+    return raw
+  }
+
+  private hashToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex')
   }
 }
