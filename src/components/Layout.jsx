@@ -19,94 +19,99 @@ export default function Layout() {
     navigate('/login')
   }
 
-  const navLinkClass = ({ isActive }) =>
-    isActive ? 'app-nav-link app-nav-link-active' : 'app-nav-link'
-
-  const navItems = user
-    ? [
-        ...(user.rol === 'admin' ? [{ to: '/admin', label: 'Panel' }] : []),
-        ...(user.rol === 'admin' || user.rol === 'docente'
-          ? [{ to: '/admin/cursos', label: 'Cursos' }]
-          : []),
-        ...(user.rol === 'admin' ? [{ to: '/admin/certificados', label: 'Certificados' }] : []),
-        ...(user.rol === 'admin' ? [{ to: '/admin/plantillas', label: 'Plantillas' }] : []),
-        { to: '/cursos', label: 'Explorar' },
-        { to: '/mis-inscripciones', label: 'Mis Inscripciones' },
-      ]
-    : []
+  const sidebarLinkClass = ({ isActive }) =>
+    isActive ? 'sidebar-link sidebar-link-active' : 'sidebar-link'
 
   return (
     <div className="app-layout">
       <a href="#main-content" className="skip-link">Saltar al contenido</a>
-      <header className="app-header">
-        <div className="app-header-inner">
-          <Link to="/" className="app-logo">Nexus<span> Summit</span></Link>
 
-          <nav className="app-nav" aria-label="Navegación principal">
-            {navItems.map(item => (
-              <NavLink key={item.to} to={item.to} className={navLinkClass}>
-                {item.label}
-              </NavLink>
-            ))}
-            <button onClick={toggleTheme} className="theme-toggle" aria-label="Cambiar tema">
-              {theme === 'dark' ? '\u2600\uFE0F' : '\uD83C\uDF19'}
-            </button>
-            {user ? (
-              <>
-                <span className="nav-user">{user.nombre}</span>
-                <button onClick={handleLogout} className="btn-logout">Salir</button>
-              </>
-            ) : (
-              <>
+      {user ? (
+        <div className="app-shell">
+          <aside id="mobile-menu" className={`sidebar${menuOpen ? ' sidebar-open' : ''}`}>
+            <div className="sidebar-header">
+              <Link to="/" className="app-logo">Nexus<span> Summit</span></Link>
+              <button
+                className="menu-close"
+                onClick={() => setMenuOpen(false)}
+                aria-label="Cerrar menú"
+              >
+                ✕
+              </button>
+            </div>
+
+            <nav className="sidebar-nav" aria-label="Navegación principal">
+              <span className="sidebar-group">General</span>
+              <NavLink to="/cursos" className={sidebarLinkClass}>Explorar cursos</NavLink>
+              <NavLink to="/mis-inscripciones" className={sidebarLinkClass}>Mis inscripciones</NavLink>
+              {user.rol === 'docente' && (
+                <NavLink to="/admin/cursos" className={sidebarLinkClass}>Mis cursos</NavLink>
+              )}
+              {user.rol === 'admin' && (
+                <>
+                  <span className="sidebar-group">Administración</span>
+                  <NavLink to="/admin" end className={sidebarLinkClass}>Panel</NavLink>
+                  <NavLink to="/admin/cursos" className={sidebarLinkClass}>Cursos</NavLink>
+                  <NavLink to="/admin/inscripciones" className={sidebarLinkClass}>Inscripciones</NavLink>
+                  <NavLink to="/admin/pagos" className={sidebarLinkClass}>Pagos</NavLink>
+                  <NavLink to="/admin/certificados" className={sidebarLinkClass}>Certificados</NavLink>
+                  <NavLink to="/admin/plantillas" className={sidebarLinkClass}>Plantillas</NavLink>
+                  <NavLink to="/admin/usuarios" className={sidebarLinkClass}>Usuarios</NavLink>
+                </>
+              )}
+            </nav>
+
+            <div className="sidebar-footer">
+              <button onClick={toggleTheme} className="theme-toggle" aria-label="Cambiar tema">
+                {theme === 'dark' ? '\u2600\uFE0F' : '\uD83C\uDF19'}
+              </button>
+              <span className="nav-user">{user.nombre}</span>
+              <button onClick={handleLogout} className="btn-logout">Salir</button>
+            </div>
+          </aside>
+
+          {menuOpen && <div className="sidebar-overlay" onClick={() => setMenuOpen(false)} />}
+
+          <div className="sidebar-main">
+            <header className="app-header app-header-mobile">
+              <button
+                className="menu-toggle"
+                onClick={() => setMenuOpen(true)}
+                aria-label="Abrir menú"
+                aria-expanded={menuOpen}
+                aria-controls="mobile-menu"
+              >
+                ☰
+              </button>
+              <Link to="/" className="app-logo">Nexus<span> Summit</span></Link>
+              <button onClick={toggleTheme} className="theme-toggle" aria-label="Cambiar tema">
+                {theme === 'dark' ? '\u2600\uFE0F' : '\uD83C\uDF19'}
+              </button>
+            </header>
+            <main id="main-content" className="app-main" tabIndex={-1}>
+              <Outlet />
+            </main>
+          </div>
+        </div>
+      ) : (
+        <>
+          <header className="app-header">
+            <div className="app-header-inner">
+              <Link to="/" className="app-logo">Nexus<span> Summit</span></Link>
+              <nav className="app-nav" aria-label="Navegación principal">
+                <button onClick={toggleTheme} className="theme-toggle" aria-label="Cambiar tema">
+                  {theme === 'dark' ? '\u2600\uFE0F' : '\uD83C\uDF19'}
+                </button>
                 <Link to="/login" className="app-nav-link">Ingresar</Link>
                 <Link to="/register" className="btn-register">Registrarse</Link>
-              </>
-            )}
-          </nav>
-
-          <button
-            className="menu-toggle"
-            onClick={() => setMenuOpen(prev => !prev)}
-            aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
-            aria-expanded={menuOpen}
-            aria-controls="mobile-menu"
-          >
-            {menuOpen ? '✕' : '☰'}
-          </button>
-        </div>
-      </header>
-
-      {menuOpen && (
-        <nav id="mobile-menu" className="mobile-menu" aria-label="Navegación móvil">
-          {navItems.map(item => (
-            <NavLink key={item.to} to={item.to} className={navLinkClass} onClick={() => setMenuOpen(false)}>
-              {item.label}
-            </NavLink>
-          ))}
-          <div className="mobile-menu-actions">
-            {user ? (
-              <>
-                <span className="nav-user">{user.nombre}</span>
-                <button
-                  onClick={handleLogout}
-                  className="btn-logout"
-                >
-                  Salir
-                </button>
-              </>
-            ) : (
-              <>
-                <Link to="/login" className="btn-outline">Ingresar</Link>
-                <Link to="/register" className="btn-primary">Registrarse</Link>
-              </>
-            )}
-          </div>
-        </nav>
+              </nav>
+            </div>
+          </header>
+          <main id="main-content" className="app-main" tabIndex={-1}>
+            <Outlet />
+          </main>
+        </>
       )}
-
-      <main id="main-content" className="app-main" tabIndex={-1}>
-        <Outlet />
-      </main>
     </div>
   )
 }

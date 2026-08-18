@@ -57,6 +57,9 @@ export default function CursoDetail() {
             <div className="curso-meta-item"><strong>Duración:</strong> {curso.duracion_horas} horas</div>
             <div className="curso-meta-item"><strong>Cupos:</strong> {curso.cupos}</div>
             <div className="curso-meta-item"><strong>Docente:</strong> {curso.docente?.nombre}</div>
+            {curso.plantilla?.nombre && (
+              <div className="curso-meta-item"><strong>Certificado:</strong> {curso.plantilla.nombre}</div>
+            )}
           </div>
           <div className="curso-section">
             <h3>Descripción</h3>

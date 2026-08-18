@@ -1,17 +1,21 @@
 import { useState, useEffect } from 'react'
 import { api } from '../services/api'
 import { useNotify } from '../context/NotificationContext'
+import { useAuth } from '../context/AuthContext'
 import RichTextEditor from '../components/RichTextEditor'
 import AdminNav from '../components/AdminNav'
 
 export default function AdminCursos() {
+  const { user } = useAuth()
   const [cursos, setCursos] = useState([])
+  const [docentes, setDocentes] = useState([])
+  const [plantillas, setPlantillas] = useState([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({
     nombre: '', descripcion: '', categoria: '', fecha_inicio: '', fecha_fin: '',
     duracion_horas: '', modalidad: 'virtual', cupos: '', precio: '', requisitos: '',
-    aceptacion_auto: false, estado: 'borrador',
+    aceptacion_auto: false, estado: 'borrador', docente_id: '', plantilla_id: '',
   })
   const [imagen, setImagen] = useState(null)
   const [imagenPreview, setImagenPreview] = useState('')
@@ -19,7 +23,17 @@ export default function AdminCursos() {
   const [submitting, setSubmitting] = useState(false)
   const { success, error } = useNotify()
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+    if (user?.rol === 'admin') {
+      api.usuarios.listar('?rol=docente')
+        .then(setDocentes)
+        .catch(() => {})
+    }
+    api.plantillas.listar()
+      .then(setPlantillas)
+      .catch(() => {})
+  }, [user?.rol])
 
   async function load() {
     try {
@@ -33,7 +47,7 @@ export default function AdminCursos() {
     setForm({
       nombre: '', descripcion: '', categoria: '', fecha_inicio: '', fecha_fin: '',
       duracion_horas: '', modalidad: 'virtual', cupos: '', precio: '', requisitos: '',
-      aceptacion_auto: false, estado: 'borrador',
+      aceptacion_auto: false, estado: 'borrador', docente_id: '', plantilla_id: '',
     })
     setImagen(null)
     setImagenPreview('')
@@ -80,6 +94,7 @@ export default function AdminCursos() {
       duracion_horas: curso.duracion_horas, modalidad: curso.modalidad,
       cupos: curso.cupos, precio: curso.precio, requisitos: curso.requisitos || '',
       aceptacion_auto: curso.aceptacion_auto, estado: curso.estado,
+      docente_id: curso.docente_id || '', plantilla_id: curso.plantilla_id || '',
     })
     setImagenPreview(curso.imagen ? `/uploads/cursos/${curso.imagen}` : '')
     setImagen(null)
@@ -186,6 +201,28 @@ export default function AdminCursos() {
               <input type="number" value={form.precio} onChange={e => setForm({ ...form, precio: e.target.value })} />
             </div>
           </div>
+          <div className="form-row">
+            {user?.rol === 'admin' && (
+              <div className="form-group">
+                <label>Docente asignado</label>
+                <select value={form.docente_id} onChange={e => setForm({ ...form, docente_id: e.target.value })} required>
+                  <option value="">Seleccionar docente...</option>
+                  {docentes.map(d => (
+                    <option key={d.id} value={d.id}>{d.nombre}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div className="form-group">
+              <label>Certificado (plantilla)</label>
+              <select value={form.plantilla_id} onChange={e => setForm({ ...form, plantilla_id: e.target.value })}>
+                <option value="">Predeterminada</option>
+                {plantillas.map(p => (
+                  <option key={p.id} value={p.id}>{p.nombre}</option>
+                ))}
+              </select>
+            </div>
+          </div>
           <div className="form-group">
             <label>Requisitos</label>
             <RichTextEditor
@@ -222,6 +259,7 @@ export default function AdminCursos() {
             <tr>
               <th>Nombre</th>
               <th>Modalidad</th>
+              <th>Docente</th>
               <th>Inicio</th>
               <th>Precio</th>
               <th>Cupos</th>
@@ -234,6 +272,7 @@ export default function AdminCursos() {
               <tr key={curso.id}>
                 <td><strong>{curso.nombre}</strong></td>
                 <td><span className="tag">{curso.modalidad}</span></td>
+                <td>{curso.docente?.nombre || '—'}</td>
                 <td>{curso.fecha_inicio}</td>
                 <td>${Number(curso.precio).toLocaleString()}</td>
                 <td>{curso.cupos}</td>

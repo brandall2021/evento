@@ -62,9 +62,15 @@ export async function descargar(req, res) {
     })
     if (!cert) return res.status(404).json({ error: 'Certificado no encontrado' })
 
-    let plantilla = await PlantillaCertificado.findOne({
-      where: { is_default: true },
-    })
+    let plantilla = null
+    if (cert.inscripcion?.curso?.plantilla_id) {
+      plantilla = await PlantillaCertificado.findByPk(cert.inscripcion.curso.plantilla_id)
+    }
+    if (!plantilla) {
+      plantilla = await PlantillaCertificado.findOne({
+        where: { is_default: true },
+      })
+    }
 
     const config = plantilla?.config || {}
     const bgColor = config.bgColor || '#faf8f5'

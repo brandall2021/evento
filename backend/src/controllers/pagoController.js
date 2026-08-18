@@ -61,7 +61,7 @@ export async function listar(req, res) {
       const offset = (page - 1) * pageSize
       const { count, rows } = await Pago.findAndCountAll({
         where,
-        include: [{ model: Inscripcion, as: 'inscripcion', include: ['curso'] }],
+        include: [{ model: Inscripcion, as: 'inscripcion', include: ['curso', 'estudiante'] }],
         order: [['createdAt', 'DESC']],
         limit: pageSize,
         offset,
@@ -71,7 +71,7 @@ export async function listar(req, res) {
 
     const pagos = await Pago.findAll({
       where,
-      include: [{ model: Inscripcion, as: 'inscripcion', include: ['curso'] }],
+      include: [{ model: Inscripcion, as: 'inscripcion', include: ['curso', 'estudiante'] }],
       order: [['createdAt', 'DESC']],
     })
     res.json(pagos)

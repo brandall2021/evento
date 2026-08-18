@@ -1,4 +1,4 @@
-import { Curso, User } from '../models/index.js'
+import { Curso, User, PlantillaCertificado } from '../models/index.js'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -20,7 +20,10 @@ export async function listar(req, res) {
       const offset = (page - 1) * pageSize
       const { count, rows } = await Curso.findAndCountAll({
         where,
-        include: [{ model: User, as: 'docente', attributes: ['id', 'nombre', 'email'] }],
+        include: [
+          { model: User, as: 'docente', attributes: ['id', 'nombre', 'email'] },
+          { model: PlantillaCertificado, as: 'plantilla', attributes: ['id', 'nombre'] },
+        ],
         order: [['createdAt', 'DESC']],
         limit: pageSize,
         offset,
@@ -30,7 +33,10 @@ export async function listar(req, res) {
 
     const cursos = await Curso.findAll({
       where,
-      include: [{ model: User, as: 'docente', attributes: ['id', 'nombre', 'email'] }],
+      include: [
+        { model: User, as: 'docente', attributes: ['id', 'nombre', 'email'] },
+        { model: PlantillaCertificado, as: 'plantilla', attributes: ['id', 'nombre'] },
+      ],
       order: [['createdAt', 'DESC']],
     })
     res.json(cursos)
@@ -42,7 +48,10 @@ export async function listar(req, res) {
 export async function obtener(req, res) {
   try {
     const curso = await Curso.findByPk(req.params.id, {
-      include: [{ model: User, as: 'docente', attributes: ['id', 'nombre', 'email'] }],
+      include: [
+        { model: User, as: 'docente', attributes: ['id', 'nombre', 'email'] },
+        { model: PlantillaCertificado, as: 'plantilla', attributes: ['id', 'nombre'] },
+      ],
     })
     if (!curso) return res.status(404).json({ error: 'Curso no encontrado' })
     res.json(curso)
@@ -53,7 +62,11 @@ export async function obtener(req, res) {
 
 export async function crear(req, res) {
   try {
-    const data = { ...req.body, docente_id: req.user.id }
+    const data = { ...req.body }
+    data.docente_id =
+      req.user.rol === 'admin' && req.body.docente_id
+        ? req.body.docente_id
+        : req.user.id
     if (req.file) data.imagen = req.file.filename
     const curso = await Curso.create(data)
     res.status(201).json(curso)

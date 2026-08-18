@@ -7,6 +7,7 @@ const Curso = sequelize.define('Curso', {
   imagen: DataTypes.STRING,
   categoria: DataTypes.STRING,
   docente_id: { type: DataTypes.INTEGER, allowNull: false },
+  plantilla_id: { type: DataTypes.INTEGER, allowNull: true },
   fecha_inicio: { type: DataTypes.DATEONLY, allowNull: false },
   fecha_fin: { type: DataTypes.DATEONLY, allowNull: false },
   duracion_horas: { type: DataTypes.INTEGER, allowNull: false },

@@ -245,7 +245,8 @@ button:disabled {
   --shadow-glow: 0 0 60px rgba(184, 148, 46, 0.1);
 }
 
-[data-theme="light"] .app-header {
+[data-theme="light"] .app-header,
+[data-theme="light"] .app-header-mobile {
   background: rgba(255, 255, 255, 0.9);
 }
 

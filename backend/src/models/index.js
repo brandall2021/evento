@@ -28,4 +28,7 @@ Certificado.belongsTo(Inscripcion, { foreignKey: 'inscripcion_id', as: 'inscripc
 User.hasMany(PlantillaCertificado, { foreignKey: 'user_id', as: 'plantillas' })
 PlantillaCertificado.belongsTo(User, { foreignKey: 'user_id', as: 'usuario' })
 
+Curso.belongsTo(PlantillaCertificado, { foreignKey: 'plantilla_id', as: 'plantilla' })
+PlantillaCertificado.hasMany(Curso, { foreignKey: 'plantilla_id', as: 'cursos' })
+
 export { sequelize, User, Curso, Inscripcion, Pago, Asistencia, Certificado, PlantillaCertificado }

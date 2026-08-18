@@ -10,8 +10,10 @@ export default function AdminNav() {
     { to: '/admin', label: 'Panel', end: true },
     { to: '/admin/cursos', label: 'Cursos' },
     { to: '/admin/inscripciones', label: 'Inscripciones' },
+    { to: '/admin/pagos', label: 'Pagos' },
     { to: '/admin/certificados', label: 'Certificados' },
     { to: '/admin/plantillas', label: 'Plantillas' },
+    { to: '/admin/usuarios', label: 'Usuarios' },
   ]
 
   return (
