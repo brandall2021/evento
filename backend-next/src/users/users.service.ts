@@ -168,15 +168,19 @@ export class UsersService {
     return this.userRoleRepo.save(userRole)
   }
 
-  async removeRole(userId: string, roleId: string): Promise<{ message: string }> {
+  async removeRole(userId: string, roleId: string, tenantId: string): Promise<{ message: string }> {
     const user = await this.userRepo.findOne({ where: { id: userId } })
     if (!user) {
       throw new NotFoundException('Usuario no encontrado')
     }
 
-    const result = await this.userRoleRepo.delete({ user_id: userId, role_id: roleId })
+    const result = await this.userRoleRepo.delete({
+      user_id: userId,
+      role_id: roleId,
+      tenant_id: tenantId,
+    })
     if (result.affected === 0) {
-      throw new NotFoundException('Rol no encontrado para este usuario')
+      throw new NotFoundException('Rol no encontrado para este usuario en el tenant')
     }
 
     return { message: 'Rol revocado' }

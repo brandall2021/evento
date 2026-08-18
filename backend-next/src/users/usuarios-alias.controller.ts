@@ -22,17 +22,17 @@ import { PermissionsGuard } from '../common/guards/permissions.guard.js'
 import { Roles } from '../common/decorators/roles.decorator.js'
 import { Permissions } from '../common/decorators/permissions.decorator.js'
 
-@ApiTags('Users')
+@ApiTags('Usuarios (alias)')
 @ApiBearerAuth()
-@Controller('users')
+@Controller('usuarios')
 @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
-export class UsersController {
+export class UsuariosAliasController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
   @Roles('super_admin', 'admin')
   @Permissions('users.list')
-  @ApiOperation({ summary: 'Listar usuarios (paginado)' })
+  @ApiOperation({ summary: 'Listar usuarios (paginado) — alias de /users' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'tenantId', required: false, type: String })
@@ -48,7 +48,7 @@ export class UsersController {
   @Get(':id')
   @Roles('super_admin', 'admin')
   @Permissions('users.read')
-  @ApiOperation({ summary: 'Obtener usuario por ID' })
+  @ApiOperation({ summary: 'Obtener usuario por ID — alias de /users' })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.usersService.findOne(id)
   }
@@ -56,7 +56,7 @@ export class UsersController {
   @Post()
   @Roles('super_admin', 'admin')
   @Permissions('users.create')
-  @ApiOperation({ summary: 'Crear usuario' })
+  @ApiOperation({ summary: 'Crear usuario — alias de /users' })
   create(@Body() dto: CreateUserDto) {
     return this.usersService.create(dto)
   }
@@ -64,7 +64,7 @@ export class UsersController {
   @Patch(':id')
   @Roles('super_admin', 'admin')
   @Permissions('users.update')
-  @ApiOperation({ summary: 'Actualizar usuario' })
+  @ApiOperation({ summary: 'Actualizar usuario — alias de /users' })
   update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateUserDto) {
     return this.usersService.update(id, dto)
   }
@@ -72,7 +72,7 @@ export class UsersController {
   @Delete(':id')
   @Roles('super_admin')
   @Permissions('users.delete')
-  @ApiOperation({ summary: 'Eliminar usuario (soft delete)' })
+  @ApiOperation({ summary: 'Eliminar usuario — alias de /users' })
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.usersService.remove(id)
   }
@@ -80,7 +80,7 @@ export class UsersController {
   @Post(':id/roles')
   @Roles('super_admin', 'admin')
   @Permissions('users.assign_role')
-  @ApiOperation({ summary: 'Asignar rol a usuario' })
+  @ApiOperation({ summary: 'Asignar rol — alias de /users' })
   assignRole(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AssignRoleDto,
@@ -91,7 +91,7 @@ export class UsersController {
   @Delete(':id/roles/:roleId')
   @Roles('super_admin', 'admin')
   @Permissions('users.remove_role')
-  @ApiOperation({ summary: 'Revocar rol de usuario' })
+  @ApiOperation({ summary: 'Revocar rol — alias de /users' })
   removeRole(
     @Param('id', ParseUUIDPipe) id: string,
     @Param('roleId', ParseUUIDPipe) roleId: string,

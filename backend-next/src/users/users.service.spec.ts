@@ -200,27 +200,32 @@ describe('UsersService', () => {
   })
 
   describe('removeRole', () => {
-    it('should remove role assignment', async () => {
+    it('should remove role assignment for a specific tenant', async () => {
       const userRepo = service['userRepo'] as any
       const userRoleRepo = service['userRoleRepo'] as any
 
       userRepo.findOne.mockResolvedValue({ id: 'uuid-1' })
       userRoleRepo.delete.mockResolvedValue({ affected: 1 })
 
-      const result = await service.removeRole('uuid-1', 'role-1')
+      const result = await service.removeRole('uuid-1', 'role-1', 'tenant-1')
       expect(result).toEqual({ message: 'Rol revocado' })
+      expect(userRoleRepo.delete).toHaveBeenCalledWith({
+        user_id: 'uuid-1',
+        role_id: 'role-1',
+        tenant_id: 'tenant-1',
+      })
     })
 
-    it('should throw NotFoundException when role not found', async () => {
+    it('should throw NotFoundException when role not found for tenant', async () => {
       const userRepo = service['userRepo'] as any
       const userRoleRepo = service['userRoleRepo'] as any
 
       userRepo.findOne.mockResolvedValue({ id: 'uuid-1' })
       userRoleRepo.delete.mockResolvedValue({ affected: 0 })
 
-      await expect(service.removeRole('uuid-1', 'nonexistent-role')).rejects.toThrow(
-        NotFoundException,
-      )
+      await expect(
+        service.removeRole('uuid-1', 'nonexistent-role', 'tenant-1'),
+      ).rejects.toThrow(NotFoundException)
     })
   })
 })

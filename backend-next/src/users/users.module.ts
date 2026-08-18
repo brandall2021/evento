@@ -6,10 +6,11 @@ import { UserRole } from './entities/user-role.entity.js'
 import { RefreshToken } from './entities/refresh-token.entity.js'
 import { UsersService } from './users.service.js'
 import { UsersController } from './users.controller.js'
+import { UsuariosAliasController } from './usuarios-alias.controller.js'
 
 @Module({
   imports: [TypeOrmModule.forFeature([User, UserTenant, UserRole, RefreshToken])],
-  controllers: [UsersController],
+  controllers: [UsersController, UsuariosAliasController],
   providers: [UsersService],
   exports: [UsersService, TypeOrmModule],
 })
