@@ -10,10 +10,10 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import * as bcrypt from 'bcryptjs'
 import { createHash, randomBytes } from 'node:crypto'
-import { User } from '../users/user.entity.js'
-import { RefreshToken } from './entities/refresh-token.entity.js'
-import { UserTenant } from './entities/user-tenant.entity.js'
-import { UserRoleAssignment } from './entities/user-role-assignment.entity.js'
+import { User } from '../users/entities/user.entity.js'
+import { RefreshToken } from '../users/entities/refresh-token.entity.js'
+import { UserTenant } from '../users/entities/user-tenant.entity.js'
+import { UserRole } from '../users/entities/user-role.entity.js'
 import { Role } from '../roles/entities/role.entity.js'
 import { AuthResponseDto } from './dto/auth-response.dto.js'
 import { JwtPayload } from './jwt.strategy.js'
@@ -27,8 +27,8 @@ export class AuthService {
     private readonly refreshTokenRepo: Repository<RefreshToken>,
     @InjectRepository(UserTenant)
     private readonly userTenantRepo: Repository<UserTenant>,
-    @InjectRepository(UserRoleAssignment)
-    private readonly userRoleRepo: Repository<UserRoleAssignment>,
+    @InjectRepository(UserRole)
+    private readonly userRoleRepo: Repository<UserRole>,
     @InjectRepository(Role)
     private readonly roleRepo: Repository<Role>,
     private readonly jwtService: JwtService,
@@ -48,8 +48,9 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(data.password, 10)
     const user = this.userRepo.create({
       email: data.email,
-      password: hashedPassword,
-      nombre: `${data.firstName} ${data.lastName}`,
+      password_hash: hashedPassword,
+      first_name: data.firstName,
+      last_name: data.lastName,
     })
     const saved = await this.userRepo.save(user)
 
@@ -59,18 +60,18 @@ export class AuthService {
   async login(email: string, password: string): Promise<AuthResponseDto> {
     const user = await this.userRepo.findOne({
       where: { email },
-      select: ['id', 'email', 'password', 'nombre', 'activo'],
+      select: ['id', 'email', 'password_hash', 'first_name', 'last_name', 'is_active'],
     })
 
     if (!user) {
       throw new UnauthorizedException('Credenciales inválidas')
     }
 
-    if (!user.activo) {
+    if (!user.is_active) {
       throw new UnauthorizedException('Usuario inactivo')
     }
 
-    const match = await bcrypt.compare(password, user.password)
+    const match = await bcrypt.compare(password, user.password_hash)
     if (!match) {
       throw new UnauthorizedException('Credenciales inválidas')
     }
@@ -94,7 +95,7 @@ export class AuthService {
       throw new GoneException('Refresh token expirado')
     }
 
-    if (!stored.user.activo) {
+    if (!stored.user.is_active) {
       throw new ForbiddenException('Usuario inactivo')
     }
 
@@ -144,8 +145,9 @@ export class AuthService {
     return {
       id: user.id,
       email: user.email,
-      firstName: user.nombre,
-      avatarUrl: user.avatar,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      avatarUrl: user.avatar_url,
       tenants: tenantsWithRoles,
     }
   }
@@ -190,19 +192,15 @@ export class AuthService {
     const accessToken = this.jwtService.sign(payload)
     const refreshToken = await this.createRefreshToken(user)
 
-    const names = (user.nombre ?? '').split(' ')
-    const firstName = names[0] ?? ''
-    const lastName = names.slice(1).join(' ')
-
     return {
       access_token: accessToken,
       refresh_token: refreshToken,
       user: {
         id: user.id,
         email: user.email,
-        firstName,
-        lastName,
-        avatarUrl: user.avatar ?? null,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        avatarUrl: user.avatar_url ?? null,
       },
     }
   }

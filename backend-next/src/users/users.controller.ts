@@ -1,64 +1,101 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, ParseIntPipe, UseGuards } from '@nestjs/common'
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  ParseUUIDPipe,
+} from '@nestjs/common'
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger'
 import { UsersService } from './users.service.js'
+import { CreateUserDto } from './dto/create-user.dto.js'
+import { UpdateUserDto } from './dto/update-user.dto.js'
+import { AssignRoleDto } from './dto/assign-role.dto.js'
+import { PageDto } from '../common/dto/pagination.dto.js'
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js'
 import { RolesGuard } from '../common/guards/roles.guard.js'
+import { PermissionsGuard } from '../common/guards/permissions.guard.js'
 import { Roles } from '../common/decorators/roles.decorator.js'
-import { UserRole } from './user.entity.js'
+import { Permissions } from '../common/decorators/permissions.decorator.js'
 
-@Controller('usuarios')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@ApiTags('Users')
+@ApiBearerAuth()
+@Controller('users')
+@UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  @Roles(UserRole.ADMIN)
+  @Roles('super_admin', 'admin')
+  @Permissions('users.list')
+  @ApiOperation({ summary: 'Listar usuarios (paginado)' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'tenantId', required: false, type: String })
+  @ApiQuery({ name: 'isActive', required: false, type: String })
   findAll(
-    @Query('rol') rol?: string,
-    @Query('activo') activo?: string,
-    @Query('page') page?: string,
-    @Query('pageSize') pageSize?: string,
+    @Query() pageDto: PageDto,
+    @Query('tenantId') tenantId?: string,
+    @Query('isActive') isActive?: string,
   ) {
-    return this.usersService.findAll({
-      rol,
-      activo,
-      page: page ? parseInt(page) : undefined,
-      pageSize: pageSize ? parseInt(pageSize) : undefined,
-    })
-  }
-
-  @Get('estadisticas')
-  @Roles(UserRole.ADMIN)
-  estadisticas() {
-    return this.usersService.estadisticas()
+    return this.usersService.findAll(pageDto, { tenantId, isActive })
   }
 
   @Get(':id')
-  @Roles(UserRole.ADMIN)
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.usersService.findById(id)
+  @Roles('super_admin', 'admin')
+  @Permissions('users.read')
+  @ApiOperation({ summary: 'Obtener usuario por ID' })
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.usersService.findOne(id)
   }
 
   @Post()
-  @Roles(UserRole.ADMIN)
-  create(@Body() body: { nombre: string; email: string; password: string; rol?: UserRole; telefono?: string }) {
-    return this.usersService.create(body)
+  @Roles('super_admin', 'admin')
+  @Permissions('users.create')
+  @ApiOperation({ summary: 'Crear usuario' })
+  create(@Body() dto: CreateUserDto) {
+    return this.usersService.create(dto)
   }
 
-  @Put(':id')
-  @Roles(UserRole.ADMIN)
-  update(@Param('id', ParseIntPipe) id: number, @Body() body: any) {
-    return this.usersService.update(id, body)
+  @Patch(':id')
+  @Roles('super_admin', 'admin')
+  @Permissions('users.update')
+  @ApiOperation({ summary: 'Actualizar usuario' })
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateUserDto) {
+    return this.usersService.update(id, dto)
   }
 
   @Delete(':id')
-  @Roles(UserRole.ADMIN)
-  remove(@Param('id', ParseIntPipe) id: number) {
+  @Roles('super_admin')
+  @Permissions('users.delete')
+  @ApiOperation({ summary: 'Eliminar usuario (soft delete)' })
+  remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.usersService.remove(id)
   }
 
-  @Put(':id/toggle')
-  @Roles(UserRole.ADMIN)
-  toggleActivo(@Param('id', ParseIntPipe) id: number) {
-    return this.usersService.toggleActivo(id)
+  @Post(':id/roles')
+  @Roles('super_admin', 'admin')
+  @Permissions('users.assign_role')
+  @ApiOperation({ summary: 'Asignar rol a usuario' })
+  assignRole(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AssignRoleDto,
+  ) {
+    return this.usersService.assignRole(id, dto)
+  }
+
+  @Delete(':id/roles/:roleId')
+  @Roles('super_admin', 'admin')
+  @Permissions('users.remove_role')
+  @ApiOperation({ summary: 'Revocar rol de usuario' })
+  removeRole(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('roleId', ParseUUIDPipe) roleId: string,
+  ) {
+    return this.usersService.removeRole(id, roleId)
   }
 }

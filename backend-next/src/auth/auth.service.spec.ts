@@ -3,10 +3,10 @@ import { getRepositoryToken } from '@nestjs/typeorm'
 import { JwtService } from '@nestjs/jwt'
 import { Repository } from 'typeorm'
 import { AuthService } from './auth.service.js'
-import { User } from '../users/user.entity.js'
-import { RefreshToken } from './entities/refresh-token.entity.js'
-import { UserTenant } from './entities/user-tenant.entity.js'
-import { UserRoleAssignment } from './entities/user-role-assignment.entity.js'
+import { User } from '../users/entities/user.entity.js'
+import { RefreshToken } from '../users/entities/refresh-token.entity.js'
+import { UserTenant } from '../users/entities/user-tenant.entity.js'
+import { UserRole } from '../users/entities/user-role.entity.js'
 import { Role } from '../roles/entities/role.entity.js'
 import { UnauthorizedException, ConflictException, GoneException, ForbiddenException } from '@nestjs/common'
 
@@ -47,7 +47,7 @@ describe('AuthService', () => {
         { provide: getRepositoryToken(User), useFactory: mockUserRepo },
         { provide: getRepositoryToken(RefreshToken), useFactory: mockRefreshTokenRepo },
         { provide: getRepositoryToken(UserTenant), useFactory: mockUserTenantRepo },
-        { provide: getRepositoryToken(UserRoleAssignment), useFactory: mockUserRoleRepo },
+        { provide: getRepositoryToken(UserRole), useFactory: mockUserRoleRepo },
         { provide: getRepositoryToken(Role), useFactory: mockRoleRepo },
         { provide: JwtService, useFactory: mockJwtService },
       ],
@@ -114,16 +114,16 @@ describe('AuthService', () => {
       userRepo.findOne.mockResolvedValue({
         id: 'uuid-1',
         email: 'test@example.com',
-        password: '$2a$10$abcdefghijklmnopqrstuuFGHIJKLMNOPQRSTUVWXYZ01234',
-        nombre: 'John Doe',
-        activo: true,
+        password_hash: '$2a$10$abcdefghijklmnopqrstuuFGHIJKLMNOPQRSTUVWXYZ01234',
+        first_name: 'John',
+        last_name: 'Doe',
+        is_active: true,
       })
 
       userTenantRepo.findOne.mockResolvedValue(null)
       userTenantRepo.find.mockResolvedValue([])
       userRoleRepo.find.mockResolvedValue([])
 
-      // Override bcrypt.compare for this test
       jest.spyOn(require('bcryptjs'), 'compare').mockResolvedValue(true as never)
 
       const result = await service.login('test@example.com', 'SecurePass1!')
@@ -142,8 +142,8 @@ describe('AuthService', () => {
       userRepo.findOne.mockResolvedValue({
         id: 'uuid-1',
         email: 'test@example.com',
-        password: '$2a$10$hashedpassword',
-        activo: true,
+        password_hash: '$2a$10$hashedpassword',
+        is_active: true,
       })
 
       jest.spyOn(require('bcryptjs'), 'compare').mockResolvedValue(false as never)
@@ -171,8 +171,8 @@ describe('AuthService', () => {
       userRepo.findOne.mockResolvedValue({
         id: 'uuid-1',
         email: 'inactive@example.com',
-        password: '$2a$10$hashed',
-        activo: false,
+        password_hash: '$2a$10$hashed',
+        is_active: false,
       })
 
       await expect(service.login('inactive@example.com', 'pass')).rejects.toThrow(
@@ -193,7 +193,7 @@ describe('AuthService', () => {
         token_hash: 'hash',
         expires_at: new Date(Date.now() + 86400000),
         revoked_at: null,
-        user: { id: 'uuid-1', email: 'test@example.com', nombre: 'John', activo: true },
+        user: { id: 'uuid-1', email: 'test@example.com', first_name: 'John', last_name: 'Doe', is_active: true },
       })
       refreshTokenRepo.save.mockResolvedValue(true)
 
@@ -237,7 +237,7 @@ describe('AuthService', () => {
         id: 'rt-1',
         expires_at: new Date(Date.now() + 86400000),
         revoked_at: null,
-        user: { id: 'uuid-1', email: 'inactive@example.com', activo: false },
+        user: { id: 'uuid-1', email: 'inactive@example.com', is_active: false },
       })
 
       await expect(service.refresh('token-for-inactive')).rejects.toThrow(ForbiddenException)

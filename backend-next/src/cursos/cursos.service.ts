@@ -28,7 +28,8 @@ export class CursosService {
       .select([
         'curso',
         'docente.id',
-        'docente.nombre',
+        'docente.first_name',
+        'docente.last_name',
         'docente.email',
       ])
       .orderBy('curso.createdAt', 'DESC')
@@ -72,7 +73,7 @@ export class CursosService {
   }
 
   async create(data: Partial<Curso>, userId: number, imagenFilename?: string) {
-    const docente = await this.userRepo.findOneBy({ id: userId })
+    const docente = await this.userRepo.findOneBy({ id: userId as any })
     if (!docente) throw new BadRequestException('Usuario no válido')
 
     const curso = this.cursoRepo.create({

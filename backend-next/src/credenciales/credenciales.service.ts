@@ -92,7 +92,7 @@ export class CredencialesService {
     doc.fontSize(11).fillColor('#666').font('Helvetica')
       .text('Asistente:', 40, 120)
     doc.fontSize(18).fillColor('#1a1a1a').font('Helvetica-Bold')
-      .text(cred.user.nombre, 40, 136, { width: pageW - 80 })
+      .text(`${cred.user.first_name} ${cred.user.last_name}`, 40, 136, { width: pageW - 80 })
 
     doc.fontSize(11).fillColor('#666').font('Helvetica')
       .text('Código:', 40, 170)
@@ -130,7 +130,7 @@ export class CredencialesService {
     return {
       valido: true,
       codigo: cred.codigo,
-      asistente: cred.user.nombre,
+      asistente: `${cred.user.first_name} ${cred.user.last_name}`,
       curso: cred.curso.nombre,
       fecha_emision: cred.fecha_emision,
     }

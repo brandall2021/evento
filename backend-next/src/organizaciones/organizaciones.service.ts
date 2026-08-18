@@ -23,7 +23,8 @@ export class OrganizacionesService {
   }
 
   async actualizar(id: number, data: Partial<Organizacion>) {
-    await this.orgRepo.update(id, data)
+    const { miembros, ...rest } = data as any
+    await this.orgRepo.update(id, rest)
     return this.orgRepo.findOne({ where: { id } })
   }
 

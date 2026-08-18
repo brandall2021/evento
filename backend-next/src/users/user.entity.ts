@@ -1,12 +1,4 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-  DeleteDateColumn,
-} from 'typeorm'
-import * as bcrypt from 'bcryptjs'
+export { User } from './entities/user.entity.js'
 
 export enum UserRole {
   SUPER_ADMIN = 'super_admin',
@@ -22,44 +14,4 @@ export enum UserRole {
   MODERATOR = 'moderador',
   DOCENTE = 'docente',
   ESTUDIANTE = 'estudiante',
-}
-
-@Entity('users', { schema: 'evento' })
-export class User {
-  @PrimaryGeneratedColumn('uuid')
-  id: string
-
-  @Column()
-  nombre: string
-
-  @Column({ unique: true })
-  email: string
-
-  @Column({ select: false })
-  password: string
-
-  @Column({ type: 'enum', enum: UserRole, default: UserRole.ATTENDEE })
-  rol: UserRole
-
-  @Column({ nullable: true })
-  telefono: string
-
-  @Column({ nullable: true })
-  avatar: string
-
-  @Column({ default: true })
-  activo: boolean
-
-  @CreateDateColumn()
-  createdAt: Date
-
-  @UpdateDateColumn()
-  updatedAt: Date
-
-  @DeleteDateColumn()
-  deletedAt: Date
-
-  async comparePassword(password: string): Promise<boolean> {
-    return bcrypt.compare(password, this.password)
-  }
 }

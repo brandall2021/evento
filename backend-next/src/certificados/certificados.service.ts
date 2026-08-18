@@ -133,7 +133,7 @@ export class CertificadosService {
       .text('Se certifica que', 60, certifyTextY, { align: 'center' })
 
     doc.fontSize(32).fillColor(nameColor).font(nameFont)
-      .text(cert.inscripcion.estudiante.nombre, 60, nameY, { align: 'center' })
+      .text(`${cert.inscripcion.estudiante.first_name} ${cert.inscripcion.estudiante.last_name}`, 60, nameY, { align: 'center' })
 
     doc.fontSize(14).fillColor(textColor).font(titleFont)
       .text('ha completado el curso', 60, courseTextY, { align: 'center' })
@@ -191,7 +191,7 @@ export class CertificadosService {
     return {
       valido: true,
       codigo: cert.codigo,
-      estudiante: cert.inscripcion.estudiante.nombre,
+      estudiante: `${cert.inscripcion.estudiante.first_name} ${cert.inscripcion.estudiante.last_name}`,
       curso: cert.inscripcion.curso.nombre,
       horas: cert.horas,
       fecha_emision: cert.fecha_emision,

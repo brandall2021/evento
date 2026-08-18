@@ -36,7 +36,7 @@ import { StorageModule } from './storage/storage.module.js'
 import { WebsocketModule } from './websocket/websocket.module.js'
 import { TenantsModule } from './tenants/tenants.module.js'
 import { RolesModule } from './roles/roles.module.js'
-import { User } from './users/user.entity.js'
+import { User } from './users/entities/user.entity.js'
 import { Curso } from './cursos/curso.entity.js'
 import { Inscripcion } from './inscripciones/inscripcion.entity.js'
 import { Asistencia } from './asistencias/asistencia.entity.js'
@@ -85,9 +85,9 @@ import { Permission } from './permissions/entities/permission.entity.js'
 import { Tenant } from './tenants/entities/tenant.entity.js'
 import { Role } from './roles/entities/role.entity.js'
 import { RolePermission } from './roles/entities/role-permission.entity.js'
-import { RefreshToken } from './auth/entities/refresh-token.entity.js'
-import { UserTenant } from './auth/entities/user-tenant.entity.js'
-import { UserRoleAssignment } from './auth/entities/user-role-assignment.entity.js'
+import { RefreshToken } from './users/entities/refresh-token.entity.js'
+import { UserTenant } from './users/entities/user-tenant.entity.js'
+import { UserRole } from './users/entities/user-role.entity.js'
 
 @Module({
   imports: [
@@ -121,7 +121,7 @@ import { UserRoleAssignment } from './auth/entities/user-role-assignment.entity.
           RolePermission,
           RefreshToken,
           UserTenant,
-          UserRoleAssignment,
+          UserRole,
         ],
         synchronize: true,
       }),

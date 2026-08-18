@@ -4,7 +4,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt'
 import { ConfigService } from '@nestjs/config'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { User } from '../../users/user.entity.js'
+import { User } from '../users/entities/user.entity.js'
 import { AuthService } from './auth.service.js'
 
 export interface JwtPayload {
@@ -32,7 +32,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(payload: JwtPayload) {
     const user = await this.userRepo.findOne({ where: { id: payload.sub } })
-    if (!user || !user.activo) {
+    if (!user || !user.is_active) {
       throw new UnauthorizedException('Usuario inactivo o no encontrado')
     }
 
