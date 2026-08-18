@@ -9,6 +9,7 @@ import {
 import * as bcrypt from 'bcryptjs'
 
 export enum UserRole {
+  SUPER_ADMIN = 'super_admin',
   ADMIN = 'admin',
   ORGANIZER = 'organizador',
   COORDINATOR = 'coordinador',

@@ -34,6 +34,7 @@ import { PermissionsModule } from './permissions/permissions.module.js'
 import { CacheModule } from './cache/cache.module.js'
 import { StorageModule } from './storage/storage.module.js'
 import { WebsocketModule } from './websocket/websocket.module.js'
+import { TenantsModule } from './tenants/tenants.module.js'
 import { User } from './users/user.entity.js'
 import { Curso } from './cursos/curso.entity.js'
 import { Inscripcion } from './inscripciones/inscripcion.entity.js'
@@ -80,6 +81,7 @@ import { Webhook, WebhookEvent } from './webhooks/webhook.entity.js'
 import { AuditLog } from './audit-logs/audit-log.entity.js'
 import { Organizacion, OrganizacionMiembro } from './organizaciones/organizacion.entity.js'
 import { Permission, RolePermission } from './permissions/permission.entity.js'
+import { Tenant } from './tenants/entities/tenant.entity.js'
 
 @Module({
   imports: [
@@ -108,6 +110,7 @@ import { Permission, RolePermission } from './permissions/permission.entity.js'
           AuditLog,
           Organizacion, OrganizacionMiembro,
           Permission, RolePermission,
+          Tenant,
         ],
         synchronize: true,
       }),
@@ -146,6 +149,7 @@ import { Permission, RolePermission } from './permissions/permission.entity.js'
     CacheModule,
     StorageModule,
     WebsocketModule,
+    TenantsModule,
   ],
 })
 export class AppModule {}
