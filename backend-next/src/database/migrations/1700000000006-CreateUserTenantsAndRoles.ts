@@ -37,7 +37,11 @@ export class CreateUserTenantsAndRoles1700000000006 implements MigrationInterfac
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`DROP INDEX IF EXISTS evento.idx_user_roles_tenant`)
+    await queryRunner.query(`DROP INDEX IF EXISTS evento.idx_user_roles_user`)
     await queryRunner.query(`DROP TABLE IF EXISTS evento.user_roles`)
+    await queryRunner.query(`DROP INDEX IF EXISTS evento.idx_user_tenants_tenant`)
+    await queryRunner.query(`DROP INDEX IF EXISTS evento.idx_user_tenants_user`)
     await queryRunner.query(`DROP TABLE IF EXISTS evento.user_tenants`)
   }
 }

@@ -25,6 +25,7 @@ export class CreateUsers1700000000004 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`DROP INDEX IF EXISTS evento.idx_users_email`)
     await queryRunner.query(`DROP TABLE IF EXISTS evento.users`)
   }
 }

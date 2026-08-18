@@ -20,6 +20,8 @@ export class CreateRefreshTokens1700000000007 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`DROP INDEX IF EXISTS evento.idx_refresh_tokens_hash`)
+    await queryRunner.query(`DROP INDEX IF EXISTS evento.idx_refresh_tokens_user`)
     await queryRunner.query(`DROP TABLE IF EXISTS evento.refresh_tokens`)
   }
 }

@@ -46,8 +46,11 @@ export class CreateRolesAndPermissions1700000000005 implements MigrationInterfac
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`DROP INDEX IF EXISTS evento.idx_role_permissions_role`)
     await queryRunner.query(`DROP TABLE IF EXISTS evento.role_permissions`)
+    await queryRunner.query(`DROP INDEX IF EXISTS evento.idx_roles_tenant`)
     await queryRunner.query(`DROP TABLE IF EXISTS evento.roles`)
+    await queryRunner.query(`DROP INDEX IF EXISTS evento.idx_permissions_module`)
     await queryRunner.query(`DROP TABLE IF EXISTS evento.permissions`)
   }
 }

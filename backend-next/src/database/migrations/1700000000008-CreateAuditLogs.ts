@@ -28,6 +28,10 @@ export class CreateAuditLogs1700000000008 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`DROP INDEX IF EXISTS evento.idx_audit_logs_created`)
+    await queryRunner.query(`DROP INDEX IF EXISTS evento.idx_audit_logs_entity`)
+    await queryRunner.query(`DROP INDEX IF EXISTS evento.idx_audit_logs_user`)
+    await queryRunner.query(`DROP INDEX IF EXISTS evento.idx_audit_logs_tenant`)
     await queryRunner.query(`DROP TABLE IF EXISTS evento.audit_logs`)
   }
 }

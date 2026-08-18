@@ -24,6 +24,8 @@ export class CreateTenants1700000000003 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`DROP INDEX IF EXISTS evento.idx_tenants_domain`)
+    await queryRunner.query(`DROP INDEX IF EXISTS evento.idx_tenants_slug`)
     await queryRunner.query(`DROP TABLE IF EXISTS evento.tenants`)
   }
 }
