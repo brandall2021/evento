@@ -20,6 +20,10 @@ describe('RolesService', () => {
     create: jest.Mock
     save: jest.Mock
     delete: jest.Mock
+    manager: {
+      transaction: jest.Mock
+      getRepository: jest.Mock
+    }
   }
   let permService: {
     findByIds: jest.Mock
@@ -58,6 +62,10 @@ describe('RolesService', () => {
       create: jest.fn((dto: any) => ({ id: 'rp-1', ...dto })),
       save: jest.fn((r: any) => Promise.resolve(r)),
       delete: jest.fn(),
+      manager: {
+        transaction: jest.fn(),
+        getRepository: jest.fn(),
+      },
     }
     permService = {
       findByIds: jest.fn(),
@@ -81,10 +89,10 @@ describe('RolesService', () => {
 
   describe('create', () => {
     it('should create a role', async () => {
-      roleRepo.findOne.mockResolvedValue(null) // no duplicate
+      roleRepo.findOne
+        .mockResolvedValueOnce(null) // no duplicate
+        .mockResolvedValueOnce({ ...mockRole, id: 'role-new' }) // after save
       roleRepo.save.mockResolvedValue({ ...mockRole, id: 'role-new' })
-      // After save, findOne is called to return full role
-      roleRepo.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce({ ...mockRole, id: 'role-new' })
 
       const result = await service.create(tenantId, { name: 'Editor' })
       expect(result.name).toBe('Editor')
@@ -94,6 +102,22 @@ describe('RolesService', () => {
     it('should throw ConflictException for duplicate name', async () => {
       roleRepo.findOne.mockResolvedValue(mockRole)
       await expect(service.create(tenantId, { name: 'Editor' })).rejects.toThrow(ConflictException)
+    })
+  })
+
+  describe('findAll', () => {
+    it('should load roles with permissions', async () => {
+      roleRepo.find.mockResolvedValue([
+        { ...mockRole, rolePermissions: [{ id: 'rp-1', permission: { id: 'p1' } }] },
+      ])
+      const result = await service.findAll(tenantId)
+      expect(roleRepo.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { tenant_id: tenantId },
+          relations: ['rolePermissions', 'rolePermissions.permission'],
+        }),
+      )
+      expect(result[0].rolePermissions).toHaveLength(1)
     })
   })
 
@@ -112,25 +136,63 @@ describe('RolesService', () => {
   })
 
   describe('assignPermissions', () => {
-    it('should replace all permissions for a role', async () => {
-      rpRepo.delete.mockResolvedValue(undefined)
+    it('should replace all permissions for a role atomically', async () => {
+      roleRepo.findOne.mockResolvedValue(mockRole)
       permService.findByIds.mockResolvedValue([{ id: 'p1' }, { id: 'p2' }])
-      rpRepo.save.mockResolvedValue([
-        { id: 'rp-1', role_id: 'role-1', permission_id: 'p1' },
-        { id: 'rp-2', role_id: 'role-1', permission_id: 'p2' },
-      ])
 
-      const result = await service.assignPermissions('role-1', ['p1', 'p2'])
-      expect(rpRepo.delete).toHaveBeenCalledWith({ role_id: 'role-1' })
-      expect(result).toHaveLength(2)
+      const mockRpRepo = {
+        create: jest.fn((dto: any) => ({ id: 'rp-new', ...dto })),
+        save: jest.fn((r: any) => Promise.resolve(r)),
+        delete: jest.fn(),
+      }
+      rpRepo.manager.getRepository.mockReturnValue(mockRpRepo)
+      rpRepo.manager.transaction.mockImplementation(async (fn: any) => fn(rpRepo.manager))
+
+      const result = await service.assignPermissions(tenantId, 'role-1', ['p1', 'p2'])
+      expect(rpRepo.manager.transaction).toHaveBeenCalled()
+      expect(mockRpRepo.delete).toHaveBeenCalledWith({ role_id: 'role-1' })
     })
 
     it('should throw BadRequestException for invalid permission IDs', async () => {
-      rpRepo.delete.mockResolvedValue(undefined)
-      permService.findByIds.mockResolvedValue([{ id: 'p1' }]) // only 1 of 2 valid
-      await expect(service.assignPermissions('role-1', ['p1', 'bad-id'])).rejects.toThrow(
-        BadRequestException,
-      )
+      roleRepo.findOne.mockResolvedValue(mockRole)
+      permService.findByIds.mockResolvedValue([{ id: 'p1' }])
+
+      const mockRpRepo = {
+        delete: jest.fn(),
+      }
+      rpRepo.manager.getRepository.mockReturnValue(mockRpRepo)
+      rpRepo.manager.transaction.mockImplementation(async (fn: any) => fn(rpRepo.manager))
+
+      await expect(
+        service.assignPermissions(tenantId, 'role-1', ['p1', 'bad-id']),
+      ).rejects.toThrow(BadRequestException)
+    })
+
+    it('should throw NotFoundException if role not found in tenant', async () => {
+      roleRepo.findOne.mockResolvedValue(null)
+      await expect(
+        service.assignPermissions(tenantId, 'role-999', ['p1']),
+      ).rejects.toThrow(NotFoundException)
+    })
+
+    it('should block modifying permissions of a system role', async () => {
+      roleRepo.findOne.mockResolvedValue(systemRole)
+      await expect(
+        service.assignPermissions(tenantId, 'role-sys', ['p1']),
+      ).rejects.toThrow(BadRequestException)
+    })
+
+    it('should clear all permissions when empty array passed', async () => {
+      roleRepo.findOne.mockResolvedValue(mockRole)
+
+      const mockRpRepo = {
+        delete: jest.fn(),
+      }
+      rpRepo.manager.getRepository.mockReturnValue(mockRpRepo)
+      rpRepo.manager.transaction.mockImplementation(async (fn: any) => fn(rpRepo.manager))
+
+      const result = await service.assignPermissions(tenantId, 'role-1', [])
+      expect(result).toEqual([])
     })
   })
 })

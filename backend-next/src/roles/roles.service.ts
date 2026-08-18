@@ -38,7 +38,7 @@ export class RolesService {
     const saved = await this.roleRepo.save(role)
 
     if (dto.permissionIds?.length) {
-      await this.assignPermissions(saved.id, dto.permissionIds)
+      await this.assignPermissions(tenantId, saved.id, dto.permissionIds)
     }
 
     return this.findOne(tenantId, saved.id)
@@ -47,6 +47,7 @@ export class RolesService {
   async findAll(tenantId: string): Promise<Role[]> {
     return this.roleRepo.find({
       where: { tenant_id: tenantId },
+      relations: ['rolePermissions', 'rolePermissions.permission'],
       order: { name: 'ASC' },
     })
   }
@@ -83,7 +84,7 @@ export class RolesService {
     await this.roleRepo.save(role)
 
     if (dto.permissionIds !== undefined) {
-      await this.assignPermissions(id, dto.permissionIds)
+      await this.assignPermissions(tenantId, id, dto.permissionIds)
     }
 
     return this.findOne(tenantId, id)
@@ -100,23 +101,39 @@ export class RolesService {
     return { message: 'Role deleted' }
   }
 
-  async assignPermissions(roleId: string, permissionIds: string[]): Promise<RolePermission[]> {
-    await this.rpRepo.delete({ role_id: roleId })
+  async assignPermissions(
+    tenantId: string,
+    roleId: string,
+    permissionIds: string[],
+  ): Promise<RolePermission[]> {
+    const role = await this.findOne(tenantId, roleId)
 
-    if (!permissionIds.length) return []
+    if (role.is_system) {
+      throw new BadRequestException('Cannot modify permissions of a system role')
+    }
+
+    if (!permissionIds.length) {
+      await this.rpRepo.delete({ role_id: roleId })
+      return []
+    }
 
     const validPerms = await this.permissionsService.findByIds(permissionIds)
     if (validPerms.length !== permissionIds.length) {
       throw new BadRequestException('One or more permission IDs are invalid')
     }
 
-    const entities = permissionIds.map(permission_id =>
-      this.rpRepo.create({ role_id: roleId, permission_id }),
-    )
-    return this.rpRepo.save(entities)
+    return this.rpRepo.manager.transaction(async (manager) => {
+      await manager.getRepository(RolePermission).delete({ role_id: roleId })
+
+      const entities = permissionIds.map((permission_id) =>
+        manager.getRepository(RolePermission).create({ role_id: roleId, permission_id }),
+      )
+      return manager.getRepository(RolePermission).save(entities)
+    })
   }
 
-  async getPermissionsByRoleId(roleId: string): Promise<RolePermission[]> {
+  async getPermissionsByRoleId(tenantId: string, roleId: string): Promise<RolePermission[]> {
+    await this.findOne(tenantId, roleId)
     return this.rpRepo.find({
       where: { role_id: roleId },
       relations: ['permission'],
