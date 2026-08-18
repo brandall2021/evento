@@ -16,7 +16,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     response.status(status).json({
       statusCode: status,
-      message: typeof message === 'string' ? message : (message as any).message,
+      message:
+        typeof message === 'string'
+          ? message
+          : typeof message === 'object' && message !== null && 'message' in message
+            ? (message as Record<string, unknown>).message
+            : message,
       timestamp: new Date().toISOString(),
       path: request.url,
     })
