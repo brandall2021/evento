@@ -3,6 +3,7 @@ import {
   UnauthorizedException,
   ConflictException,
   GoneException,
+  ForbiddenException,
 } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -93,6 +94,10 @@ export class AuthService {
       throw new GoneException('Refresh token expirado')
     }
 
+    if (!stored.user.activo) {
+      throw new ForbiddenException('Usuario inactivo')
+    }
+
     stored.revoked_at = new Date()
     await this.refreshTokenRepo.save(stored)
 
@@ -128,30 +133,13 @@ export class AuthService {
       relations: ['tenant'],
     })
 
-    const tenantIds = tenants.map(t => t.tenant_id)
-
-    const assignments = await this.userRoleRepo.find({
-      where: tenantIds.map(tid => ({ user_id: userId, tenant_id: tid })),
-      relations: ['role', 'role.rolePermissions', 'role.rolePermissions.permission', 'tenant'],
-    })
-
-    const tenantsWithRoles = tenants.map(t => {
-      const tenantAssignments = assignments.filter(a => a.tenant_id === t.tenant_id)
-      const roles = [...new Set(tenantAssignments.map(a => a.role.name))]
-      const permissions = [
-        ...new Set(
-          tenantAssignments.flatMap(a =>
-            a.role.rolePermissions.map((rp: any) => rp.permission.code),
-          ),
-        ),
-      ]
-      return {
+    const tenantsWithRoles = await Promise.all(
+      tenants.map(async t => ({
         tenant_id: t.tenant_id,
         tenant_name: t.tenant.name,
-        roles,
-        permissions,
-      }
-    })
+        ...(await this.getUserRBAC(userId, t.tenant_id)),
+      })),
+    )
 
     return {
       id: user.id,
@@ -162,19 +150,13 @@ export class AuthService {
     }
   }
 
-  private async buildAuthResponse(user: User): Promise<AuthResponseDto> {
-    const firstTenant = await this.userTenantRepo.findOne({
-      where: { user_id: user.id, is_active: true },
-    })
-
-    const tenantId = firstTenant?.tenant_id ?? ''
-
+  async getUserRBAC(userId: string, tenantId: string) {
     const assignments = await this.userRoleRepo.find({
-      where: { user_id: user.id, tenant_id: tenantId },
+      where: { user_id: userId, tenant_id: tenantId },
       relations: ['role', 'role.rolePermissions', 'role.rolePermissions.permission'],
     })
 
-    const roleNames = [...new Set(assignments.map(a => a.role.name))]
+    const roles = [...new Set(assignments.map(a => a.role.name))]
     const permissions = [
       ...new Set(
         assignments.flatMap(a =>
@@ -183,12 +165,26 @@ export class AuthService {
       ),
     ]
 
+    return { roles, permissions }
+  }
+
+  private async buildAuthResponse(user: User): Promise<AuthResponseDto> {
+    const firstTenant = await this.userTenantRepo.findOne({
+      where: { user_id: user.id, is_active: true },
+    })
+
+    const tenantId = firstTenant?.tenant_id ?? ''
+
+    const rbac = tenantId
+      ? await this.getUserRBAC(user.id, tenantId)
+      : { roles: [], permissions: [] }
+
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
       tenant_id: tenantId,
-      roles: roleNames,
-      permissions,
+      roles: rbac.roles,
+      permissions: rbac.permissions,
     }
 
     const accessToken = this.jwtService.sign(payload)

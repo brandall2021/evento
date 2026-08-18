@@ -8,7 +8,7 @@ import { RefreshToken } from './entities/refresh-token.entity.js'
 import { UserTenant } from './entities/user-tenant.entity.js'
 import { UserRoleAssignment } from './entities/user-role-assignment.entity.js'
 import { Role } from '../roles/entities/role.entity.js'
-import { UnauthorizedException, ConflictException, GoneException } from '@nestjs/common'
+import { UnauthorizedException, ConflictException, GoneException, ForbiddenException } from '@nestjs/common'
 
 describe('AuthService', () => {
   let service: AuthService
@@ -229,6 +229,18 @@ describe('AuthService', () => {
       })
 
       await expect(service.refresh('expired-token')).rejects.toThrow(GoneException)
+    })
+
+    it('should throw ForbiddenException for inactive user', async () => {
+      const refreshTokenRepo = service['refreshTokenRepo'] as any
+      refreshTokenRepo.findOne.mockResolvedValue({
+        id: 'rt-1',
+        expires_at: new Date(Date.now() + 86400000),
+        revoked_at: null,
+        user: { id: 'uuid-1', email: 'inactive@example.com', activo: false },
+      })
+
+      await expect(service.refresh('token-for-inactive')).rejects.toThrow(ForbiddenException)
     })
   })
 

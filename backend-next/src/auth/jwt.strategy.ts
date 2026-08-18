@@ -5,8 +5,7 @@ import { ConfigService } from '@nestjs/config'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { User } from '../../users/user.entity.js'
-import { UserRoleAssignment } from '../entities/user-role-assignment.entity.js'
-import { RolePermission } from '../../roles/entities/role-permission.entity.js'
+import { AuthService } from './auth.service.js'
 
 export interface JwtPayload {
   sub: string
@@ -22,8 +21,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     configService: ConfigService,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
-    @InjectRepository(UserRoleAssignment)
-    private readonly userRoleRepo: Repository<UserRoleAssignment>,
+    private readonly authService: AuthService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -38,26 +36,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Usuario inactivo o no encontrado')
     }
 
-    const assignments = await this.userRoleRepo.find({
-      where: { user_id: payload.sub, tenant_id: payload.tenant_id },
-      relations: ['role', 'role.rolePermissions', 'role.rolePermissions.permission'],
-    })
-
-    const roleNames = [...new Set(assignments.map(a => a.role.name))]
-    const permissions = [
-      ...new Set(
-        assignments.flatMap(a =>
-          a.role.rolePermissions.map((rp: RolePermission) => rp.permission.code),
-        ),
-      ),
-    ]
+    const rbac = await this.authService.getUserRBAC(payload.sub, payload.tenant_id)
 
     return {
       id: user.id,
       email: user.email,
       tenant_id: payload.tenant_id,
-      roles: roleNames,
-      permissions,
+      roles: rbac.roles,
+      permissions: rbac.permissions,
     }
   }
 }

@@ -85,6 +85,9 @@ import { Permission } from './permissions/entities/permission.entity.js'
 import { Tenant } from './tenants/entities/tenant.entity.js'
 import { Role } from './roles/entities/role.entity.js'
 import { RolePermission } from './roles/entities/role-permission.entity.js'
+import { RefreshToken } from './auth/entities/refresh-token.entity.js'
+import { UserTenant } from './auth/entities/user-tenant.entity.js'
+import { UserRoleAssignment } from './auth/entities/user-role-assignment.entity.js'
 
 @Module({
   imports: [
@@ -116,6 +119,9 @@ import { RolePermission } from './roles/entities/role-permission.entity.js'
           Tenant,
           Role,
           RolePermission,
+          RefreshToken,
+          UserTenant,
+          UserRoleAssignment,
         ],
         synchronize: true,
       }),
