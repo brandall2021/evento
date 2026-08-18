@@ -1,44 +1,40 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { Permission, RolePermission } from './permission.entity.js'
+import { Permission } from './entities/permission.entity.js'
 
 @Injectable()
 export class PermissionsService {
   constructor(
-    @InjectRepository(Permission) private permRepo: Repository<Permission>,
-    @InjectRepository(RolePermission) private rolePermRepo: Repository<RolePermission>,
+    @InjectRepository(Permission)
+    private readonly permRepo: Repository<Permission>,
   ) {}
 
-  async crear(data: { nombre: string; clave: string; descripcion?: string; categoria?: string }) {
-    return this.permRepo.save(data)
+  async findAll(): Promise<Permission[]> {
+    return this.permRepo.find({ order: { module: 'ASC', action: 'ASC' } })
   }
 
-  async findAll() {
-    return this.permRepo.find({ order: { categoria: 'ASC', nombre: 'ASC' } })
+  async findByModule(mod: string): Promise<Permission[]> {
+    return this.permRepo.find({ where: { module: mod }, order: { action: 'ASC' } })
   }
 
-  async asignarRol(rol: string, permissionId: number) {
-    const exists = await this.rolePermRepo.findOne({ where: { rol, permission_id: permissionId } })
-    if (!exists) return this.rolePermRepo.save({ rol, permission_id: permissionId })
-    return exists
+  async findByCodes(codes: string[]): Promise<Permission[]> {
+    if (!codes.length) return []
+    return this.permRepo.createQueryBuilder('p').where('p.code IN (:...codes)', { codes }).getMany()
   }
 
-  async removerRol(rol: string, permissionId: number) {
-    await this.rolePermRepo.delete({ rol, permission_id: permissionId })
-  }
-
-  async permisosDeRol(rol: string) {
-    const rps = await this.rolePermRepo.find({ where: { rol } })
-    const ids = rps.map(rp => rp.permission_id)
+  async findByIds(ids: string[]): Promise<Permission[]> {
     if (!ids.length) return []
-    return this.permRepo.findByIds(ids)
+    return this.permRepo.createQueryBuilder('p').where('p.id IN (:...ids)', { ids }).getMany()
   }
 
-  async tienePermiso(rol: string, clave: string) {
-    const perm = await this.permRepo.findOne({ where: { clave } })
+  async tienePermiso(roleId: string, permissionCode: string): Promise<boolean> {
+    const perm = await this.permRepo.findOne({ where: { code: permissionCode } })
     if (!perm) return false
-    const rp = await this.rolePermRepo.findOne({ where: { rol, permission_id: perm.id } })
-    return !!rp
+    const result = await this.permRepo.manager.query(
+      'SELECT 1 FROM evento.role_permissions WHERE role_id = $1 AND permission_id = $2 LIMIT 1',
+      [roleId, perm.id],
+    )
+    return result.length > 0
   }
 }

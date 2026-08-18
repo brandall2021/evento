@@ -80,7 +80,7 @@ import { PlantillaNotificacion } from './notificaciones/plantilla-notificacion.e
 import { Webhook, WebhookEvent } from './webhooks/webhook.entity.js'
 import { AuditLog } from './audit-logs/audit-log.entity.js'
 import { Organizacion, OrganizacionMiembro } from './organizaciones/organizacion.entity.js'
-import { Permission, RolePermission } from './permissions/permission.entity.js'
+import { Permission } from './permissions/entities/permission.entity.js'
 import { Tenant } from './tenants/entities/tenant.entity.js'
 
 @Module({
@@ -109,7 +109,7 @@ import { Tenant } from './tenants/entities/tenant.entity.js'
           Webhook, WebhookEvent,
           AuditLog,
           Organizacion, OrganizacionMiembro,
-          Permission, RolePermission,
+          Permission,
           Tenant,
         ],
         synchronize: true,
