@@ -28,7 +28,7 @@ import { PublicApiModule } from './public-api/public-api.module.js'
 import { WebhooksModule } from './webhooks/webhooks.module.js'
 import { AnalyticsModule } from './analytics/analytics.module.js'
 import { ExportModule } from './export/export.module.js'
-import { AuditLogsModule } from './audit-logs/audit-logs.module.js'
+import { AuditModule } from './audit/audit.module.js'
 import { OrganizacionesModule } from './organizaciones/organizaciones.module.js'
 import { PermissionsModule } from './permissions/permissions.module.js'
 import { CacheModule } from './cache/cache.module.js'
@@ -79,7 +79,7 @@ import { FAQ } from './cms/faq.entity.js'
 import { Notificacion } from './notificaciones/notificacion.entity.js'
 import { PlantillaNotificacion } from './notificaciones/plantilla-notificacion.entity.js'
 import { Webhook, WebhookEvent } from './webhooks/webhook.entity.js'
-import { AuditLog } from './audit-logs/audit-log.entity.js'
+import { AuditLog } from './audit/entities/audit-log.entity.js'
 import { Organizacion, OrganizacionMiembro } from './organizaciones/organizacion.entity.js'
 import { Permission } from './permissions/entities/permission.entity.js'
 import { Tenant } from './tenants/entities/tenant.entity.js'
@@ -154,7 +154,7 @@ import { UserRole } from './users/entities/user-role.entity.js'
     WebhooksModule,
     AnalyticsModule,
     ExportModule,
-    AuditLogsModule,
+    AuditModule,
     OrganizacionesModule,
     PermissionsModule,
     CacheModule,

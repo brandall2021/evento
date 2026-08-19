@@ -1,5 +1,5 @@
-import { Controller, Get, Param, Query, UseGuards, Req } from '@nestjs/common'
-import { AuditLogsService } from './audit-logs.service.js'
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common'
+import { AuditService } from '../audit/audit.service.js'
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js'
 import { RolesGuard } from '../common/guards/roles.guard.js'
 import { Roles } from '../common/decorators/roles.decorator.js'
@@ -9,20 +9,18 @@ import { UserRole } from '../users/user.entity.js'
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
 export class AuditLogsController {
-  constructor(private readonly auditLogsService: AuditLogsService) {}
+  constructor(private readonly auditService: AuditService) {}
 
-  @Get()
-  findAll(@Query('page') page?: string, @Query('pageSize') pageSize?: string) {
-    return this.auditLogsService.findAll(page ? parseInt(page) : undefined, pageSize ? parseInt(pageSize) : undefined)
+  @Get('entity/:entity')
+  findByEntity(
+    @Param('entity') entity: string,
+    @Query('entity_id') entityId?: string,
+  ) {
+    return this.auditService.findByEntity(entity, entityId)
   }
 
-  @Get('entidad/:entidad')
-  byEntidad(@Param('entidad') entidad: string) {
-    return this.auditLogsService.byEntidad(entidad)
-  }
-
-  @Get('usuario/:id')
-  byUser(@Param('id') id: string) {
-    return this.auditLogsService.byUser(parseInt(id))
+  @Get('user/:userId')
+  findByUser(@Param('userId') userId: string) {
+    return this.auditService.findByUser(userId)
   }
 }
