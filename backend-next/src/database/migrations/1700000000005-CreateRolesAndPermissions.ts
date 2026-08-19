@@ -21,7 +21,7 @@ export class CreateRolesAndPermissions1700000000005 implements MigrationInterfac
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         tenant_id UUID NOT NULL,
         name VARCHAR(100) NOT NULL,
-        description VARCHAR(255),
+        description TEXT,
         is_system BOOLEAN NOT NULL DEFAULT false,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),

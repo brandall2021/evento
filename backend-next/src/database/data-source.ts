@@ -2,7 +2,7 @@ import { DataSource, DataSourceOptions } from 'typeorm'
 import { config } from 'dotenv'
 import { resolve } from 'path'
 
-config({ path: resolve(__dirname, '../../../.env') })
+config({ path: resolve(__dirname, '../../../.env'), override: true })
 
 interface ParsedUrl {
   host: string
@@ -34,7 +34,7 @@ const options: DataSourceOptions = {
   username: urlParts?.username || process.env.DB_USER || 'postgres',
   password: urlParts?.password || process.env.DB_PASSWORD || 'postgres',
   database: urlParts?.database || process.env.DB_NAME || 'evento_web',
-  schema: 'evento',
+  entities: [resolve(__dirname, '../**/*.entity{.ts,.js}')],
   migrations: [resolve(__dirname, 'migrations/*{.ts,.js}')],
   logging: true,
 }
