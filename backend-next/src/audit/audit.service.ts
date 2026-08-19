@@ -21,8 +21,8 @@ export class AuditService {
     ip_address?: string | null
     user_agent?: string | null
   }): Promise<AuditLog> {
-    const entry = this.auditRepo.create(data as any)
-    return this.auditRepo.save(entry as any)
+    const entry = this.auditRepo.create(data)
+    return this.auditRepo.save(entry)
   }
 
   async findByEntity(entity: string, entity_id?: string): Promise<AuditLog[]> {
