@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { TypeOrmModule } from '@nestjs/typeorm'
+import { ThrottlerModule } from '@nestjs/throttler'
+import { HealthModule } from './health/health.module.js'
 import { AuthModule } from './auth/auth.module.js'
 import { UsersModule } from './users/users.module.js'
 import { CursosModule } from './cursos/cursos.module.js'
@@ -92,6 +94,10 @@ import { UserRole } from './users/entities/user-role.entity.js'
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ThrottlerModule.forRoot([{
+      ttl: 60000,
+      limit: 100,
+    }]),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({
@@ -123,10 +129,11 @@ import { UserRole } from './users/entities/user-role.entity.js'
           UserTenant,
           UserRole,
         ],
-        synchronize: true,
+        synchronize: false,
       }),
       inject: [ConfigService],
     }),
+    HealthModule,
     AuthModule,
     UsersModule,
     CursosModule,

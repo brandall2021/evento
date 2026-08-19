@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core'
 import { ValidationPipe } from '@nestjs/common'
+import { HttpExceptionFilter } from './common/filters/http-exception.filter.js'
 import { NestExpressApplication } from '@nestjs/platform-express'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import { join } from 'path'
@@ -8,7 +9,7 @@ import { AppModule } from './app.module.js'
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule)
 
-  app.setGlobalPrefix('api')
+  app.setGlobalPrefix('api/v1')
 
   app.enableCors({
     origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173'],
@@ -21,6 +22,8 @@ async function bootstrap() {
     transform: true,
   }))
 
+  app.useGlobalFilters(new HttpExceptionFilter())
+
   app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' })
 
   const config = new DocumentBuilder()
@@ -28,6 +31,7 @@ async function bootstrap() {
     .setDescription('API de la plataforma SaaS de gestión de eventos — NestJS Backend')
     .setVersion('2.0')
     .addBearerAuth()
+    .addTag('Health', 'Endpoints de salud y monitoreo')
     .addTag('Auth', 'Registro, login, perfil, Google OAuth2')
     .addTag('Users', 'CRUD de usuarios con 12 roles')
     .addTag('Cursos', 'Gestión de cursos/eventos')
@@ -58,6 +62,8 @@ async function bootstrap() {
     .addTag('Audit Logs', 'Logs de auditoría')
     .addTag('Organizaciones', 'Multi-tenant')
     .addTag('Permissions', 'Permisos granulares')
+    .addTag('Tenants', 'Gestión de tenant')
+    .addTag('Roles', 'Gestión de roles')
     .build()
 
   const document = SwaggerModule.createDocument(app, config)
