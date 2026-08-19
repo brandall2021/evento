@@ -1,0 +1,2451 @@
+Especificación técnica integral — Plataforma de Gestión de Eventos Académicos
+1. Objetivo del sistema
+
+Desarrollar una plataforma web multiinstitucional para gestionar de extremo a extremo:
+
+Jornadas.
+Congresos.
+Cursos.
+Talleres.
+Seminarios.
+Conferencias.
+Capacitaciones.
+Actividades académicas.
+Eventos institucionales.
+
+El sistema deberá cubrir:
+
+CREACIÓN
+   ↓
+CONFIGURACIÓN
+   ↓
+PUBLICACIÓN
+   ↓
+INSCRIPCIÓN
+   ↓
+PAGO
+   ↓
+ACREDITACIÓN
+   ↓
+ASISTENCIA
+   ↓
+EVALUACIÓN
+   ↓
+CERTIFICACIÓN
+   ↓
+VALIDACIÓN
+   ↓
+ENCUESTAS
+   ↓
+REPORTES
+
+La aplicación debe estar diseñada como un sistema API-first, permitiendo posteriormente integrar:
+
+SIU Guaraní.
+Sistemas institucionales.
+LDAP/Active Directory.
+OAuth2/OIDC.
+Google.
+Mercado Pago.
+SMTP.
+WhatsApp mediante API.
+Sistemas externos de certificados.
+Sistemas de estadísticas.
+2. Arquitectura tecnológica recomendada
+
+Para una primera versión recomiendo un monolito modular, no microservicios.
+
+Esto simplifica enormemente el desarrollo inicial y permite separar posteriormente los módulos.
+
+Frontend
+Next.js
+TypeScript
+React
+Tailwind CSS
+Componentes UI
+React Hook Form
+Zod
+TanStack Query
+
+También puede implementarse con Angular si se desea mantener todo el ecosistema TypeScript.
+
+Backend
+
+Recomiendo:
+
+NestJS
+TypeScript
+REST API
+WebSocket
+JWT
+RBAC
+OpenAPI/Swagger
+Base de datos
+PostgreSQL
+Cache / tiempo real
+Redis
+
+Utilizado para:
+
+Sesiones temporales.
+Rate limiting.
+Cache.
+Colas.
+Eventos en tiempo real.
+Procesamiento de certificados.
+Envío de emails.
+Archivos
+
+Compatible con:
+
+S3
+MinIO
+Cloud Storage
+
+Para:
+
+Certificados.
+Logos.
+Materiales.
+Imágenes.
+Documentación.
+Cola de trabajos
+BullMQ + Redis
+
+Para procesos pesados:
+
+generación PDF
+envío emails
+envío notificaciones
+generación certificados
+exportaciones
+procesamiento de encuestas
+PDF
+
+Utilizar:
+
+Puppeteer
+
+o una biblioteca equivalente para generar certificados a partir de HTML/CSS.
+
+QR
+
+Generación mediante biblioteca estándar de QR.
+
+El QR no debe contener información sensible.
+
+Debe contener solamente un identificador o URL de validación.
+
+3. Arquitectura lógica
+                    ┌─────────────────────┐
+                    │      FRONTEND       │
+                    │      Next.js        │
+                    └──────────┬──────────┘
+                               │
+                         HTTPS / REST
+                               │
+                    ┌──────────▼──────────┐
+                    │       API           │
+                    │      NestJS         │
+                    └──────────┬──────────┘
+                               │
+       ┌───────────────────────┼─────────────────────────┐
+       │                       │                         │
+       ▼                       ▼                         ▼
+ EVENTOS                  PARTICIPANTES              PAGOS
+       │                       │                         │
+       ▼                       ▼                         ▼
+ ACTIVIDADES              ASISTENCIA              MERCADO PAGO
+       │                       │
+       ▼                       ▼
+ EVALUACIONES             CERTIFICADOS
+                               │
+                               ▼
+                         VALIDACIÓN QR
+
+
+       ┌─────────────────────────────────────────────┐
+       │              INFRAESTRUCTURA                │
+       │ PostgreSQL │ Redis │ S3 │ SMTP │ WebSocket │
+       └─────────────────────────────────────────────┘
+4. Multiinstitución
+
+El sistema debe estar preparado para que una misma instalación gestione varias instituciones.
+
+Ejemplo:
+
+Plataforma
+│
+├── Universidad Nacional
+│   ├── Facultad A
+│   ├── Facultad B
+│   └── Facultad C
+│
+├── Universidad B
+│   └── Facultad X
+│
+└── Instituto
+
+Por lo tanto debe existir:
+
+tenant
+
+Cada registro importante debe estar asociado a un tenant_id.
+
+Ejemplo:
+
+users
+events
+participants
+activities
+certificates
+payments
+
+deben tener relación con la institución correspondiente.
+
+Esto evita que un administrador de una facultad pueda acceder a información de otra.
+
+5. Módulos principales
+
+La aplicación deberá estar dividida como mínimo en:
+
+AUTH
+USERS
+ROLES
+TENANTS
+EVENTS
+EVENT_TYPES
+REGISTRATIONS
+PARTICIPANTS
+ACTIVITIES
+SCHEDULE
+ROOMS
+SPEAKERS
+MATERIALS
+PAYMENTS
+CREDENTIALS
+ATTENDANCE
+EVALUATIONS
+CERTIFICATES
+CERTIFICATE_VALIDATION
+SURVEYS
+NOTIFICATIONS
+EMAIL
+REPORTS
+EXPORTS
+AUDIT
+SETTINGS
+6. Autenticación
+
+El sistema debe soportar:
+
+Registro
+nombre
+apellido
+tipo_documento
+numero_documento
+email
+telefono
+password
+Login
+POST /api/v1/auth/login
+
+Respuesta:
+
+{
+  "access_token": "...",
+  "refresh_token": "...",
+  "user": {
+    "id": "...",
+    "name": "...",
+    "email": "...",
+    "roles": []
+  }
+}
+Métodos futuros
+
+Preparar arquitectura para:
+
+Google OAuth
+Microsoft
+LDAP
+OIDC
+SAML
+7. Roles y permisos
+
+No utilizar únicamente:
+
+if user.role == "admin"
+
+Implementar RBAC.
+
+Modelo:
+
+User
+   ↓
+Role
+   ↓
+Permission
+
+Permisos:
+
+event.create
+event.read
+event.update
+event.delete
+
+
+registration.read
+registration.create
+registration.update
+
+
+attendance.read
+attendance.register
+
+
+certificate.create
+certificate.issue
+certificate.revoke
+
+
+report.read
+report.export
+8. Evento
+
+Entidad principal.
+
+Campos:
+
+id UUID
+tenant_id UUID
+code VARCHAR
+name VARCHAR
+slug VARCHAR
+description TEXT
+short_description TEXT
+event_type_id UUID
+status ENUM
+start_date DATE
+end_date DATE
+registration_start TIMESTAMP
+registration_end TIMESTAMP
+location VARCHAR
+address TEXT
+city VARCHAR
+country VARCHAR
+timezone VARCHAR
+logo_url TEXT
+banner_url TEXT
+website_url TEXT
+contact_email VARCHAR
+contact_phone VARCHAR
+max_capacity INTEGER
+is_public BOOLEAN
+requires_payment BOOLEAN
+created_at
+updated_at
+deleted_at
+
+Estados:
+
+DRAFT
+PUBLISHED
+REGISTRATION_OPEN
+REGISTRATION_CLOSED
+IN_PROGRESS
+FINISHED
+CANCELLED
+ARCHIVED
+9. Tipos de evento
+
+Tabla:
+
+event_types
+
+Ejemplos:
+
+CONGRESO
+JORNADA
+CURSO
+TALLER
+SEMINARIO
+CONFERENCIA
+CAPACITACION
+DIPLOMATURA
+
+Debe ser configurable.
+
+10. Página pública
+
+Cada evento debe tener:
+
+/evento/{slug}
+
+Ejemplo:
+
+/evento/congreso-economia-2026
+
+Debe mostrar:
+
+Logo
+Banner
+Nombre
+Descripción
+Fecha
+Lugar
+Programa
+Ponentes
+Costo
+Cupos
+Formulario
+Botón inscripción
+
+SEO:
+
+title
+description
+OpenGraph
+canonical
+structured data
+11. Constructor de formularios
+
+Uno de los módulos más importantes.
+
+El administrador debe poder crear campos personalizados.
+
+Tipos:
+
+TEXT
+TEXTAREA
+NUMBER
+EMAIL
+PHONE
+DATE
+SELECT
+MULTISELECT
+RADIO
+CHECKBOX
+FILE
+COUNTRY
+PROVINCE
+CITY
+DOCUMENT
+
+Ejemplo:
+
+{
+  "field": "institution",
+  "type": "text",
+  "label": "Institución",
+  "required": true
+}
+
+Debe existir:
+
+form_templates
+form_fields
+form_submissions
+
+Los formularios no deben requerir cambios en la base de datos para agregar nuevos campos.
+
+Los valores personalizados pueden almacenarse en JSONB.
+
+12. Participante
+
+Separar:
+
+PERSONA
+
+de:
+
+INSCRIPCIÓN
+
+Esto es fundamental.
+
+Una persona puede participar en 20 eventos.
+
+Modelo:
+
+participants
+
+Campos:
+
+id UUID
+tenant_id UUID
+first_name
+last_name
+document_type
+document_number
+email
+phone
+institution
+occupation
+birth_date
+created_at
+updated_at
+
+Y:
+
+event_registrations
+
+Relaciona:
+
+participant
+        ↓
+event
+13. Inscripción
+
+Campos:
+
+id
+event_id
+participant_id
+registration_code
+registration_type_id
+status
+price
+currency
+payment_status
+registered_at
+confirmed_at
+cancelled_at
+
+Estados:
+
+PENDING
+CONFIRMED
+WAITLIST
+CANCELLED
+REJECTED
+ATTENDED
+COMPLETED
+14. Tipos de participantes
+
+Configurable:
+
+ALUMNO
+DOCENTE
+INVESTIGADOR
+PROFESIONAL
+GRADUADO
+EXTERNO
+INVITADO
+PONENTE
+ORGANIZADOR
+
+Cada tipo puede tener:
+
+precio
+cupo
+campos obligatorios
+actividades disponibles
+reglas de certificación
+15. Cupos
+
+El sistema debe soportar cupos:
+
+Evento
+max_capacity = 500
+Actividad
+max_capacity = 50
+Tipo de participante
+alumnos = 100
+docentes = 50
+externos = 200
+
+Cuando el cupo llega a cero:
+
+INSCRIPCIONES ABIERTAS
+        ↓
+CUPO COMPLETO
+        ↓
+LISTA DE ESPERA
+16. Programa académico
+
+Modelo:
+
+Event
+ └── Module
+      └── Activity
+Module
+id
+event_id
+name
+description
+order
+Activity
+id
+module_id
+name
+description
+activity_type
+start_at
+end_at
+room_id
+capacity
+is_mandatory
+requires_attendance
+requires_evaluation
+attendance_percentage_required
+approval_required
+
+Tipos:
+
+CONFERENCE
+CLASS
+WORKSHOP
+EXAM
+PANEL
+PRESENTATION
+TALK
+PRACTICAL
+17. Salas
+rooms
+
+Campos:
+
+id
+tenant_id
+name
+building
+floor
+capacity
+location
+latitude
+longitude
+
+Validación:
+
+Una actividad de 100 personas no puede asignarse a una sala con capacidad 50.
+
+18. Ponentes y docentes
+
+Separar la persona del rol.
+
+Una persona puede ser:
+
+docente
+ponente
+coordinador
+moderador
+evaluador
+
+Tabla:
+
+event_speakers
+
+Campos:
+
+event_id
+person_id
+role
+biography
+photo_url
+organization
+title
+19. Materiales
+
+Cada actividad puede tener materiales.
+
+materials
+
+Tipos:
+
+PDF
+PRESENTATION
+VIDEO
+LINK
+DOCUMENT
+IMAGE
+
+Permisos:
+
+PUBLIC
+REGISTERED
+ATTENDED
+COMPLETED
+20. Pagos
+
+Integración con Mercado Pago.
+
+Flujo:
+
+Inscripción
+      ↓
+Crear preferencia de pago
+      ↓
+Mercado Pago
+      ↓
+Pago
+      ↓
+Webhook
+      ↓
+Validación
+      ↓
+Actualizar payment
+      ↓
+Confirmar inscripción
+      ↓
+Enviar email
+
+Nunca confirmar una inscripción exclusivamente por el retorno del navegador.
+
+Debe utilizarse el webhook.
+
+Endpoint:
+
+POST /api/v1/payments/webhooks/mercadopago
+
+Estados:
+
+PENDING
+APPROVED
+REJECTED
+CANCELLED
+REFUNDED
+21. Credencial digital
+
+Después de confirmar la inscripción:
+
+registration
+       ↓
+credential
+       ↓
+QR
+
+La credencial contiene:
+
+nombre
+apellido
+evento
+tipo participante
+foto opcional
+QR
+
+El QR debe contener algo similar a:
+
+https://eventos.dominio.edu/qr/{token}
+
+El token debe ser aleatorio y no predecible.
+
+22. Acreditación
+
+El operador abre:
+
+/accreditation
+
+Selecciona:
+
+Evento
+
+Escanea QR.
+
+Backend:
+
+buscar token
+↓
+validar credential
+↓
+validar registration
+↓
+validar event
+↓
+registrar check-in
+
+Respuesta:
+
+{
+  "valid": true,
+  "participant": {
+    "name": "Juan Pérez"
+  },
+  "event": "Congreso 2026",
+  "status": "CHECKED_IN"
+}
+
+Si ya ingresó:
+
+{
+  "valid": true,
+  "already_checked_in": true
+}
+23. Asistencia por actividad
+
+No confundir:
+
+ACREDITACIÓN AL EVENTO
+
+con:
+
+ASISTENCIA A ACTIVIDAD
+
+Una persona puede estar acreditada pero no asistir a una actividad.
+
+Modelo:
+
+attendance_sessions
+attendance_records
+
+Registro:
+
+participant_id
+event_id
+activity_id
+check_in
+check_out
+duration
+method
+device
+operator_id
+latitude
+longitude
+created_at
+
+Métodos:
+
+QR
+MANUAL
+IMPORT
+SYSTEM
+24. Control de entrada y salida
+
+Ejemplo:
+
+09:00 Entrada
+10:30 Salida
+10:45 Entrada
+12:00 Salida
+
+El sistema calcula:
+
+90 minutos
++
+75 minutos
+=
+165 minutos
+
+Actividad:
+
+180 minutos
+
+Porcentaje:
+
+165 / 180 * 100 = 91,67 %
+
+Por lo tanto:
+
+asistencia = 91,67 %
+25. Reglas de asistencia
+
+Las reglas deben ser configurables.
+
+Ejemplos:
+
+minimum_percentage = 75
+
+O:
+
+minimum_minutes = 180
+
+O:
+
+required_activities = [A1,A2,A3]
+
+O:
+
+required_modules = [M1,M2]
+26. Evaluaciones
+
+Entidad:
+
+evaluations
+
+Campos:
+
+id
+activity_id
+title
+description
+minimum_score
+max_score
+attempts
+time_limit
+available_from
+available_until
+
+Preguntas:
+
+evaluation_questions
+
+Tipos:
+
+MULTIPLE_CHOICE
+TRUE_FALSE
+SINGLE_CHOICE
+OPEN_TEXT
+27. Resultado académico
+
+Crear una entidad:
+
+participant_results
+
+Debe almacenar:
+
+participant
+activity
+attendance_percentage
+evaluation_score
+approved
+completed
+
+Ejemplo:
+
+{
+  "attendance_percentage": 87.5,
+  "evaluation_score": 8.5,
+  "approved": true
+}
+28. Motor de reglas de certificación
+
+Este debería ser uno de los componentes centrales.
+
+No programar:
+
+if course then 75%
+
+Las reglas deben ser configurables.
+
+Ejemplo:
+
+{
+  "certificate_type": "APPROVAL",
+  "rules": {
+    "attendance": {
+      "minimum_percentage": 80
+    },
+    "evaluation": {
+      "required": true,
+      "minimum_score": 6
+    }
+  }
+}
+
+Otro evento:
+
+{
+  "certificate_type": "ATTENDANCE",
+  "rules": {
+    "attendance": {
+      "minimum_percentage": 75
+    }
+  }
+}
+29. Certificado
+
+Entidad:
+
+certificates
+
+Campos:
+
+id UUID
+tenant_id
+event_id
+participant_id
+activity_id
+certificate_type
+certificate_number
+verification_token
+issued_at
+pdf_url
+status
+template_id
+
+Estados:
+
+ISSUED
+REVOKED
+CANCELLED
+30. Numeración
+
+Debe existir un generador transaccional.
+
+Ejemplo:
+
+UNT-ECO-2026-000001
+UNT-ECO-2026-000002
+UNT-ECO-2026-000003
+
+Nunca generar el número simplemente con:
+
+COUNT(*) + 1
+
+porque produciría duplicados bajo concurrencia.
+
+Usar:
+
+PostgreSQL sequence
+
+o mecanismo transaccional equivalente.
+
+31. Validación de certificado
+
+Endpoint público:
+
+GET /api/v1/public/certificates/verify/{token}
+
+No requiere autenticación.
+
+Respuesta:
+
+{
+  "valid": true,
+  "certificate": {
+    "number": "UNT-ECO-2026-000123",
+    "participant": "Juan Pérez",
+    "event": "Congreso de Economía 2026",
+    "type": "Certificado de aprobación",
+    "date": "2026-08-18",
+    "status": "VALID"
+  }
+}
+32. Revocación
+
+Un administrador autorizado puede revocar.
+
+Debe registrar:
+
+certificate
+revoked_at
+revoked_by
+reason
+
+La página pública debe mostrar:
+
+CERTIFICADO REVOCADO
+33. Plantillas de certificados
+
+Crear:
+
+certificate_templates
+
+Campos:
+
+name
+html_template
+css
+page_size
+orientation
+variables
+
+Variables:
+
+{{participant.name}}
+{{participant.document}}
+{{event.name}}
+{{certificate.number}}
+{{certificate.date}}
+{{activity.name}}
+
+Esto permite crear distintos diseños sin modificar código.
+
+34. Firma
+
+El sistema debe permitir configurar:
+
+firma 1
+firma 2
+firma 3
+
+Cada firma:
+
+name
+position
+signature_image
+institution
+35. Encuestas
+
+Crear:
+
+surveys
+survey_questions
+survey_responses
+
+Tipos:
+
+SCALE
+MULTIPLE_CHOICE
+TEXT
+YES_NO
+
+Escala:
+
+1 → Muy malo
+2 → Malo
+3 → Regular
+4 → Bueno
+5 → Excelente
+36. Notificaciones
+
+Crear un sistema centralizado:
+
+notifications
+
+Canales:
+
+EMAIL
+WEB
+PUSH
+WHATSAPP
+
+Eventos:
+
+registration.confirmed
+payment.approved
+event.reminder
+credential.created
+certificate.issued
+survey.available
+37. Email
+
+Crear plantillas:
+
+registration_confirmation
+payment_confirmation
+credential
+event_reminder
+certificate_available
+survey
+
+No enviar emails directamente desde los controllers.
+
+Debe hacerse mediante cola:
+
+API
+ ↓
+Redis/BullMQ
+ ↓
+Email Worker
+ ↓
+SMTP
+
+Esto evita que una falla SMTP bloquee una inscripción.
+
+38. Dashboard
+
+Dashboard general:
+
+Eventos
+Inscripciones
+Pagos
+Participantes
+Asistencias
+Certificados
+
+Dashboard de evento:
+
+Total inscritos
+Confirmados
+Pagados
+Acreditados
+Presentes
+Ausentes
+Certificados emitidos
+Certificados pendientes
+
+Dashboard académico:
+
+Actividad
+Inscritos
+Asistentes
+% asistencia
+Aprobados
+Desaprobados
+39. Reportes
+
+Debe existir un motor de reportes.
+
+Reportes mínimos:
+
+Inscripciones
+por evento
+por fecha
+por tipo participante
+por institución
+Asistencia
+por evento
+por actividad
+por participante
+por sala
+por horario
+Académico
+aprobados
+desaprobados
+promedio
+asistencia
+Certificados
+emitidos
+pendientes
+revocados
+40. Exportaciones
+
+Formatos:
+
+CSV
+XLSX
+PDF
+
+La exportación grande debe ser asíncrona.
+
+Ejemplo:
+
+Usuario solicita exportación
+        ↓
+Job
+        ↓
+Procesamiento
+        ↓
+Archivo
+        ↓
+S3/MinIO
+        ↓
+Notificación
+        ↓
+Descarga
+41. Auditoría
+
+Todo cambio importante debe registrarse.
+
+Tabla:
+
+audit_logs
+
+Campos:
+
+id
+tenant_id
+user_id
+action
+entity
+entity_id
+old_values
+new_values
+ip_address
+user_agent
+created_at
+
+Ejemplo:
+
+{
+  "action": "CERTIFICATE_REVOKED",
+  "entity": "certificate",
+  "entity_id": "...",
+  "reason": "Error en documento"
+}
+42. Seguridad
+
+Implementar como mínimo:
+
+Backend
+JWT.
+Refresh tokens.
+RBAC.
+Validación DTO.
+Zod/class-validator.
+Rate limiting.
+CORS.
+Helmet.
+CSRF cuando corresponda.
+Sanitización.
+Protección contra SQL Injection mediante ORM/query parametrizada.
+Protección contra XSS.
+Logs.
+Auditoría.
+Contraseñas
+
+Nunca almacenar:
+
+password
+
+en texto plano.
+
+Usar:
+
+Argon2
+
+o bcrypt.
+
+QR
+
+No utilizar:
+
+documento + fecha nacimiento
+
+como QR.
+
+Usar:
+
+UUID/token criptográficamente aleatorio
+43. Privacidad
+
+Los datos personales deben estar separados de los datos públicos.
+
+La API pública nunca debe devolver:
+
+email
+telefono
+documento completo
+direccion
+
+La página pública de certificado solamente devuelve la información necesaria para verificar autenticidad.
+
+44. Modelo de datos principal
+
+Una estructura inicial de PostgreSQL podría ser:
+
+tenants
+users
+roles
+permissions
+user_roles
+role_permissions
+
+
+persons
+participants
+
+
+event_types
+events
+event_modules
+activities
+
+
+rooms
+speakers
+event_speakers
+materials
+
+
+registration_types
+event_registrations
+registration_field_values
+
+
+payment_orders
+payments
+payment_events
+
+
+credentials
+
+
+attendance_sessions
+attendance_records
+
+
+evaluations
+evaluation_questions
+evaluation_options
+evaluation_attempts
+evaluation_answers
+
+
+participant_results
+
+
+certificate_templates
+certificate_rules
+certificates
+
+
+surveys
+survey_questions
+survey_responses
+
+
+notifications
+notification_templates
+email_logs
+
+
+reports
+exports
+
+
+audit_logs
+45. Relaciones principales
+TENANT
+ │
+ ├── USERS
+ │
+ ├── EVENTS
+ │    │
+ │    ├── MODULES
+ │    │     │
+ │    │     └── ACTIVITIES
+ │    │             │
+ │    │             ├── MATERIALS
+ │    │             ├── EVALUATIONS
+ │    │             └── ATTENDANCE
+ │    │
+ │    ├── REGISTRATIONS
+ │    │       │
+ │    │       └── PARTICIPANT
+ │    │
+ │    ├── PAYMENTS
+ │    │
+ │    └── CERTIFICATES
+ │
+ └── ROLES
+46. API REST
+
+Versionar la API:
+
+/api/v1
+Auth
+POST /auth/login
+POST /auth/register
+POST /auth/refresh
+POST /auth/logout
+GET  /auth/me
+Eventos
+GET    /events
+POST   /events
+GET    /events/:id
+PATCH  /events/:id
+DELETE /events/:id
+POST   /events/:id/publish
+POST   /events/:id/cancel
+Actividades
+GET    /events/:eventId/activities
+POST   /events/:eventId/activities
+GET    /activities/:id
+PATCH  /activities/:id
+DELETE /activities/:id
+Inscripciones
+POST /events/:eventId/register
+GET  /events/:eventId/registrations
+GET  /registrations/:id
+PATCH /registrations/:id
+Pagos
+POST /payments/create
+GET  /payments/:id
+POST /payments/webhooks/mercadopago
+Acreditación
+POST /events/:eventId/check-in
+Asistencia
+POST /activities/:activityId/attendance/check-in
+POST /activities/:activityId/attendance/check-out
+GET  /activities/:activityId/attendance
+Certificados
+POST /events/:eventId/certificates/generate
+GET  /certificates/:id
+POST /certificates/:id/revoke
+Validación pública
+GET /public/certificates/verify/:token
+47. WebSocket
+
+Para dashboards en tiempo real:
+
+/events/{eventId}/attendance
+
+Eventos:
+
+participant.checked_in
+participant.checked_out
+activity.attendance_updated
+certificate.generated
+registration.created
+payment.approved
+
+Ejemplo:
+
+{
+  "event": "participant.checked_in",
+  "data": {
+    "participant_id": "...",
+    "activity_id": "...",
+    "timestamp": "2026-08-18T10:32:15Z"
+  }
+}
+
+El dashboard se actualiza sin refrescar la página.
+
+48. Idempotencia
+
+Muy importante para pagos y QR.
+
+Una misma petición puede llegar dos veces.
+
+Ejemplo:
+
+Idempotency-Key: 3f4c...
+
+El backend debe detectar solicitudes repetidas.
+
+Especialmente:
+
+Mercado Pago webhook
+QR check-in
+generación certificado
+envío de email
+49. Máquina de estados
+
+No permitir cambios arbitrarios.
+
+Ejemplo de inscripción:
+
+PENDING
+   │
+   ├── CONFIRMED
+   │      │
+   │      └── ATTENDED
+   │
+   ├── WAITLIST
+   │
+   └── CANCELLED
+
+Evento:
+
+DRAFT
+ ↓
+PUBLISHED
+ ↓
+REGISTRATION_OPEN
+ ↓
+REGISTRATION_CLOSED
+ ↓
+IN_PROGRESS
+ ↓
+FINISHED
+ ↓
+ARCHIVED
+50. Flujos críticos
+Flujo de inscripción gratuita
+Usuario
+ ↓
+Página evento
+ ↓
+Formulario
+ ↓
+Validación
+ ↓
+Crear participant
+ ↓
+Crear registration
+ ↓
+CONFIRMED
+ ↓
+Crear credential
+ ↓
+Generar QR
+ ↓
+Enviar email
+Flujo de inscripción paga
+Usuario
+ ↓
+Formulario
+ ↓
+Crear registration PENDING
+ ↓
+Crear payment
+ ↓
+Mercado Pago
+ ↓
+Pago
+ ↓
+Webhook
+ ↓
+Validar webhook
+ ↓
+Actualizar payment APPROVED
+ ↓
+Actualizar registration CONFIRMED
+ ↓
+Crear credential
+ ↓
+Enviar email
+Flujo de acreditación
+Escanear QR
+ ↓
+API
+ ↓
+Validar token
+ ↓
+Buscar credential
+ ↓
+Buscar registration
+ ↓
+Validar evento
+ ↓
+Crear attendance
+ ↓
+Emitir WebSocket
+ ↓
+Actualizar dashboard
+Flujo de certificado
+Evento finalizado
+ ↓
+Calcular asistencia
+ ↓
+Calcular evaluación
+ ↓
+Aplicar reglas
+ ↓
+¿Cumple?
+ ├── NO → pendiente/no aprobado
+ │
+ └── SÍ
+      ↓
+Generar número
+      ↓
+Crear certificate
+      ↓
+Generar QR
+      ↓
+Generar PDF
+      ↓
+Guardar S3/MinIO
+      ↓
+Enviar email
+51. Reglas de negocio
+
+La IA debe implementar reglas explícitas.
+
+RN001
+
+Una persona no puede tener dos inscripciones activas para el mismo evento.
+
+RN002
+
+Una inscripción paga no pasa a CONFIRMED hasta recibir confirmación válida del proveedor de pago.
+
+RN003
+
+Un QR inválido nunca genera asistencia.
+
+RN004
+
+Un participante no puede registrar dos entradas simultáneas para la misma actividad.
+
+RN005
+
+Una salida sin entrada previa debe ser rechazada o registrada como incidencia.
+
+RN006
+
+Un certificado solamente puede emitirse si cumple las reglas configuradas.
+
+RN007
+
+Un certificado revocado nunca debe mostrarse como válido.
+
+RN008
+
+Un evento cerrado no admite nuevas inscripciones salvo autorización administrativa.
+
+RN009
+
+Una actividad no puede superar la capacidad de su sala.
+
+RN010
+
+Los webhooks deben ser idempotentes.
+
+RN011
+
+Toda acción administrativa crítica debe quedar auditada.
+
+RN012
+
+Los datos de distintos tenants nunca deben mezclarse.
+
+52. Estados del certificado
+PENDING
+GENERATING
+ISSUED
+AVAILABLE
+REVOKED
+CANCELLED
+53. Estados del pago
+PENDING
+PROCESSING
+APPROVED
+REJECTED
+CANCELLED
+REFUNDED
+54. Estados de asistencia
+PRESENT
+ABSENT
+PARTIAL
+
+Calculados automáticamente.
+
+55. Sistema de permisos para actividades
+
+Puede definirse:
+
+activity.visibility
+
+Valores:
+
+PUBLIC
+REGISTERED
+AUTHORIZED
+
+Y:
+
+activity.access_type
+
+Valores:
+
+FREE
+REGISTRATION_REQUIRED
+PAYMENT_REQUIRED
+INVITATION_ONLY
+56. Gestión de listas de espera
+
+Cuando:
+
+capacity = 100
+confirmed = 100
+
+la siguiente inscripción:
+
+WAITLIST
+
+Si alguien cancela:
+
+capacity available
+       ↓
+first waitlisted
+       ↓
+notification
+       ↓
+confirmation window
+57. Control de concurrencia
+
+Hay que evitar que dos usuarios ocupen simultáneamente el último cupo.
+
+Debe utilizarse:
+
+transaction
++
+row locking
+
+Por ejemplo:
+
+SELECT ... FOR UPDATE
+
+durante la asignación del cupo.
+
+58. Estructura del backend
+src/
+├── auth/
+├── users/
+├── roles/
+├── tenants/
+├── persons/
+├── participants/
+├── events/
+├── event-types/
+├── modules/
+├── activities/
+├── rooms/
+├── speakers/
+├── materials/
+├── registrations/
+├── payments/
+├── credentials/
+├── attendance/
+├── evaluations/
+├── certificates/
+├── certificate-validation/
+├── surveys/
+├── notifications/
+├── email/
+├── reports/
+├── exports/
+├── audit/
+├── storage/
+├── queue/
+├── websocket/
+├── common/
+└── database/
+59. Estructura del frontend
+app/
+├── login
+├── register
+├── dashboard
+├── events
+│   ├── create
+│   ├── edit
+│   ├── [id]
+│   ├── registrations
+│   ├── activities
+│   ├── attendance
+│   ├── certificates
+│   ├── reports
+│   └── settings
+├── accreditation
+├── participants
+├── certificates
+├── reports
+├── settings
+└── public
+    ├── events
+    └── certificates
+60. Panel administrativo
+
+Menú:
+
+Dashboard
+Eventos
+Participantes
+Inscripciones
+Actividades
+Agenda
+Salas
+Ponentes
+Pagos
+Acreditación
+Asistencia
+Evaluaciones
+Certificados
+Encuestas
+Reportes
+Exportaciones
+Usuarios
+Roles
+Configuración
+Auditoría
+61. Dashboard del organizador
+
+Al entrar a un evento:
+
+┌─────────────────────────────────────────┐
+│ CONGRESO DE ECONOMÍA 2026              │
+├──────────┬──────────┬──────────┬───────┤
+│ 1.250    │ 1.100    │ 980      │ 950   │
+│ Inscritos│ Confirm. │ Check-in │ Cert.  │
+└──────────┴──────────┴──────────┴───────┘
+
+Debajo:
+
+Asistencia por actividad
+Inscripciones por día
+Participantes por tipo
+Ocupación de salas
+Pagos
+Certificados
+62. Aplicación de acreditación
+
+Puede ser una interfaz especialmente simplificada:
+
+┌───────────────────────────────┐
+│      ACREDITACIÓN             │
+│                               │
+│       [ CÁMARA QR ]           │
+│                               │
+│       Escanear QR             │
+│                               │
+│ ✓ Juan Pérez                  │
+│   Acreditación correcta       │
+└───────────────────────────────┘
+
+Debe funcionar perfectamente en:
+
+Android
+iPhone
+Tablet
+Notebook
+PC
+63. Modo offline para acreditación
+
+Esto es especialmente interesante.
+
+Si el lugar tiene mala conectividad, el dispositivo puede almacenar temporalmente:
+
+QR
+timestamp
+device
+event
+
+y sincronizar posteriormente.
+
+Pero debe implementarse cuidadosamente para evitar duplicados.
+
+La arquitectura podría utilizar:
+
+IndexedDB
+Service Worker
+Sync Queue
+64. GPS
+
+Si se decide utilizar ubicación para asistencia, no debe considerarse el GPS como única prueba.
+
+Puede utilizarse como dato adicional:
+
+latitude
+longitude
+accuracy
+timestamp
+
+Y configurar:
+
+geofence radius = 100 meters
+
+Pero la regla debe ser configurable.
+
+65. API para integraciones
+
+Crear una sección:
+
+/api/v1/integrations
+
+Permitir posteriormente:
+
+SIU
+Google
+Mercado Pago
+SMTP
+WhatsApp
+LDAP
+OIDC
+
+También API Keys institucionales:
+
+api_keys
+
+Con permisos específicos:
+
+events.read
+participants.read
+attendance.write
+certificates.read
+66. Webhooks propios
+
+La plataforma puede enviar eventos a sistemas externos:
+
+registration.created
+registration.confirmed
+payment.approved
+attendance.created
+certificate.issued
+certificate.revoked
+
+Ejemplo:
+
+{
+  "event": "certificate.issued",
+  "timestamp": "...",
+  "data": {
+    "certificate_id": "...",
+    "participant_id": "...",
+    "certificate_number": "..."
+  }
+}
+67. OpenAPI
+
+La API debe documentarse automáticamente.
+
+Ruta:
+
+/api/docs
+
+Debe permitir:
+
+Ver endpoints.
+Parámetros.
+Respuestas.
+Autenticación.
+Probar endpoints.
+68. Tests
+
+La IA debe generar tests.
+
+Unitarios
+reglas de certificación
+cálculo asistencia
+cupos
+estados
+numeración certificados
+Integración
+registro
+pago
+webhook
+QR
+asistencia
+certificación
+E2E
+
+Flujo completo:
+
+Crear evento
+ ↓
+Publicar
+ ↓
+Inscribirse
+ ↓
+Pagar
+ ↓
+Confirmar
+ ↓
+Acreditar
+ ↓
+Asistir
+ ↓
+Evaluar
+ ↓
+Certificar
+ ↓
+Validar certificado
+69. Docker
+
+Desarrollo:
+
+docker-compose.yml
+
+Servicios:
+
+frontend
+backend
+postgres
+redis
+minio
+mailhog
+
+Producción:
+
+frontend
+backend
+worker
+postgres
+redis
+minio/S3
+reverse proxy
+70. Variables de entorno
+
+Ejemplo:
+
+DATABASE_URL=
+REDIS_URL=
+
+
+JWT_SECRET=
+JWT_EXPIRES_IN=
+
+
+S3_ENDPOINT=
+S3_BUCKET=
+S3_ACCESS_KEY=
+S3_SECRET_KEY=
+
+
+SMTP_HOST=
+SMTP_PORT=
+SMTP_USER=
+SMTP_PASSWORD=
+
+
+MERCADOPAGO_ACCESS_TOKEN=
+MERCADOPAGO_WEBHOOK_SECRET=
+
+
+APP_URL=
+API_URL=
+
+Nunca incluir secretos en Git.
+
+71. Migraciones
+
+Toda modificación de base de datos debe realizarse mediante:
+
+migration
+
+Nunca permitir que la IA modifique manualmente la base de datos de producción.
+
+72. Backup
+
+PostgreSQL:
+
+backup diario
+backup incremental
+retención configurable
+
+Debe existir procedimiento de restauración probado.
+
+Los certificados almacenados en S3/MinIO también deben tener estrategia de backup.
+
+73. Observabilidad
+
+Implementar:
+
+structured logging
+health checks
+metrics
+error tracking
+
+Endpoints:
+
+GET /health
+GET /health/database
+GET /health/redis
+74. Seguridad de API
+
+Agregar:
+
+rate limiting
+
+especialmente en:
+
+/login
+/register
+/check-in
+/certificate/verify
+
+También:
+
+pagination
+filtering
+sorting
+
+en todas las APIs administrativas.
+
+Nunca devolver:
+
+SELECT *
+
+indiscriminadamente.
+
+75. Paginación
+
+Todas las listas:
+
+GET /events?page=1&limit=20
+
+Respuesta:
+
+{
+  "data": [],
+  "meta": {
+    "page": 1,
+    "limit": 20,
+    "total": 1250,
+    "totalPages": 63
+  }
+}
+76. Búsqueda
+
+Los participantes deben poder buscar por:
+
+nombre
+apellido
+documento
+email
+institución
+registration_code
+
+Los certificados por:
+
+número
+participante
+evento
+fecha
+estado
+77. Importación masiva
+
+Debe existir:
+
+Importar participantes
+Importar docentes
+Importar actividades
+
+Formato:
+
+CSV
+XLSX
+
+Proceso:
+
+Upload
+ ↓
+Validación
+ ↓
+Preview
+ ↓
+Errores
+ ↓
+Confirmación
+ ↓
+Importación
+
+No importar directamente sin mostrar errores.
+
+78. Detección de duplicados
+
+Ejemplo:
+
+document_type + document_number
+
+o:
+
+email
+
+de acuerdo con la configuración institucional.
+
+79. Internacionalización
+
+Preparar desde el inicio:
+
+es
+en
+pt
+
+Aunque inicialmente solamente se active:
+
+español
+
+Las etiquetas no deben estar hardcodeadas en los componentes.
+
+80. Zona horaria
+
+Cada evento debe tener:
+
+timezone
+
+Ejemplo:
+
+America/Argentina/Tucuman
+
+La base de datos debe almacenar timestamps en UTC.
+
+El frontend los presenta según la zona horaria del evento.
+
+81. Arquitectura definitiva del dominio
+
+El núcleo conceptual debería ser:
+
+                    TENANT
+                       │
+                       ▼
+                     EVENT
+                       │
+             ┌─────────┼─────────┐
+             ▼         ▼         ▼
+          MODULE    REGISTRATION ROOM
+             │         │
+             ▼         ▼
+         ACTIVITY   PARTICIPANT
+             │         │
+       ┌─────┼──────┐  │
+       ▼     ▼      ▼  ▼
+   MATERIAL EVAL ATTENDANCE
+                    │
+                    ▼
+                  RESULT
+                    │
+                    ▼
+                CERTIFICATE
+                    │
+                    ▼
+                 QR VERIFY
+82. Orden de desarrollo para una IA
+
+No conviene pedirle a una IA:
+
+"Desarrollá toda la plataforma."
+
+Es demasiado grande y aumentaría mucho el riesgo de código inconsistente.
+
+Debe desarrollarse por fases.
+
+Fase 1 — Infraestructura
+Docker
+PostgreSQL
+Redis
+Backend
+Frontend
+ORM
+Migraciones
+Auth
+RBAC
+Fase 2 — Instituciones
+Tenant
+Usuarios
+Roles
+Permisos
+Configuración
+Fase 3 — Eventos
+Event
+EventType
+Module
+Activity
+Room
+Speaker
+Material
+Fase 4 — Inscripciones
+Participant
+Registration
+RegistrationType
+Dynamic Forms
+Cupos
+Lista de espera
+Fase 5 — Pagos
+Mercado Pago
+Payment
+Webhook
+Idempotencia
+Fase 6 — Credenciales
+Credential
+QR
+Validación
+Fase 7 — Asistencia
+Check-in
+Check-out
+Actividad
+Dashboard
+WebSocket
+Fase 8 — Evaluaciones
+Evaluation
+Questions
+Attempts
+Answers
+Results
+Fase 9 — Certificados
+Rules
+Templates
+Certificate
+PDF
+QR
+Validation
+Revocation
+Fase 10 — Post-evento
+Surveys
+Emails
+Notifications
+Reports
+Exports
+Fase 11 — Integraciones
+SIU
+LDAP
+OIDC
+Google
+WhatsApp
+Webhooks
+API Keys
+Fase 12 — Producción
+Tests
+Security
+Backup
+Monitoring
+Logging
+CI/CD
+Docker
+Deploy
+83. Instrucción maestra para la IA desarrolladora
+
+Podés utilizar como prompt base algo como esto:
+
+Desarrollar una plataforma web multiinstitucional de gestión integral de eventos académicos utilizando arquitectura modular, API-first y PostgreSQL como base de datos.
+
+La plataforma debe administrar eventos, jornadas, congresos, cursos, talleres y seminarios desde su creación hasta la certificación y validación posterior.
+
+Implementar los módulos de autenticación, usuarios, roles, permisos, instituciones, eventos, tipos de evento, módulos académicos, actividades, salas, docentes, ponentes, materiales, participantes, formularios dinámicos, inscripciones, cupos, listas de espera, pagos, Mercado Pago, credenciales digitales, QR, acreditación, asistencia, evaluaciones, resultados, reglas de certificación, certificados PDF, validación pública mediante QR, revocación, encuestas, notificaciones, email, reportes, exportaciones y auditoría.
+
+Utilizar PostgreSQL con migraciones versionadas, Redis para cache y colas, BullMQ para procesos asíncronos y almacenamiento compatible con S3 para archivos.
+
+El backend debe estar construido como API REST versionada /api/v1, con documentación OpenAPI, validación de DTOs, JWT, refresh tokens, RBAC, rate limiting, auditoría, logs estructurados, idempotencia y controles de seguridad.
+
+El frontend debe consumir exclusivamente la API y no acceder directamente a PostgreSQL.
+
+Separar claramente las entidades Persona, Participante, Evento, Inscripción, Actividad, Asistencia, Evaluación, Resultado y Certificado.
+
+Implementar un motor configurable de reglas de certificación que permita definir requisitos de asistencia, evaluación, actividades obligatorias y módulos obligatorios sin modificar código fuente.
+
+Implementar generación de certificados mediante plantillas HTML/CSS, generación automática de PDF, número único, UUID de validación y código QR. La validación pública debe permitir comprobar la autenticidad del certificado sin autenticación.
+
+Implementar Mercado Pago mediante webhooks y nunca confirmar pagos únicamente por el redirect del navegador. Los webhooks deben ser idempotentes.
+
+Implementar control de cupos utilizando transacciones y bloqueo de filas para evitar sobreasignación concurrente.
+
+Implementar asistencia mediante QR con registro de entrada, salida, actividad, fecha/hora, operador y método de registro.
+
+Implementar WebSocket para actualizar dashboards de asistencia en tiempo real.
+
+Todo cambio administrativo crítico debe registrarse en una tabla de auditoría.
+
+No implementar toda la aplicación en una única iteración. Dividir el desarrollo en fases. Antes de escribir código de cada fase, analizar dependencias, crear o actualizar el modelo de datos, generar migraciones, implementar backend, implementar frontend, crear tests unitarios, integración y E2E y verificar los criterios de aceptación.
+
+No inventar tablas, endpoints o relaciones que contradigan el modelo de dominio existente. Mantener compatibilidad hacia atrás de la API.
+
+Cada módulo debe incluir:
+
+Modelo de datos.
+Migraciones.
+Entidades.
+DTOs.
+Servicios.
+Controllers.
+Guards.
+Permisos.
+Validaciones.
+Endpoints.
+Tests.
+Componentes frontend.
+Estados de carga y error.
+Auditoría.
+Documentación.
+
+No considerar una funcionalidad terminada hasta que el flujo completo pueda ejecutarse desde frontend hasta base de datos y pueda ser probado mediante tests.
+
+84. Lo que yo agregaría antes de comenzar a programar
+
+Hay tres documentos adicionales que conviene generar antes de pedirle a la IA que escriba código:
+
+Documento A — Modelo ER completo
+
+Con todas las tablas, columnas, tipos PostgreSQL, índices, claves foráneas, restricciones y cardinalidades.
+
+Documento B — Contrato API
+
+Cada endpoint con:
+
+URL
+método
+autenticación
+roles
+request
+response
+errores
+validaciones
+Documento C — Historias de usuario + criterios de aceptación
+
+Por ejemplo:
+
+Como organizador quiero crear un evento para poder publicar una actividad académica.
+
+Y después:
+
+AC-001
+El nombre es obligatorio.
+
+
+AC-002
+La fecha final no puede ser anterior a la inicial.
+
+
+AC-003
+Un evento en estado DRAFT no aparece públicamente.
+
+
+AC-004
+Un evento PUBLISHED puede visualizarse sin autenticación.
+
+
+AC-005
+Un evento REGISTRATION_CLOSED no permite nuevas inscripciones.
+
+Con esos tres documentos, la IA deja de "interpretar" qué querés construir y pasa a tener una especificación prácticamente ejecutable.
