@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { Curso, EstadoCurso } from '../cursos/curso.entity.js'
-import { BlogPost } from '../cms/blog-post.entity.js'
-import { FAQ } from '../cms/faq.entity.js'
-import { Galeria } from '../cms/galeria.entity.js'
-import { PerfilPonente } from '../ponentes/perfil-ponente.entity.js'
-import { PlantillaCertificado } from '../plantillas/plantilla.entity.js'
-import { CacheService } from '../cache/cache.service.js'
+import { Curso, EstadoCurso } from '../cursos/curso.entity'
+import { BlogPost } from '../cms/blog-post.entity'
+import { FAQ } from '../cms/faq.entity'
+import { Galeria } from '../cms/galeria.entity'
+import { PerfilPonente } from '../ponentes/perfil-ponente.entity'
+import { PlantillaCertificado } from '../plantillas/plantilla.entity'
+import { CacheService } from '../cache/cache.service'
 
 @Injectable()
 export class PublicApiService {

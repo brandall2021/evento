@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { Patrocinador, CategoriaPatrocinio } from './patrocinador.entity.js'
-import { BeneficioPatrocinio } from './beneficio.entity.js'
+import { Patrocinador, CategoriaPatrocinio } from './patrocinador.entity'
+import { BeneficioPatrocinio } from './beneficio.entity'
 
 @Injectable()
 export class PatrocinadoresService {

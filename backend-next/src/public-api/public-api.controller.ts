@@ -1,5 +1,5 @@
 import { Controller, Get, Param, Query, ParseIntPipe } from '@nestjs/common'
-import { PublicApiService } from './public-api.service.js'
+import { PublicApiService } from './public-api.service'
 
 @Controller('public')
 export class PublicApiController {

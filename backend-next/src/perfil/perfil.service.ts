@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { PerfilAsistente } from './perfil.entity.js'
+import { PerfilAsistente } from './perfil.entity'
 
 @Injectable()
 export class PerfilService {

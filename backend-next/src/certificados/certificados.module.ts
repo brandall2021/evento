@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
-import { Certificado } from './certificado.entity.js'
-import { Inscripcion } from '../inscripciones/inscripcion.entity.js'
-import { Asistencia } from '../asistencias/asistencia.entity.js'
-import { PlantillaCertificado } from '../plantillas/plantilla.entity.js'
-import { CertificadosService } from './certificados.service.js'
-import { CertificadosController } from './certificados.controller.js'
+import { Certificado } from './certificado.entity'
+import { Inscripcion } from '../inscripciones/inscripcion.entity'
+import { Asistencia } from '../asistencias/asistencia.entity'
+import { PlantillaCertificado } from '../plantillas/plantilla.entity'
+import { CertificadosService } from './certificados.service'
+import { CertificadosController } from './certificados.controller'
 
 @Module({
   imports: [TypeOrmModule.forFeature([Certificado, Inscripcion, Asistencia, PlantillaCertificado])],

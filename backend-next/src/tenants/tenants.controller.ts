@@ -9,13 +9,13 @@ import {
   UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common'
-import { TenantsService } from './tenants.service.js'
-import { CreateTenantDto } from './dto/create-tenant.dto.js'
-import { UpdateTenantDto } from './dto/update-tenant.dto.js'
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js'
-import { RolesGuard } from '../common/guards/roles.guard.js'
-import { Roles } from '../common/decorators/roles.decorator.js'
-import { UserRole } from '../users/user.entity.js'
+import { TenantsService } from './tenants.service'
+import { CreateTenantDto } from './dto/create-tenant.dto'
+import { UpdateTenantDto } from './dto/update-tenant.dto'
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
+import { RolesGuard } from '../common/guards/roles.guard'
+import { Roles } from '../common/decorators/roles.decorator'
+import { UserRole } from '../users/user.entity'
 
 @Controller('tenants')
 @UseGuards(JwtAuthGuard, RolesGuard)

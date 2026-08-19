@@ -7,8 +7,8 @@ import {
   JoinColumn,
   Unique,
 } from 'typeorm'
-import { User } from '../users/user.entity.js'
-import { Badge } from './badge.entity.js'
+import { User } from '../users/user.entity'
+import { Badge } from './badge.entity'
 
 @Entity('usuarios_badges')
 @Unique(['user_id', 'badge_id'])

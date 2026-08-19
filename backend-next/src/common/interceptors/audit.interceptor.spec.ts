@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { ExecutionContext, CallHandler } from '@nestjs/common'
 import { of } from 'rxjs'
-import { AuditInterceptor } from './audit.interceptor.js'
-import { AuditService } from '../../audit/audit.service.js'
-import { AuditAction } from '../../audit/entities/audit-log.entity.js'
+import { AuditInterceptor } from './audit.interceptor'
+import { AuditService } from '../../audit/audit.service'
+import { AuditAction } from '../../audit/entities/audit-log.entity'
 
 describe('AuditInterceptor', () => {
   let interceptor: AuditInterceptor

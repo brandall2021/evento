@@ -8,7 +8,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm'
-import { Curso } from '../cursos/curso.entity.js'
+import { Curso } from '../cursos/curso.entity'
 
 @Entity('salas')
 export class Sala {
@@ -25,10 +25,10 @@ export class Sala {
   @Column()
   nombre: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   capacidad: number
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   ubicacion: string
 
   @CreateDateColumn()

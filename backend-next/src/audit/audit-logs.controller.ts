@@ -1,9 +1,9 @@
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common'
-import { AuditService } from './audit.service.js'
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js'
-import { RolesGuard } from '../common/guards/roles.guard.js'
-import { Roles } from '../common/decorators/roles.decorator.js'
-import { UserRole } from '../users/user.entity.js'
+import { AuditService } from './audit.service'
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
+import { RolesGuard } from '../common/guards/roles.guard'
+import { Roles } from '../common/decorators/roles.decorator'
+import { UserRole } from '../users/user.entity'
 
 @Controller('audit-logs')
 @UseGuards(JwtAuthGuard, RolesGuard)

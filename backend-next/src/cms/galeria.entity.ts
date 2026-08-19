@@ -17,7 +17,7 @@ export class Galeria {
   @PrimaryGeneratedColumn()
   id: number
 
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   curso_id: number
 
   @Column()
@@ -29,7 +29,7 @@ export class Galeria {
   @Column()
   url: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   thumbnail_url: string
 
   @Column({ type: 'enum', enum: TipoMedia, default: TipoMedia.IMAGEN })

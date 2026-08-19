@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
-import { Checkin } from './checkin.entity.js'
-import { Inscripcion } from '../inscripciones/inscripcion.entity.js'
-import { Sesion } from '../agenda/sesion.entity.js'
-import { Sala } from '../agenda/sala.entity.js'
-import { CheckinService } from './checkin.service.js'
-import { CheckinController } from './checkin.controller.js'
+import { Checkin } from './checkin.entity'
+import { Inscripcion } from '../inscripciones/inscripcion.entity'
+import { Sesion } from '../agenda/sesion.entity'
+import { Sala } from '../agenda/sala.entity'
+import { CheckinService } from './checkin.service'
+import { CheckinController } from './checkin.controller'
 
 @Module({
   imports: [TypeOrmModule.forFeature([Checkin, Inscripcion, Sesion, Sala])],

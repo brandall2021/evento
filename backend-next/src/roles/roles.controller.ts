@@ -10,14 +10,14 @@ import {
   ParseUUIDPipe,
   Req,
 } from '@nestjs/common'
-import { RolesService } from './roles.service.js'
-import { CreateRoleDto } from './dto/create-role.dto.js'
-import { UpdateRoleDto } from './dto/update-role.dto.js'
-import { AssignPermissionsDto } from './dto/assign-permissions.dto.js'
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js'
-import { RolesGuard } from '../common/guards/roles.guard.js'
-import { Roles } from '../common/decorators/roles.decorator.js'
-import { UserRole } from '../users/user.entity.js'
+import { RolesService } from './roles.service'
+import { CreateRoleDto } from './dto/create-role.dto'
+import { UpdateRoleDto } from './dto/update-role.dto'
+import { AssignPermissionsDto } from './dto/assign-permissions.dto'
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
+import { RolesGuard } from '../common/guards/roles.guard'
+import { Roles } from '../common/decorators/roles.decorator'
+import { UserRole } from '../users/user.entity'
 
 export interface RequestWithUser {
   user: { tenantId: string }

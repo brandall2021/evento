@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { getRepositoryToken } from '@nestjs/typeorm'
-import { TenantsService } from './tenants.service.js'
-import { Tenant } from './entities/tenant.entity.js'
+import { TenantsService } from './tenants.service'
+import { Tenant } from './entities/tenant.entity'
 import { ConflictException, NotFoundException } from '@nestjs/common'
 
 describe('TenantsService', () => {

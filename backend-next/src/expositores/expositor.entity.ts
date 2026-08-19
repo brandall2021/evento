@@ -9,8 +9,8 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm'
-import { User } from '../users/user.entity.js'
-import { Curso } from '../cursos/curso.entity.js'
+import { User } from '../users/user.entity'
+import { Curso } from '../cursos/curso.entity'
 
 @Entity('expositores')
 export class Expositor {
@@ -37,13 +37,13 @@ export class Expositor {
   @Column({ type: 'text', nullable: true })
   descripcion: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   logo_url: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   stand_numero: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   stand_ubicacion: string
 
   @CreateDateColumn()

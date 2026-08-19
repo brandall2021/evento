@@ -6,11 +6,11 @@ import {
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { Role } from './entities/role.entity.js'
-import { RolePermission } from './entities/role-permission.entity.js'
-import { PermissionsService } from '../permissions/permissions.service.js'
-import { CreateRoleDto } from './dto/create-role.dto.js'
-import { UpdateRoleDto } from './dto/update-role.dto.js'
+import { Role } from './entities/role.entity'
+import { RolePermission } from './entities/role-permission.entity'
+import { PermissionsService } from '../permissions/permissions.service'
+import { CreateRoleDto } from './dto/create-role.dto'
+import { UpdateRoleDto } from './dto/update-role.dto'
 
 @Injectable()
 export class RolesService {

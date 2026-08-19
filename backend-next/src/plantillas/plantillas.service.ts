@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { PlantillaCertificado } from './plantilla.entity.js'
+import { PlantillaCertificado } from './plantilla.entity'
 
 @Injectable()
 export class PlantillasService {

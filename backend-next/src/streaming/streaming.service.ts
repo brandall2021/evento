@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { SalaStreaming } from './sala-streaming.entity.js'
-import { EncuestaStreaming } from './encuesta.entity.js'
-import { RespuestaEncuesta } from './respuesta-encuesta.entity.js'
-import { PreguntaQA } from './pregunta-qa.entity.js'
+import { SalaStreaming } from './sala-streaming.entity'
+import { EncuestaStreaming } from './encuesta.entity'
+import { RespuestaEncuesta } from './respuesta-encuesta.entity'
+import { PreguntaQA } from './pregunta-qa.entity'
 
 @Injectable()
 export class StreamingService {

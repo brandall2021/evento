@@ -6,8 +6,8 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm'
-import { Conversacion } from './conversacion.entity.js'
-import { User } from '../users/user.entity.js'
+import { Conversacion } from './conversacion.entity'
+import { User } from '../users/user.entity'
 
 export enum TipoMensaje {
   TEXTO = 'texto',

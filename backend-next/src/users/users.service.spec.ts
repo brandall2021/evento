@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { UsersService } from './users.service.js'
-import { User } from './entities/user.entity.js'
-import { UserTenant } from './entities/user-tenant.entity.js'
-import { UserRole } from './entities/user-role.entity.js'
-import { RefreshToken } from './entities/refresh-token.entity.js'
+import { UsersService } from './users.service'
+import { User } from './entities/user.entity'
+import { UserTenant } from './entities/user-tenant.entity'
+import { UserRole } from './entities/user-role.entity'
+import { RefreshToken } from './entities/refresh-token.entity'
 import { ConflictException, NotFoundException } from '@nestjs/common'
 
 describe('UsersService', () => {

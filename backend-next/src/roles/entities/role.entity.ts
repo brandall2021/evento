@@ -8,8 +8,8 @@ import {
   JoinColumn,
   OneToMany,
 } from 'typeorm'
-import { Tenant } from '../../tenants/entities/tenant.entity.js'
-import { RolePermission } from './role-permission.entity.js'
+import { Tenant } from '../../tenants/entities/tenant.entity'
+import { RolePermission } from './role-permission.entity'
 
 @Entity('roles', { schema: 'evento' })
 export class Role {

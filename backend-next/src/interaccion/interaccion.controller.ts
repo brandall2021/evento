@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, Query, Request, ParseIntPipe, UseGuards } from '@nestjs/common'
-import { InteraccionService } from './interaccion.service.js'
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js'
+import { InteraccionService } from './interaccion.service'
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
 
 @Controller('interaccion')
 @UseGuards(JwtAuthGuard)

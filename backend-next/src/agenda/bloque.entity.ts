@@ -8,7 +8,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm'
-import { DiaAgenda } from './dia.entity.js'
+import { DiaAgenda } from './dia.entity'
 
 @Entity('bloques')
 export class Bloque {

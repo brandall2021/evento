@@ -7,8 +7,8 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm'
-import { User } from '../users/user.entity.js'
-import { Curso } from '../cursos/curso.entity.js'
+import { User } from '../users/user.entity'
+import { Curso } from '../cursos/curso.entity'
 
 export enum EstadoReunion {
   PROGRAMADA = 'programada',
@@ -48,7 +48,7 @@ export class Reunion {
   @Column({ type: 'timestamp' })
   fecha_fin: Date
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   ubicacion: string | null
 
   @Column({ type: 'enum', enum: EstadoReunion, default: EstadoReunion.PROGRAMADA })

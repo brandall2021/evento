@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable } from 'typeorm'
-import { User } from '../users/user.entity.js'
+import { User } from '../users/user.entity'
 
 @Entity('organizaciones')
 export class Organizacion {
@@ -9,10 +9,10 @@ export class Organizacion {
   @Column()
   nombre: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   slug: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   logo_url: string | null
 
   @Column({ type: 'text', nullable: true })

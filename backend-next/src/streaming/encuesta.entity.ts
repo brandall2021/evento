@@ -7,7 +7,7 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm'
-import { SalaStreaming } from './sala-streaming.entity.js'
+import { SalaStreaming } from './sala-streaming.entity'
 
 @Entity('encuestas_streaming')
 export class EncuestaStreaming {

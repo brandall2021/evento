@@ -4,7 +4,7 @@ import {
   Column,
   CreateDateColumn,
 } from 'typeorm'
-import { CanalNotificacion } from './notificacion.entity.js'
+import { CanalNotificacion } from './notificacion.entity'
 
 @Entity('plantillas_notificacion')
 export class PlantillaNotificacion {

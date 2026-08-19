@@ -4,8 +4,8 @@ import { ExtractJwt, Strategy } from 'passport-jwt'
 import { ConfigService } from '@nestjs/config'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { User } from '../users/entities/user.entity.js'
-import { AuthService } from './auth.service.js'
+import { User } from '../users/entities/user.entity'
+import { AuthService } from './auth.service'
 
 export interface JwtPayload {
   sub: string

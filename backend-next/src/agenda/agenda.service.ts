@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { DiaAgenda } from './dia.entity.js'
-import { Sala } from './sala.entity.js'
-import { Bloque } from './bloque.entity.js'
-import { Sesion } from './sesion.entity.js'
+import { DiaAgenda } from './dia.entity'
+import { Sala } from './sala.entity'
+import { Bloque } from './bloque.entity'
+import { Sesion } from './sesion.entity'
 
 @Injectable()
 export class AgendaService {

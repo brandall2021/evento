@@ -7,8 +7,8 @@ import {
   JoinColumn,
   Unique,
 } from 'typeorm'
-import { Reunion } from './reunion.entity.js'
-import { User } from '../users/user.entity.js'
+import { Reunion } from './reunion.entity'
+import { User } from '../users/user.entity'
 
 export enum EstadoParticipante {
   PENDIENTE = 'pendiente',

@@ -12,7 +12,7 @@ export class FAQ {
   @PrimaryGeneratedColumn()
   id: number
 
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   curso_id: number
 
   @Column()

@@ -6,8 +6,8 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm'
-import { SalaStreaming } from './sala-streaming.entity.js'
-import { User } from '../users/user.entity.js'
+import { SalaStreaming } from './sala-streaming.entity'
+import { User } from '../users/user.entity'
 
 @Entity('preguntas_qa')
 export class PreguntaQA {

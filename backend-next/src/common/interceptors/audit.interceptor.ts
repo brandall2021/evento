@@ -5,8 +5,8 @@ import {
   CallHandler,
 } from '@nestjs/common'
 import { Observable, tap } from 'rxjs'
-import { AuditService } from '../../audit/audit.service.js'
-import { AuditAction } from '../../audit/entities/audit-log.entity.js'
+import { AuditService } from '../../audit/audit.service'
+import { AuditAction } from '../../audit/entities/audit-log.entity'
 
 @Injectable()
 export class AuditInterceptor implements NestInterceptor {

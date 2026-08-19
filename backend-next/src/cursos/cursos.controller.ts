@@ -16,12 +16,12 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express'
 import { diskStorage } from 'multer'
 import { extname } from 'path'
-import { CursosService } from './cursos.service.js'
-import { EstadoCurso } from './curso.entity.js'
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js'
-import { RolesGuard } from '../common/guards/roles.guard.js'
-import { Roles } from '../common/decorators/roles.decorator.js'
-import { UserRole } from '../users/user.entity.js'
+import { CursosService } from './cursos.service'
+import { EstadoCurso } from './curso.entity'
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
+import { RolesGuard } from '../common/guards/roles.guard'
+import { Roles } from '../common/decorators/roles.decorator'
+import { UserRole } from '../users/user.entity'
 
 @Controller('cursos')
 @UseGuards(JwtAuthGuard, RolesGuard)

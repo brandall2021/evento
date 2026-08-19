@@ -1,9 +1,9 @@
 import { Controller, Get, Put, Delete, Body, Param, Query, Request, ParseIntPipe, UseGuards } from '@nestjs/common'
-import { PonentesService } from './ponentes.service.js'
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js'
-import { RolesGuard } from '../common/guards/roles.guard.js'
-import { Roles } from '../common/decorators/roles.decorator.js'
-import { UserRole } from '../users/user.entity.js'
+import { PonentesService } from './ponentes.service'
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
+import { RolesGuard } from '../common/guards/roles.guard'
+import { Roles } from '../common/decorators/roles.decorator'
+import { UserRole } from '../users/user.entity'
 
 @Controller('ponentes')
 @UseGuards(JwtAuthGuard, RolesGuard)

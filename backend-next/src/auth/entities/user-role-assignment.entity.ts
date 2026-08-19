@@ -1,1 +1,1 @@
-export { UserRole as UserRoleAssignment } from '../../users/entities/user-role.entity.js'
+export { UserRole as UserRoleAssignment } from '../../users/entities/user-role.entity'

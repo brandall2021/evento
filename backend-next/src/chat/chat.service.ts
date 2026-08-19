@@ -1,9 +1,9 @@
 import { Injectable, NotFoundException, BadRequestException, Optional } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { Conversacion } from './conversacion.entity.js'
-import { MensajeChat, TipoMensaje } from './mensaje.entity.js'
-import { ParticipanteConversacion } from './participante.entity.js'
+import { Conversacion } from './conversacion.entity'
+import { MensajeChat, TipoMensaje } from './mensaje.entity'
+import { ParticipanteConversacion } from './participante.entity'
 
 @Injectable()
 export class ChatService {

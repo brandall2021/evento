@@ -8,7 +8,7 @@ import {
   OneToOne,
   JoinColumn,
 } from 'typeorm'
-import { User } from '../users/user.entity.js'
+import { User } from '../users/user.entity'
 
 @Entity('perfiles_asistente')
 export class PerfilAsistente {
@@ -22,10 +22,10 @@ export class PerfilAsistente {
   @JoinColumn({ name: 'user_id' })
   user: User
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   empresa: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   cargo: string
 
   @Column({ type: 'text', nullable: true })

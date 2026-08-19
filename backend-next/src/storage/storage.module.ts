@@ -1,5 +1,5 @@
 import { Module, Global } from '@nestjs/common'
-import { StorageService } from './storage.service.js'
+import { StorageService } from './storage.service'
 
 @Global()
 @Module({

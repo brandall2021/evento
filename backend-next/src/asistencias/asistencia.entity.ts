@@ -8,7 +8,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm'
-import { Inscripcion } from '../inscripciones/inscripcion.entity.js'
+import { Inscripcion } from '../inscripciones/inscripcion.entity'
 
 @Entity('asistencias')
 export class Asistencia {

@@ -9,7 +9,7 @@ import {
   OneToOne,
   JoinColumn,
 } from 'typeorm'
-import { Inscripcion } from '../inscripciones/inscripcion.entity.js'
+import { Inscripcion } from '../inscripciones/inscripcion.entity'
 
 @Entity('certificados')
 export class Certificado {
@@ -35,10 +35,10 @@ export class Certificado {
   @Column({ type: 'decimal', precision: 4, scale: 2, nullable: true })
   nota: number | null
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   pdf_url: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   qr_url: string
 
   @Column({ default: true })

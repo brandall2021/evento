@@ -9,8 +9,8 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm'
-import { User } from '../users/user.entity.js'
-import { Curso } from '../cursos/curso.entity.js'
+import { User } from '../users/user.entity'
+import { Curso } from '../cursos/curso.entity'
 
 export enum EstadoInscripcion {
   PENDIENTE = 'pendiente',

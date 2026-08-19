@@ -16,10 +16,10 @@ export class Badge {
   @Column({ type: 'text', nullable: true })
   descripcion: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   imagen_url: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   icono: string
 
   @Column({ default: 0 })

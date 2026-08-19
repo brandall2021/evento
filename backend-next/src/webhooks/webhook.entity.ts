@@ -14,10 +14,10 @@ export class Webhook {
   @Column({ default: true })
   activo: boolean
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   secret: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   user_id: number
 
   @CreateDateColumn()
@@ -41,10 +41,10 @@ export class WebhookEvent {
   @Column({ default: 'pendiente' })
   estado: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   respuesta_status: number | null
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   respuesta_body: string | null
 
   @Column({ type: 'int', default: 0 })

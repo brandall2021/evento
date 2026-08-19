@@ -6,7 +6,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm'
-import { User } from '../users/user.entity.js'
+import { User } from '../users/user.entity'
 
 export enum FuentePuntos {
   CHECKIN = 'checkin',
@@ -37,7 +37,7 @@ export class PuntosHistorial {
   @Column({ type: 'enum', enum: FuentePuntos })
   fuente: FuentePuntos
 
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   referencia_id: number | null
 
   @Column({ type: 'text', nullable: true })

@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
-import { Pago } from './pago.entity.js'
-import { Inscripcion } from '../inscripciones/inscripcion.entity.js'
-import { Curso } from '../cursos/curso.entity.js'
-import { PagosService } from './pagos.service.js'
-import { PagosController } from './pagos.controller.js'
+import { Pago } from './pago.entity'
+import { Inscripcion } from '../inscripciones/inscripcion.entity'
+import { Curso } from '../cursos/curso.entity'
+import { PagosService } from './pagos.service'
+import { PagosController } from './pagos.controller'
 
 @Module({
   imports: [TypeOrmModule.forFeature([Pago, Inscripcion, Curso])],

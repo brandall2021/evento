@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { Pago, EstadoPago } from './pago.entity.js'
-import { Inscripcion, EstadoInscripcion } from '../inscripciones/inscripcion.entity.js'
-import { Curso } from '../cursos/curso.entity.js'
-import { User, UserRole } from '../users/user.entity.js'
+import { Pago, EstadoPago } from './pago.entity'
+import { Inscripcion, EstadoInscripcion } from '../inscripciones/inscripcion.entity'
+import { Curso } from '../cursos/curso.entity'
+import { User, UserRole } from '../users/user.entity'
 
 @Injectable()
 export class PagosService {

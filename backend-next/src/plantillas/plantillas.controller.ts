@@ -14,12 +14,12 @@ import {
 import { FilesInterceptor } from '@nestjs/platform-express'
 import { memoryStorage } from 'multer'
 import { extname } from 'path'
-import { PlantillasService } from './plantillas.service.js'
-import { StorageService } from '../storage/storage.service.js'
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js'
-import { RolesGuard } from '../common/guards/roles.guard.js'
-import { Roles } from '../common/decorators/roles.decorator.js'
-import { UserRole } from '../users/user.entity.js'
+import { PlantillasService } from './plantillas.service'
+import { StorageService } from '../storage/storage.service'
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
+import { RolesGuard } from '../common/guards/roles.guard'
+import { Roles } from '../common/decorators/roles.decorator'
+import { UserRole } from '../users/user.entity'
 
 const imageFilter = (_req: any, file: Express.Multer.File, cb: any) => {
   if (!/\.(jpg|jpeg|png|webp)$/i.test(extname(file.originalname))) {

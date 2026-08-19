@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { Credencial } from './credencial.entity.js'
-import { Inscripcion, EstadoInscripcion } from '../inscripciones/inscripcion.entity.js'
+import { Credencial } from './credencial.entity'
+import { Inscripcion, EstadoInscripcion } from '../inscripciones/inscripcion.entity'
 import * as QRCode from 'qrcode'
 import PDFDocument from 'pdfkit'
 

@@ -8,9 +8,9 @@ import {
   Index,
   Unique,
 } from 'typeorm'
-import { User } from './user.entity.js'
-import { Role } from '../../roles/entities/role.entity.js'
-import { Tenant } from '../../tenants/entities/tenant.entity.js'
+import { User } from './user.entity'
+import { Role } from '../../roles/entities/role.entity'
+import { Tenant } from '../../tenants/entities/tenant.entity'
 
 @Entity('user_roles', { schema: 'evento' })
 @Unique('uq_user_role_tenant', ['user_id', 'role_id', 'tenant_id'])

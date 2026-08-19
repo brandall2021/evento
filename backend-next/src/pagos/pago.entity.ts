@@ -8,7 +8,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm'
-import { Inscripcion } from '../inscripciones/inscripcion.entity.js'
+import { Inscripcion } from '../inscripciones/inscripcion.entity'
 
 export enum MetodoPago {
   MERCADO_PAGO = 'mercado_pago',
@@ -48,10 +48,10 @@ export class Pago {
   @Column({ type: 'timestamp', nullable: true })
   fecha_pago: Date
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   codigo_transaccion: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   comprobante: string
 
   @Column({ default: 1 })
@@ -63,7 +63,7 @@ export class Pago {
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   descuento: number
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   tipo_beca: string
 
   @CreateDateColumn()

@@ -1,5 +1,5 @@
 import { ExecutionContext, ForbiddenException } from '@nestjs/common'
-import { PermissionsGuard } from './permissions.guard.js'
+import { PermissionsGuard } from './permissions.guard'
 
 describe('PermissionsGuard', () => {
   let guard: PermissionsGuard

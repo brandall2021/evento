@@ -7,7 +7,7 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm'
-import { User } from '../users/user.entity.js'
+import { User } from '../users/user.entity'
 
 @Entity('comentarios')
 export class Comentario {
@@ -21,16 +21,16 @@ export class Comentario {
   @JoinColumn({ name: 'user_id' })
   user: User
 
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   curso_id: number | null
 
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   sesion_id: number | null
 
   @Column({ type: 'text' })
   contenido: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   padre_id: number | null
 
   @Column({ default: 0 })

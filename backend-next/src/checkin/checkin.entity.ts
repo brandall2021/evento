@@ -7,9 +7,9 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm'
-import { Inscripcion } from '../inscripciones/inscripcion.entity.js'
-import { Sesion } from '../agenda/sesion.entity.js'
-import { Sala } from '../agenda/sala.entity.js'
+import { Inscripcion } from '../inscripciones/inscripcion.entity'
+import { Sesion } from '../agenda/sesion.entity'
+import { Sala } from '../agenda/sala.entity'
 
 export enum MetodoCheckin {
   QR = 'qr',
@@ -29,14 +29,14 @@ export class Checkin {
   @JoinColumn({ name: 'inscripcion_id' })
   inscripcion: Inscripcion
 
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   sesion_id: number | null
 
   @ManyToOne(() => Sesion, { eager: false })
   @JoinColumn({ name: 'sesion_id' })
   sesion: Sesion
 
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   sala_id: number | null
 
   @ManyToOne(() => Sala, { eager: false })
@@ -49,7 +49,7 @@ export class Checkin {
   @Column({ type: 'enum', enum: MetodoCheckin, default: MetodoCheckin.QR })
   metodo: MetodoCheckin
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   device_info: string | null
 
   @CreateDateColumn()

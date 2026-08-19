@@ -8,7 +8,7 @@ import {
   OneToOne,
   JoinColumn,
 } from 'typeorm'
-import { User } from '../users/user.entity.js'
+import { User } from '../users/user.entity'
 
 @Entity('perfiles_ponente')
 export class PerfilPonente {
@@ -22,10 +22,10 @@ export class PerfilPonente {
   @JoinColumn({ name: 'user_id' })
   user: User
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   cv_url: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   especialidad: string
 
   @Column({ type: 'text', nullable: true })
@@ -34,7 +34,7 @@ export class PerfilPonente {
   @Column({ type: 'decimal', precision: 3, scale: 2, nullable: true })
   calificacion: number
 
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   anos_experiencia: number
 
   @CreateDateColumn()

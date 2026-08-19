@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { Reunion, EstadoReunion } from './reunion.entity.js'
-import { ParticipanteReunion, EstadoParticipante } from './participante.entity.js'
+import { Reunion, EstadoReunion } from './reunion.entity'
+import { ParticipanteReunion, EstadoParticipante } from './participante.entity'
 
 @Injectable()
 export class ReunionesService {

@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { Checkin, MetodoCheckin } from './checkin.entity.js'
-import { Inscripcion, EstadoInscripcion } from '../inscripciones/inscripcion.entity.js'
-import { Sesion } from '../agenda/sesion.entity.js'
-import { Sala } from '../agenda/sala.entity.js'
+import { Checkin, MetodoCheckin } from './checkin.entity'
+import { Inscripcion, EstadoInscripcion } from '../inscripciones/inscripcion.entity'
+import { Sesion } from '../agenda/sesion.entity'
+import { Sala } from '../agenda/sala.entity'
 
 @Injectable()
 export class CheckinService {

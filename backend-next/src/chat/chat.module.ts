@@ -1,12 +1,12 @@
 import { Module, OnModuleInit } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
-import { Conversacion } from './conversacion.entity.js'
-import { MensajeChat } from './mensaje.entity.js'
-import { ParticipanteConversacion } from './participante.entity.js'
-import { ChatService } from './chat.service.js'
-import { ChatController } from './chat.controller.js'
-import { WebsocketModule } from '../websocket/websocket.module.js'
-import { ChatGateway } from '../websocket/chat.gateway.js'
+import { Conversacion } from './conversacion.entity'
+import { MensajeChat } from './mensaje.entity'
+import { ParticipanteConversacion } from './participante.entity'
+import { ChatService } from './chat.service'
+import { ChatController } from './chat.controller'
+import { WebsocketModule } from '../websocket/websocket.module'
+import { ChatGateway } from '../websocket/chat.gateway'
 
 @Module({
   imports: [

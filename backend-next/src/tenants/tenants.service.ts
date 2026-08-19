@@ -1,9 +1,9 @@
 import { Injectable, ConflictException, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { Tenant } from './entities/tenant.entity.js'
-import { CreateTenantDto } from './dto/create-tenant.dto.js'
-import { UpdateTenantDto } from './dto/update-tenant.dto.js'
+import { Tenant } from './entities/tenant.entity'
+import { CreateTenantDto } from './dto/create-tenant.dto'
+import { UpdateTenantDto } from './dto/update-tenant.dto'
 
 @Injectable()
 export class TenantsService {

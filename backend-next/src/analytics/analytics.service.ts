@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { User } from '../users/user.entity.js'
-import { Curso, EstadoCurso } from '../cursos/curso.entity.js'
-import { Inscripcion, EstadoInscripcion } from '../inscripciones/inscripcion.entity.js'
-import { Pago, EstadoPago } from '../pagos/pago.entity.js'
-import { Asistencia } from '../asistencias/asistencia.entity.js'
-import { Certificado } from '../certificados/certificado.entity.js'
+import { User } from '../users/user.entity'
+import { Curso, EstadoCurso } from '../cursos/curso.entity'
+import { Inscripcion, EstadoInscripcion } from '../inscripciones/inscripcion.entity'
+import { Pago, EstadoPago } from '../pagos/pago.entity'
+import { Asistencia } from '../asistencias/asistencia.entity'
+import { Certificado } from '../certificados/certificado.entity'
 
 @Injectable()
 export class AnalyticsService {

@@ -7,8 +7,8 @@ import {
   JoinColumn,
   Unique,
 } from 'typeorm'
-import { Trivia } from './trivia.entity.js'
-import { User } from '../users/user.entity.js'
+import { Trivia } from './trivia.entity'
+import { User } from '../users/user.entity'
 
 @Entity('respuestas_trivia')
 @Unique(['trivia_id', 'user_id'])

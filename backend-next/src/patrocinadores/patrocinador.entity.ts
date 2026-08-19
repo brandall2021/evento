@@ -9,8 +9,8 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm'
-import { User } from '../users/user.entity.js'
-import { Curso } from '../cursos/curso.entity.js'
+import { User } from '../users/user.entity'
+import { Curso } from '../cursos/curso.entity'
 
 export enum CategoriaPatrocinio {
   PLATINO = 'platino',
@@ -44,16 +44,16 @@ export class Patrocinador {
   @Column({ type: 'enum', enum: CategoriaPatrocinio, default: CategoriaPatrocinio.BRONCE })
   categoria: CategoriaPatrocinio
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   logo_url: string
 
   @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
   monto: number
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   contacto_nombre: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   contacto_email: string
 
   @CreateDateColumn()

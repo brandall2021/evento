@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
-import { MatchNetworking } from './match.entity.js'
-import { PerfilAsistente } from '../perfil/perfil.entity.js'
-import { NetworkingService } from './networking.service.js'
-import { NetworkingController } from './networking.controller.js'
+import { MatchNetworking } from './match.entity'
+import { PerfilAsistente } from '../perfil/perfil.entity'
+import { NetworkingService } from './networking.service'
+import { NetworkingController } from './networking.controller'
 
 @Module({
   imports: [TypeOrmModule.forFeature([MatchNetworking, PerfilAsistente])],

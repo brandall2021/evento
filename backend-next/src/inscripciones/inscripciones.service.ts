@@ -1,9 +1,9 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { Inscripcion, EstadoInscripcion } from './inscripcion.entity.js'
-import { Curso, EstadoCurso } from '../cursos/curso.entity.js'
-import { User, UserRole } from '../users/user.entity.js'
+import { Inscripcion, EstadoInscripcion } from './inscripcion.entity'
+import { Curso, EstadoCurso } from '../cursos/curso.entity'
+import { User, UserRole } from '../users/user.entity'
 
 @Injectable()
 export class InscripcionesService {

@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { Pagina } from './pagina.entity.js'
-import { BlogPost } from './blog-post.entity.js'
-import { Galeria } from './galeria.entity.js'
-import { FAQ } from './faq.entity.js'
+import { Pagina } from './pagina.entity'
+import { BlogPost } from './blog-post.entity'
+import { Galeria } from './galeria.entity'
+import { FAQ } from './faq.entity'
 
 @Injectable()
 export class CmsService {

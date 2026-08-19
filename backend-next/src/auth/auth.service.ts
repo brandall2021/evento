@@ -10,13 +10,13 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import * as bcrypt from 'bcryptjs'
 import { createHash, randomBytes } from 'node:crypto'
-import { User } from '../users/entities/user.entity.js'
-import { RefreshToken } from '../users/entities/refresh-token.entity.js'
-import { UserTenant } from '../users/entities/user-tenant.entity.js'
-import { UserRole } from '../users/entities/user-role.entity.js'
-import { Role } from '../roles/entities/role.entity.js'
-import { AuthResponseDto } from './dto/auth-response.dto.js'
-import { JwtPayload } from './jwt.strategy.js'
+import { User } from '../users/entities/user.entity'
+import { RefreshToken } from '../users/entities/refresh-token.entity'
+import { UserTenant } from '../users/entities/user-tenant.entity'
+import { UserRole } from '../users/entities/user-role.entity'
+import { Role } from '../roles/entities/role.entity'
+import { AuthResponseDto } from './dto/auth-response.dto'
+import { JwtPayload } from './jwt.strategy'
 
 @Injectable()
 export class AuthService {
@@ -153,6 +153,10 @@ export class AuthService {
   }
 
   async getUserRBAC(userId: string, tenantId: string) {
+    if (!tenantId) {
+      return { roles: [], permissions: [] }
+    }
+
     const assignments = await this.userRoleRepo.find({
       where: { user_id: userId, tenant_id: tenantId },
       relations: ['role', 'role.rolePermissions', 'role.rolePermissions.permission'],

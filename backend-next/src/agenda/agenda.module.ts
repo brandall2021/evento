@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
-import { DiaAgenda } from './dia.entity.js'
-import { Sala } from './sala.entity.js'
-import { Bloque } from './bloque.entity.js'
-import { Sesion } from './sesion.entity.js'
-import { AgendaService } from './agenda.service.js'
-import { AgendaController, DiaController, BloqueController, SalaController, SesionController } from './agenda.controller.js'
+import { DiaAgenda } from './dia.entity'
+import { Sala } from './sala.entity'
+import { Bloque } from './bloque.entity'
+import { Sesion } from './sesion.entity'
+import { AgendaService } from './agenda.service'
+import { AgendaController, DiaController, BloqueController, SalaController, SesionController } from './agenda.controller'
 
 @Module({
   imports: [TypeOrmModule.forFeature([DiaAgenda, Sala, Bloque, Sesion])],

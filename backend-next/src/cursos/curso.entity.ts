@@ -8,7 +8,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm'
-import { User } from '../users/user.entity.js'
+import { User } from '../users/user.entity'
 
 export enum Modalidad {
   PRESENCIAL = 'presencial',
@@ -33,10 +33,10 @@ export class Curso {
   @Column({ type: 'text', nullable: true })
   descripcion: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   imagen: string | null
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   categoria: string
 
   @Column()

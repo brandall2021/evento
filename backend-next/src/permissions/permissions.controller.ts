@@ -1,6 +1,6 @@
 import { Controller, Get, Param, ParseUUIDPipe, UseGuards, Query } from '@nestjs/common'
-import { PermissionsService } from './permissions.service.js'
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js'
+import { PermissionsService } from './permissions.service'
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
 
 @Controller('permissions')
 @UseGuards(JwtAuthGuard)

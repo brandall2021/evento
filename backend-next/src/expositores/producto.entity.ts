@@ -8,7 +8,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm'
-import { Expositor } from './expositor.entity.js'
+import { Expositor } from './expositor.entity'
 
 @Entity('productos_expositor')
 export class ProductoExpositor {
@@ -28,13 +28,13 @@ export class ProductoExpositor {
   @Column({ type: 'text', nullable: true })
   descripcion: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   imagen_url: string
 
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   precio: number
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   url_externa: string
 
   @CreateDateColumn()

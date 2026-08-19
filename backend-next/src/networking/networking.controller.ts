@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Put, Body, Param, Query, Request, ParseIntPipe, UseGuards } from '@nestjs/common'
-import { NetworkingService } from './networking.service.js'
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js'
+import { NetworkingService } from './networking.service'
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
 
 @Controller('networking')
 @UseGuards(JwtAuthGuard)

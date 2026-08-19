@@ -1,10 +1,10 @@
 import { Controller, Get, Post, Body, Param, Query, Request, ParseIntPipe, UseGuards } from '@nestjs/common'
-import { GamificacionService } from './gamificacion.service.js'
-import { FuentePuntos } from './puntos-historial.entity.js'
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js'
-import { RolesGuard } from '../common/guards/roles.guard.js'
-import { Roles } from '../common/decorators/roles.decorator.js'
-import { UserRole } from '../users/user.entity.js'
+import { GamificacionService } from './gamificacion.service'
+import { FuentePuntos } from './puntos-historial.entity'
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
+import { RolesGuard } from '../common/guards/roles.guard'
+import { Roles } from '../common/decorators/roles.decorator'
+import { UserRole } from '../users/user.entity'
 
 @Controller('gamificacion')
 @UseGuards(JwtAuthGuard, RolesGuard)

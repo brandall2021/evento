@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { getRepositoryToken } from '@nestjs/typeorm'
-import { RolesService } from './roles.service.js'
-import { Role } from './entities/role.entity.js'
-import { RolePermission } from './entities/role-permission.entity.js'
-import { PermissionsService } from '../permissions/permissions.service.js'
+import { RolesService } from './roles.service'
+import { Role } from './entities/role.entity'
+import { RolePermission } from './entities/role-permission.entity'
+import { PermissionsService } from '../permissions/permissions.service'
 import { ConflictException, NotFoundException, BadRequestException } from '@nestjs/common'
 
 describe('RolesService', () => {

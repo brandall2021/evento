@@ -1,10 +1,10 @@
 import { Controller, Get, Post, Put, Body, Param, Request, ParseIntPipe, UseGuards } from '@nestjs/common'
-import { ReunionesService } from './reuniones.service.js'
-import { EstadoReunion } from './reunion.entity.js'
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js'
-import { RolesGuard } from '../common/guards/roles.guard.js'
-import { Roles } from '../common/decorators/roles.decorator.js'
-import { UserRole } from '../users/user.entity.js'
+import { ReunionesService } from './reuniones.service'
+import { EstadoReunion } from './reunion.entity'
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
+import { RolesGuard } from '../common/guards/roles.guard'
+import { Roles } from '../common/decorators/roles.decorator'
+import { UserRole } from '../users/user.entity'
 
 @Controller('reuniones')
 @UseGuards(JwtAuthGuard, RolesGuard)

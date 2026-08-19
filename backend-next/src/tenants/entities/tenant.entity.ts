@@ -18,13 +18,13 @@ export class Tenant {
   @Column({ unique: true })
   slug: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   domain: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   logo_url: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   banner_url: string
 
   @Column({ type: 'jsonb', default: () => "'{}'" })

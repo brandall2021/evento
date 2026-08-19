@@ -1,10 +1,10 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, IsNull } from 'typeorm'
-import { Comentario } from './comentario.entity.js'
-import { Like } from './like.entity.js'
-import { Trivia } from './trivia.entity.js'
-import { RespuestaTrivia } from './respuesta-trivia.entity.js'
+import { Comentario } from './comentario.entity'
+import { Like } from './like.entity'
+import { Trivia } from './trivia.entity'
+import { RespuestaTrivia } from './respuesta-trivia.entity'
 
 @Injectable()
 export class InteraccionService {

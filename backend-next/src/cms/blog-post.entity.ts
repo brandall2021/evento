@@ -8,7 +8,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm'
-import { User } from '../users/user.entity.js'
+import { User } from '../users/user.entity'
 
 @Entity('blog_posts')
 export class BlogPost {
@@ -27,10 +27,10 @@ export class BlogPost {
   @Column({ type: 'text' })
   contenido: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   imagen_portada: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   autor_id: number
 
   @ManyToOne(() => User, { eager: false })

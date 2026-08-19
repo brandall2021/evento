@@ -9,7 +9,7 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm'
-import { Curso } from '../cursos/curso.entity.js'
+import { Curso } from '../cursos/curso.entity'
 
 @Entity('dias_agenda')
 export class DiaAgenda {

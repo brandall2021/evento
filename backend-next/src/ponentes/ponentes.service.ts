@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { PerfilPonente } from './perfil-ponente.entity.js'
+import { PerfilPonente } from './perfil-ponente.entity'
 
 @Injectable()
 export class PonentesService {

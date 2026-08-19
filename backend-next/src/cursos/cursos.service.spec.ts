@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { getRepositoryToken } from '@nestjs/typeorm'
-import { CursosService } from './cursos.service.js'
-import { Curso, EstadoCurso } from './curso.entity.js'
-import { User, UserRole } from '../users/user.entity.js'
-import { CacheService } from '../cache/cache.service.js'
+import { CursosService } from './cursos.service'
+import { Curso, EstadoCurso } from './curso.entity'
+import { User, UserRole } from '../users/user.entity'
+import { CacheService } from '../cache/cache.service'
 
 describe('CursosService', () => {
   let service: CursosService

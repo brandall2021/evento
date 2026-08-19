@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { Curso } from '../cursos/curso.entity.js'
-import { Inscripcion } from '../inscripciones/inscripcion.entity.js'
-import { Pago } from '../pagos/pago.entity.js'
-import { Asistencia } from '../asistencias/asistencia.entity.js'
-import { Certificado } from '../certificados/certificado.entity.js'
+import { Curso } from '../cursos/curso.entity'
+import { Inscripcion } from '../inscripciones/inscripcion.entity'
+import { Pago } from '../pagos/pago.entity'
+import { Asistencia } from '../asistencias/asistencia.entity'
+import { Certificado } from '../certificados/certificado.entity'
 
 @Injectable()
 export class ExportService {

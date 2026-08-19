@@ -7,8 +7,8 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm'
-import { Curso } from '../cursos/curso.entity.js'
-import { Sesion } from '../agenda/sesion.entity.js'
+import { Curso } from '../cursos/curso.entity'
+import { Sesion } from '../agenda/sesion.entity'
 
 export enum PlataformaStream {
   ZOOM = 'zoom',
@@ -30,7 +30,7 @@ export class SalaStreaming {
   @JoinColumn({ name: 'curso_id' })
   curso: Curso
 
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   sesion_id: number | null
 
   @ManyToOne(() => Sesion, { eager: false })
@@ -43,10 +43,10 @@ export class SalaStreaming {
   @Column({ type: 'enum', enum: PlataformaStream })
   plataforma: PlataformaStream
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   url_stream: string | null
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   url_chat: string | null
 
   @Column({ default: true })

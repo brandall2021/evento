@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
-import { Inscripcion } from './inscripcion.entity.js'
-import { Curso } from '../cursos/curso.entity.js'
-import { User } from '../users/user.entity.js'
-import { InscripcionesService } from './inscripciones.service.js'
-import { InscripcionesController } from './inscripciones.controller.js'
+import { Inscripcion } from './inscripcion.entity'
+import { Curso } from '../cursos/curso.entity'
+import { User } from '../users/user.entity'
+import { InscripcionesService } from './inscripciones.service'
+import { InscripcionesController } from './inscripciones.controller'
 
 @Module({
   imports: [TypeOrmModule.forFeature([Inscripcion, Curso, User])],

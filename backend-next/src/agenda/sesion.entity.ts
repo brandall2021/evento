@@ -8,9 +8,9 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm'
-import { Bloque } from './bloque.entity.js'
-import { Sala } from './sala.entity.js'
-import { User } from '../users/user.entity.js'
+import { Bloque } from './bloque.entity'
+import { Sala } from './sala.entity'
+import { User } from '../users/user.entity'
 
 export enum TipoSesion {
   CONFERENCIA = 'conferencia',
@@ -33,14 +33,14 @@ export class Sesion {
   @JoinColumn({ name: 'bloque_id' })
   bloque: Bloque
 
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   sala_id: number
 
   @ManyToOne(() => Sala, { eager: false })
   @JoinColumn({ name: 'sala_id' })
   sala: Sala
 
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   ponente_id: number
 
   @ManyToOne(() => User, { eager: false })
@@ -56,7 +56,7 @@ export class Sesion {
   @Column({ type: 'enum', enum: TipoSesion, default: TipoSesion.CONFERENCIA })
   tipo: TipoSesion
 
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   cupos: number
 
   @CreateDateColumn()

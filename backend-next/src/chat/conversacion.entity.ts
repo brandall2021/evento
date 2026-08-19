@@ -8,20 +8,20 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm'
-import { Curso } from '../cursos/curso.entity.js'
+import { Curso } from '../cursos/curso.entity'
 
 @Entity('conversaciones')
 export class Conversacion {
   @PrimaryGeneratedColumn()
   id: number
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   nombre: string | null
 
   @Column({ default: false })
   es_grupal: boolean
 
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   curso_id: number | null
 
   @ManyToOne(() => Curso, { eager: false })

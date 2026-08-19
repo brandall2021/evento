@@ -18,10 +18,10 @@ export class PlantillaCertificado {
   @Column({ type: 'jsonb', default: {} })
   config: Record<string, any>
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   firma_url: string | null
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   logo_url: string | null
 
   @Column({ default: false })

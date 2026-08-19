@@ -6,7 +6,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm'
-import { User } from '../users/user.entity.js'
+import { User } from '../users/user.entity'
 
 export enum CanalNotificacion {
   PUSH = 'push',
@@ -48,10 +48,10 @@ export class Notificacion {
   @Column({ type: 'enum', enum: EstadoNotificacion, default: EstadoNotificacion.PENDIENTE })
   estado: EstadoNotificacion
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   referencia_tipo: string | null
 
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   referencia_id: number | null
 
   @Column({ type: 'jsonb', nullable: true })

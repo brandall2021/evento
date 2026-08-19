@@ -1,10 +1,10 @@
 import { Controller, Get, Post, Body, Param, Query, Res, Request, ParseIntPipe, UseGuards } from '@nestjs/common'
 import { Response } from 'express'
-import { CertificadosService } from './certificados.service.js'
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js'
-import { RolesGuard } from '../common/guards/roles.guard.js'
-import { Roles } from '../common/decorators/roles.decorator.js'
-import { UserRole } from '../users/user.entity.js'
+import { CertificadosService } from './certificados.service'
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
+import { RolesGuard } from '../common/guards/roles.guard'
+import { Roles } from '../common/decorators/roles.decorator'
+import { UserRole } from '../users/user.entity'
 
 @Controller('certificados')
 @UseGuards(JwtAuthGuard, RolesGuard)

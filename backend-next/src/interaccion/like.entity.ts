@@ -7,8 +7,8 @@ import {
   JoinColumn,
   Unique,
 } from 'typeorm'
-import { User } from '../users/user.entity.js'
-import { Comentario } from './comentario.entity.js'
+import { User } from '../users/user.entity'
+import { Comentario } from './comentario.entity'
 
 @Entity('likes')
 @Unique(['user_id', 'comentario_id'])

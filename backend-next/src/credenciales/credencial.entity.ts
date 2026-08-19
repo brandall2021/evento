@@ -9,9 +9,9 @@ import {
   OneToOne,
   JoinColumn,
 } from 'typeorm'
-import { User } from '../users/user.entity.js'
-import { Curso } from '../cursos/curso.entity.js'
-import { Inscripcion } from '../inscripciones/inscripcion.entity.js'
+import { User } from '../users/user.entity'
+import { Curso } from '../cursos/curso.entity'
+import { Inscripcion } from '../inscripciones/inscripcion.entity'
 
 @Entity('credenciales')
 export class Credencial {
@@ -45,7 +45,7 @@ export class Credencial {
   @Column({ type: 'text', nullable: true })
   qr_data: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   pdf_url: string
 
   @Column({ default: false })

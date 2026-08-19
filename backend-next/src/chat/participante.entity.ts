@@ -7,8 +7,8 @@ import {
   JoinColumn,
   Unique,
 } from 'typeorm'
-import { Conversacion } from './conversacion.entity.js'
-import { User } from '../users/user.entity.js'
+import { Conversacion } from './conversacion.entity'
+import { User } from '../users/user.entity'
 
 @Entity('participantes_conversacion')
 @Unique(['conversacion_id', 'user_id'])

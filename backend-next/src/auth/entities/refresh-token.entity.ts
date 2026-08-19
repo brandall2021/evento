@@ -1,1 +1,1 @@
-export { RefreshToken } from '../../users/entities/refresh-token.entity.js'
+export { RefreshToken } from '../../users/entities/refresh-token.entity'

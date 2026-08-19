@@ -11,16 +11,16 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common'
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger'
-import { UsersService } from './users.service.js'
-import { CreateUserDto } from './dto/create-user.dto.js'
-import { UpdateUserDto } from './dto/update-user.dto.js'
-import { AssignRoleDto } from './dto/assign-role.dto.js'
-import { PageDto } from '../common/dto/pagination.dto.js'
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js'
-import { RolesGuard } from '../common/guards/roles.guard.js'
-import { PermissionsGuard } from '../common/guards/permissions.guard.js'
-import { Roles } from '../common/decorators/roles.decorator.js'
-import { Permissions } from '../common/decorators/permissions.decorator.js'
+import { UsersService } from './users.service'
+import { CreateUserDto } from './dto/create-user.dto'
+import { UpdateUserDto } from './dto/update-user.dto'
+import { AssignRoleDto } from './dto/assign-role.dto'
+import { PageDto } from '../common/dto/pagination.dto'
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
+import { RolesGuard } from '../common/guards/roles.guard'
+import { PermissionsGuard } from '../common/guards/permissions.guard'
+import { Roles } from '../common/decorators/roles.decorator'
+import { Permissions } from '../common/decorators/permissions.decorator'
 
 @ApiTags('Users')
 @ApiBearerAuth()

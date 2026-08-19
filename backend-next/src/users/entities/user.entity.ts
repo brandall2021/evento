@@ -8,9 +8,9 @@ import {
   OneToMany,
 } from 'typeorm'
 import * as bcrypt from 'bcryptjs'
-import { UserTenant } from './user-tenant.entity.js'
-import { UserRole } from './user-role.entity.js'
-import { RefreshToken } from './refresh-token.entity.js'
+import { UserTenant } from './user-tenant.entity'
+import { UserRole } from './user-role.entity'
+import { RefreshToken } from './refresh-token.entity'
 
 @Entity('users', { schema: 'evento' })
 export class User {

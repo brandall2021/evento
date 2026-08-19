@@ -8,7 +8,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm'
-import { Patrocinador } from './patrocinador.entity.js'
+import { Patrocinador } from './patrocinador.entity'
 
 export enum TipoBeneficio {
   BANNER = 'banner',
@@ -40,10 +40,10 @@ export class BeneficioPatrocinio {
   @Column({ type: 'text', nullable: true })
   contenido: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   imagen_url: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   url: string
 
   @Column({ default: true })

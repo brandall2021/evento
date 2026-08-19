@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { MatchNetworking, EstadoMatch } from './match.entity.js'
-import { PerfilAsistente } from '../perfil/perfil.entity.js'
+import { MatchNetworking, EstadoMatch } from './match.entity'
+import { PerfilAsistente } from '../perfil/perfil.entity'
 
 @Injectable()
 export class NetworkingService {

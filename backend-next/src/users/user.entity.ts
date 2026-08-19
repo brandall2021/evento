@@ -1,4 +1,4 @@
-export { User } from './entities/user.entity.js'
+export { User } from './entities/user.entity'
 
 export enum UserRole {
   SUPER_ADMIN = 'super_admin',

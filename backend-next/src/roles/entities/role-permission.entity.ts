@@ -7,8 +7,8 @@ import {
   JoinColumn,
   Unique,
 } from 'typeorm'
-import { Role } from './role.entity.js'
-import { Permission } from '../../permissions/entities/permission.entity.js'
+import { Role } from './role.entity'
+import { Permission } from '../../permissions/entities/permission.entity'
 
 @Entity('role_permissions', { schema: 'evento' })
 @Unique('uq_role_permission', ['role_id', 'permission_id'])

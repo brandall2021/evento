@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { PuntosHistorial, FuentePuntos } from './puntos-historial.entity.js'
-import { Badge } from './badge.entity.js'
-import { UsuarioBadge } from './usuario-badge.entity.js'
+import { PuntosHistorial, FuentePuntos } from './puntos-historial.entity'
+import { Badge } from './badge.entity'
+import { UsuarioBadge } from './usuario-badge.entity'
 
 @Injectable()
 export class GamificacionService {

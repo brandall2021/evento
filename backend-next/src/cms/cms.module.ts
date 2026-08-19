@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
-import { Pagina } from './pagina.entity.js'
-import { BlogPost } from './blog-post.entity.js'
-import { Galeria } from './galeria.entity.js'
-import { FAQ } from './faq.entity.js'
-import { CmsService } from './cms.service.js'
-import { CmsController } from './cms.controller.js'
+import { Pagina } from './pagina.entity'
+import { BlogPost } from './blog-post.entity'
+import { Galeria } from './galeria.entity'
+import { FAQ } from './faq.entity'
+import { CmsService } from './cms.service'
+import { CmsController } from './cms.controller'
 
 @Module({
   imports: [TypeOrmModule.forFeature([Pagina, BlogPost, Galeria, FAQ])],
