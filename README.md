@@ -1095,7 +1095,7 @@ El instalador imprime la URL del panel (generalmente `https://IP:3000`).
 1. Dentro del proyecto → pestaña **Configuration** → sección **Git**
 2. Completar:
    - **Repository URL:** `https://github.com/brandall2021/evento.git`
-   - **Branch:** `master`
+   - **Branch:** `master2`
 3. Si el repo es **privado**:
    - GitHub → Settings → Developer settings → **Personal access tokens**
    - Crear token con permiso `repo`
@@ -1261,6 +1261,37 @@ curl -X POST https://evento.tudominio.com/api/auth/login \
 2. **Payload URL:** `https://TU-SERVIDOR:3000/api/deploy-webhook?token=TU_TOKEN`
 3. **Content type:** `application/json`
 4. **Events:** `Just the push event`
+
+### Configuración de Dokploy resumida
+
+Si querés replicar el deploy sin leer toda la guía:
+
+| Servicio | Valor |
+|----------|-------|
+| Repo | `https://github.com/brandall2021/evento.git` |
+| Branch | `master2` |
+| Build | Dockerfile del root del repo |
+| App port | `3001` |
+| DB service | `evento-db` |
+| DB port | `5432` |
+| Health check | `/api/health` |
+| Uploads | `/app/backend/uploads` |
+| Auto deploy | GitHub deploy key o webhook |
+
+Variables mínimas:
+
+```env
+PORT=3001
+DB_HOST=evento-db
+DB_PORT=5432
+DB_NAME=evento_web
+DB_USER=postgres
+DB_PASSWORD=***
+JWT_SECRET=***
+JWT_EXPIRES_IN=7d
+API_URL=https://evento.tudominio.com
+CORS_ORIGIN=https://evento.tudominio.com
+```
 
 ### Desplegar NestJS (futuro)
 
