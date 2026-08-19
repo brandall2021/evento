@@ -2449,3 +2449,1154 @@ AC-005
 Un evento REGISTRATION_CLOSED no permite nuevas inscripciones.
 
 Con esos tres documentos, la IA deja de "interpretar" qué querés construir y pasa a tener una especificación prácticamente ejecutable.
+
+
+
+Sí. El siguiente paso debería ser definir simultáneamente el modelo de datos y la arquitectura del frontend, porque el frontend no debe diseñarse como pantallas aisladas: debe corresponder exactamente con los módulos, estados, permisos y API del backend.
+
+Te propongo esta arquitectura para que una IA pueda desarrollarla por etapas.
+
+1. Arquitectura completa del sistema
+┌─────────────────────────────────────────────────────────────┐
+│                         FRONTEND                            │
+│                 Next.js + TypeScript                        │
+│                                                             │
+│  Portal Público        Portal Participante    Admin        │
+│  ─────────────         ──────────────────     ──────       │
+│  Eventos               Mis eventos            Dashboard    │
+│  Inscripción            Credencial QR         Eventos      │
+│  Programa               Asistencias           Inscripciones│
+│  Certificados           Certificados          Actividades  │
+│  Validación             Evaluaciones          Asistencia   │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+                         REST / WebSocket
+                               │
+┌──────────────────────────────▼──────────────────────────────┐
+│                         BACKEND                             │
+│                    NestJS / TypeScript                      │
+│                                                             │
+│ Auth │ Events │ Registration │ Payments │ Attendance        │
+│ Eval │ Certificate │ Reports │ Notification │ Audit         │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+              ┌────────────────┼────────────────┐
+              ▼                ▼                ▼
+         PostgreSQL           Redis             S3
+              │                │                │
+              │                │                ├─ PDFs
+              │                │                ├─ Logos
+              │                │                └─ Materiales
+              │                │
+              │                └─ Jobs / Cache / WS
+              │
+              └─ Datos principales
+2. Frontend: tres experiencias diferentes
+
+No recomiendo hacer un único frontend donde todos vean el mismo menú.
+
+Debe haber tres experiencias:
+
+A. Portal público
+
+Para cualquier visitante.
+
+/
+├── eventos
+├── eventos/[slug]
+├── eventos/[slug]/programa
+├── eventos/[slug]/ponentes
+├── eventos/[slug]/inscripcion
+├── certificados/verificar/[token]
+└── instituciones/[slug]
+B. Portal del participante
+/app
+├── dashboard
+├── mis-eventos
+├── mis-inscripciones
+├── mis-credenciales
+├── mis-asistencias
+├── mis-evaluaciones
+├── mis-certificados
+├── perfil
+└── notificaciones
+C. Panel administrativo
+/admin
+├── dashboard
+├── eventos
+├── participantes
+├── inscripciones
+├── actividades
+├── agenda
+├── salas
+├── ponentes
+├── pagos
+├── acreditacion
+├── asistencia
+├── evaluaciones
+├── certificados
+├── encuestas
+├── reportes
+├── exportaciones
+├── usuarios
+├── roles
+├── instituciones
+├── configuracion
+└── auditoria
+3. Diseño visual
+
+Para una plataforma académica institucional recomiendo un diseño:
+
+Profesional.
+Limpio.
+Responsive.
+Accesible.
+No excesivamente "corporativo".
+Orientado a información.
+Excelente visualización en celular.
+Stack
+Next.js
+TypeScript
+Tailwind CSS
+shadcn/ui
+Lucide Icons
+React Hook Form
+Zod
+TanStack Query
+TanStack Table
+Recharts
+
+La IA debe evitar crear componentes visuales diferentes para cada pantalla.
+
+Crear un Design System.
+
+4. Design System
+
+Crear:
+
+components/
+├── ui/
+├── forms/
+├── tables/
+├── charts/
+├── dialogs/
+├── navigation/
+├── feedback/
+├── event/
+├── participant/
+├── attendance/
+├── certificate/
+└── dashboard/
+
+Componentes básicos:
+
+Button
+Input
+Select
+Combobox
+Checkbox
+Radio
+Textarea
+DatePicker
+DateTimePicker
+FileUpload
+Modal
+Drawer
+Tabs
+Card
+Badge
+Alert
+Toast
+Tooltip
+Dropdown
+Pagination
+DataTable
+Skeleton
+EmptyState
+ConfirmDialog
+5. Layout administrativo
+
+El administrador tendrá:
+
+┌──────────────────────────────────────────────────────────────┐
+│ LOGO                    🔔   Usuario ▼                       │
+├───────────────┬──────────────────────────────────────────────┤
+│               │                                              │
+│ Dashboard     │              CONTENIDO                       │
+│               │                                              │
+│ Eventos       │                                              │
+│ Participantes │                                              │
+│ Inscripciones │                                              │
+│ Actividades   │                                              │
+│ Asistencia    │                                              │
+│ Certificados  │                                              │
+│ Reportes      │                                              │
+│               │                                              │
+│ Configuración │                                              │
+└───────────────┴──────────────────────────────────────────────┘
+
+En móvil:
+
+┌──────────────────────────┐
+│ ☰    Eventos       👤   │
+├──────────────────────────┤
+│                          │
+│       CONTENIDO          │
+│                          │
+└──────────────────────────┘
+6. Dashboard administrativo
+
+La primera pantalla después del login:
+
+┌────────────────────────────────────────────────────────────┐
+│ Dashboard                                                  │
+│ Resumen general                                            │
+├────────────┬────────────┬────────────┬────────────────────┤
+│ 24         │ 4.820      │ 3.940      │ 3.120              │
+│ Eventos    │ Inscritos  │ Asistentes │ Certificados       │
+└────────────┴────────────┴────────────┴────────────────────┘
+
+
+┌─────────────────────────────┐ ┌──────────────────────────┐
+│ Inscripciones por mes       │ │ Eventos                  │
+│                             │ │                          │
+│       ╭───────╮             │ │ Congreso Economía        │
+│   ╭───╯       ╰───          │ │ Jornada Investigación    │
+│ ──╯                          │ │ Curso Python             │
+└─────────────────────────────┘ └──────────────────────────┘
+
+
+┌────────────────────────────────────────────────────────────┐
+│ Próximas actividades                                       │
+├────────────────────────────────────────────────────────────┤
+│ Curso Python │ 20/08 │ 09:00 │ Aula 4 │ 42/50             │
+│ Seminario    │ 21/08 │ 14:00 │ Aula 2 │ 80/100            │
+└────────────────────────────────────────────────────────────┘
+7. Gestión de eventos
+
+Ruta:
+
+/admin/eventos
+
+Tabla:
+
+Evento	Fecha	Estado	Inscritos	Asistentes	Acciones
+Congreso 2026	20/08	Publicado	850	0	Ver
+Curso Python	25/08	Inscripción	45	0	Ver
+Jornada	10/09	Borrador	0	0	Editar
+
+Filtros:
+
+Buscar
+Estado
+Tipo
+Fecha
+Institución
+8. Crear evento
+
+Wizard de varios pasos.
+
+No recomiendo un formulario gigantesco.
+
+Paso 1
+Información general
+Nombre.
+Tipo.
+Descripción.
+Imagen.
+Logo.
+Institución.
+Paso 2
+Fechas y ubicación
+Inicio.
+Fin.
+Zona horaria.
+Lugar.
+Dirección.
+Modalidad.
+Paso 3
+Inscripción
+Apertura.
+Cierre.
+Gratuita/arancelada.
+Cupos.
+Tipos de participantes.
+Paso 4
+Programa
+Módulos.
+Actividades.
+Salas.
+Docentes.
+Paso 5
+Certificación
+Tipo.
+Asistencia mínima.
+Evaluación.
+Plantilla.
+Paso 6
+Publicación
+Vista previa.
+SEO.
+Publicar.
+9. Editor de evento
+
+Una vez creado:
+
+/admin/eventos/:id
+
+Tabs:
+
+Resumen
+Información
+Programa
+Agenda
+Participantes
+Inscripciones
+Ponentes
+Salas
+Materiales
+Pagos
+Asistencia
+Evaluaciones
+Certificados
+Encuestas
+Reportes
+Configuración
+10. Página pública del evento
+
+Debe ser mucho más visual.
+
+┌─────────────────────────────────────────────────────────────┐
+│                         BANNER                              │
+│                                                             │
+│              CONGRESO DE ECONOMÍA 2026                     │
+│              20 - 22 Agosto 2026                            │
+│                                                             │
+│             [ INSCRIBIRME ]                                 │
+└─────────────────────────────────────────────────────────────┘
+
+
+Sobre el evento
+─────────────────────────────────────────────────────────────
+
+
+📅 20 al 22 de agosto
+📍 Facultad de Ciencias Económicas
+🎓 Evento académico
+
+
+Programa
+─────────────────────────────────────────────────────────────
+
+
+20 AGOSTO
+
+
+09:00  Conferencia inaugural
+10:30  Economía regional
+14:00  Taller de análisis
+
+
+Ponentes
+─────────────────────────────────────────────────────────────
+
+
+[Foto] Juan Pérez
+       Profesor
+
+
+[Foto] María González
+       Investigadora
+11. Inscripción pública
+
+Debe ser extremadamente sencilla.
+
+Paso 1
+Datos personales
+
+
+Paso 2
+Tipo de participante
+
+
+Paso 3
+Actividades
+
+
+Paso 4
+Pago
+
+
+Paso 5
+Confirmación
+
+Barra:
+
+●────●────○────○────○
+1    2    3    4    5
+12. Formulario dinámico
+
+El frontend debe construir automáticamente el formulario según la configuración recibida desde API.
+
+Por ejemplo, backend devuelve:
+
+{
+  "fields": [
+    {
+      "name": "institution",
+      "label": "Institución",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "occupation",
+      "label": "Actividad",
+      "type": "select",
+      "required": true
+    }
+  ]
+}
+
+React genera automáticamente:
+
+Institución *
+[____________________]
+
+
+Actividad *
+[ Docente ▼ ]
+
+
+[ CONTINUAR ]
+
+Esto hace que el sistema sea verdaderamente configurable.
+
+13. Panel del participante
+/app/dashboard
+
+Debe mostrar:
+
+Hola, Juan 👋
+
+
+┌───────────────┐
+│ 3             │
+│ Mis eventos   │
+└───────────────┘
+
+
+┌───────────────┐
+│ 2             │
+│ Certificados  │
+└───────────────┘
+
+
+┌───────────────┐
+│ 87 %          │
+│ Asistencia    │
+└───────────────┘
+14. Credencial digital
+
+Pantalla móvil:
+
+┌─────────────────────────────┐
+│                             │
+│       UNIVERSIDAD           │
+│                             │
+│       CONGRESO 2026         │
+│                             │
+│        JUAN PÉREZ           │
+│       Participante          │
+│                             │
+│         ┌─────────┐         │
+│         │   QR    │         │
+│         │         │         │
+│         └─────────┘         │
+│                             │
+│       ID: EVT-82A91         │
+│                             │
+└─────────────────────────────┘
+
+Botón:
+
+[ Agregar a billetera ]
+[ Descargar credencial ]
+15. Acreditación
+
+Esta pantalla merece una aplicación frontend especializada.
+
+Ruta:
+
+/admin/acreditacion
+
+Seleccionar:
+
+Evento
+Actividad
+
+Luego:
+
+┌────────────────────────────────────┐
+│                                    │
+│          ESCANEAR QR               │
+│                                    │
+│       ┌────────────────┐           │
+│       │                │           │
+│       │    CÁMARA      │           │
+│       │                │           │
+│       └────────────────┘           │
+│                                    │
+│       Esperando QR...              │
+│                                    │
+└────────────────────────────────────┘
+
+Resultado exitoso:
+
+✓ ACREDITACIÓN CORRECTA
+
+
+Juan Pérez
+Docente
+Congreso 2026
+
+
+Entrada:
+09:04:32
+
+
+[ CONTINUAR ]
+
+Error:
+
+✕ QR NO VÁLIDO
+
+
+El participante no está
+registrado en este evento.
+16. Dashboard de asistencia en tiempo real
+
+Ruta:
+
+/admin/eventos/:id/asistencia
+
+Mostrar:
+
+┌────────────┬────────────┬────────────┐
+│ 1.200      │ 890        │ 74,1 %     │
+│ Inscritos  │ Presentes  │ Asistencia │
+└────────────┴────────────┴────────────┘
+
+Gráfico:
+
+Asistencia por actividad
+
+Y:
+
+Actividad       Inscritos   Presentes   %
+Conferencia       500         450       90%
+Taller 1          100          85       85%
+Taller 2           80          70       87%
+
+Con WebSocket los números se actualizan automáticamente.
+
+17. Gestión de actividades
+
+Vista:
+
+/admin/eventos/:id/actividades
+
+Cada actividad como tarjeta:
+
+┌───────────────────────────────────────┐
+│ Taller de Estadística                │
+│                                       │
+│ 📅 20/08/2026                        │
+│ 🕐 14:00 - 17:00                     │
+│ 📍 Aula 5                             │
+│ 👥 42 / 50                            │
+│                                       │
+│ [Editar] [Asistencia] [Evaluación]   │
+└───────────────────────────────────────┘
+18. Agenda
+
+Debe tener vista:
+
+Día
+Semana
+Lista
+
+Ejemplo:
+
+08:00 ─────────────────────────────
+
+
+09:00 │ Conferencia inaugural
+      │ Aula Magna
+      │ 350 participantes
+
+
+10:30 │ Taller Estadística
+      │ Aula 5
+      │ 45 participantes
+
+
+12:00 ─────────────────────────────
+19. Certificados
+
+Panel:
+
+/admin/eventos/:id/certificados
+
+Indicadores:
+
+Elegibles:       850
+Generados:       820
+En proceso:       20
+No cumplen:       10
+
+Acciones:
+
+[ Generar todos ]
+[ Generar seleccionados ]
+[ Descargar ]
+[ Enviar por email ]
+20. Constructor de certificado
+
+Visualmente:
+
+┌─────────────────────────────────────┐
+│                                     │
+│          UNIVERSIDAD                │
+│                                     │
+│           CERTIFICADO               │
+│                                     │
+│         Se certifica que            │
+│                                     │
+│          JUAN PÉREZ                 │
+│                                     │
+│ participó/aprobó el curso...        │
+│                                     │
+│                                     │
+│ Firma             Firma             │
+│                                     │
+│             [ QR ]                  │
+└─────────────────────────────────────┘
+
+El administrador debería poder seleccionar:
+
+Plantilla
+Firma
+Tipo
+Tamaño
+Orientación
+21. Validación pública
+
+Ruta:
+
+/verificar/ABC123
+
+Diseño:
+
+┌────────────────────────────────────────┐
+│                                        │
+│              ✓                         │
+│       CERTIFICADO VÁLIDO               │
+│                                        │
+│       Juan Pérez                       │
+│                                        │
+│       Congreso de Economía 2026        │
+│                                        │
+│       Certificado de aprobación        │
+│                                        │
+│       Nº UNT-ECO-2026-00124            │
+│                                        │
+│       Emitido: 22/08/2026              │
+│                                        │
+└────────────────────────────────────────┘
+22. Reportes
+
+Frontend con filtros avanzados:
+
+Evento
+Fecha desde
+Fecha hasta
+Actividad
+Tipo participante
+Estado
+
+Botones:
+
+[ Buscar ]
+
+
+[ CSV ]
+[ Excel ]
+[ PDF ]
+23. Tabla avanzada
+
+Todas las tablas administrativas deberían tener:
+
+búsqueda
+filtros
+ordenamiento
+paginación
+selección múltiple
+acciones masivas
+exportación
+
+Ejemplo:
+
+┌────────────────────────────────────────────────────────────┐
+│ Buscar participante...                    [Filtros]         │
+├───┬───────────────┬──────────┬──────────┬─────────────────┤
+│ □ │ Nombre        │ Email    │ Estado   │ Acciones        │
+├───┼───────────────┼──────────┼──────────┼─────────────────┤
+│ □ │ Juan Pérez    │ ...      │ Confirm. │ ⋮               │
+│ □ │ Ana Gómez     │ ...      │ Pagado   │ ⋮               │
+└───┴───────────────┴──────────┴──────────┴─────────────────┘
+24. UX de estados
+
+Todas las operaciones asíncronas deben tener:
+
+Loading
+Success
+Error
+Empty
+
+Ejemplo:
+
+Cargando participantes...
+
+Nunca dejar una pantalla congelada.
+
+25. Arquitectura de carpetas frontend
+
+Recomiendo:
+
+src/
+├── app/
+│   ├── (public)/
+│   ├── (auth)/
+│   ├── (participant)/
+│   └── (admin)/
+│
+├── components/
+│   ├── ui/
+│   ├── layout/
+│   ├── forms/
+│   ├── tables/
+│   ├── charts/
+│   ├── events/
+│   ├── registrations/
+│   ├── attendance/
+│   └── certificates/
+│
+├── features/
+│   ├── auth/
+│   ├── events/
+│   ├── participants/
+│   ├── registrations/
+│   ├── payments/
+│   ├── attendance/
+│   ├── evaluations/
+│   ├── certificates/
+│   └── reports/
+│
+├── lib/
+│   ├── api/
+│   ├── auth/
+│   ├── websocket/
+│   ├── permissions/
+│   ├── validations/
+│   └── utils/
+│
+├── hooks/
+├── types/
+└── config/
+26. Manejo de API
+
+No hacer fetch() dispersos por todo el frontend.
+
+Crear:
+
+lib/api/client.ts
+
+Y servicios:
+
+eventsApi
+participantsApi
+registrationsApi
+attendanceApi
+certificatesApi
+paymentsApi
+
+Ejemplo conceptual:
+
+eventsApi.getEvents()
+eventsApi.getEvent(id)
+eventsApi.createEvent(data)
+
+
+attendanceApi.checkIn(data)
+
+
+certificatesApi.generate(id)
+certificatesApi.verify(token)
+27. TanStack Query
+
+Utilizar React Query para:
+
+GET
+POST
+PATCH
+DELETE
+cache
+invalidación
+loading
+error
+refetch
+
+Por ejemplo:
+
+useEvents()
+useEvent(id)
+useRegistrations(eventId)
+useAttendance(eventId)
+useCertificates(eventId)
+
+Esto evita una gran cantidad de lógica repetida.
+
+28. Autorización frontend
+
+El frontend debe conocer los permisos:
+
+event.create
+event.edit
+event.delete
+attendance.register
+certificate.issue
+report.export
+
+Por ejemplo:
+
+[Editar]
+
+solo aparece si:
+
+user.permissions.includes("event.update")
+
+Pero esto nunca reemplaza la autorización del backend.
+
+El backend siempre debe volver a verificar el permiso.
+
+29. Responsive
+
+Tres puntos de diseño:
+
+Mobile
+Tablet
+Desktop
+
+Especialmente:
+
+Participante
+
+Prioridad:
+
+Mobile
+Acreditación
+
+Prioridad:
+
+Mobile / Tablet
+Administración
+
+Prioridad:
+
+Desktop / Tablet
+30. PWA
+
+Yo incorporaría una PWA.
+
+Especialmente para:
+
+credencial
+QR
+acreditación
+asistencia
+
+Permitir:
+
+instalar aplicación
+
+en Android/iOS mediante navegador.
+
+31. Scanner QR
+
+El componente:
+
+<QRScanner />
+
+debe:
+
+Solicitar cámara.
+Detectar QR.
+Obtener token.
+Enviar API.
+Mostrar resultado.
+Reproducir feedback visual/sonoro.
+Volver automáticamente al modo escaneo.
+
+Esto permite acreditar cientos de personas rápidamente.
+
+32. Arquitectura de navegación
+Público
+Inicio
+ ├── Eventos
+ │    └── Evento
+ │         ├── Información
+ │         ├── Programa
+ │         ├── Ponentes
+ │         └── Inscripción
+ │
+ └── Validar certificado
+Participante
+Dashboard
+ ├── Mis eventos
+ ├── Credencial
+ ├── Asistencia
+ ├── Evaluaciones
+ ├── Certificados
+ └── Perfil
+Administrador
+Dashboard
+ ├── Eventos
+ │    └── Evento
+ │         ├── Resumen
+ │         ├── Programa
+ │         ├── Inscripciones
+ │         ├── Participantes
+ │         ├── Asistencia
+ │         ├── Evaluaciones
+ │         ├── Certificados
+ │         └── Reportes
+ │
+ ├── Participantes
+ ├── Usuarios
+ ├── Instituciones
+ └── Configuración
+33. Diseño de la experiencia de creación
+
+Una de las partes más importantes para que el sistema sea fácil de usar.
+
+El organizador no debería enfrentarse a 100 campos.
+
+Utilizar un Event Builder:
+
+┌────────────────────────────────────────────┐
+│ Crear evento                               │
+│                                            │
+│ ✓ Información                              │
+│ ✓ Fechas                                   │
+│ ✓ Inscripción                              │
+│ ○ Programa                                 │
+│ ○ Certificación                            │
+│ ○ Publicación                              │
+│                                            │
+│              [Guardar y continuar]         │
+└────────────────────────────────────────────┘
+34. Arquitectura visual del evento
+
+El evento debería tener una identidad visual configurable:
+
+logo
+banner
+favicon
+color primario
+color secundario
+tipografía
+
+Pero el administrador no debe poder romper el Design System.
+
+Se pueden definir variables:
+
+--event-primary
+--event-secondary
+--event-background
+35. Frontend + API + permisos
+
+La regla fundamental debe ser:
+
+UI
+ ↓
+Feature
+ ↓
+API Client
+ ↓
+Backend
+ ↓
+Authorization
+ ↓
+Database
+
+Nunca:
+
+UI
+ ↓
+Database
+36. Orden exacto que le daría a la IA
+
+No le pediría todavía que programe todas las pantallas.
+
+Le daría estas tareas consecutivas:
+
+Sprint 1
+1. Crear proyecto Next.js
+2. Configurar TypeScript
+3. Tailwind
+4. shadcn/ui
+5. Design System
+6. Layout público
+7. Layout participante
+8. Layout administrativo
+9. Login
+10. Protección de rutas
+Sprint 2
+1. Dashboard
+2. Eventos
+3. Crear evento
+4. Editar evento
+5. Publicar evento
+6. Página pública
+Sprint 3
+1. Participantes
+2. Formularios dinámicos
+3. Inscripción
+4. Cupos
+5. Lista de espera
+Sprint 4
+1. Actividades
+2. Módulos
+3. Agenda
+4. Salas
+5. Ponentes
+6. Materiales
+Sprint 5
+1. Mercado Pago
+2. Credencial
+3. QR
+4. Emails
+Sprint 6
+1. Scanner QR
+2. Acreditación
+3. Asistencia
+4. Dashboard realtime
+Sprint 7
+1. Evaluaciones
+2. Resultados
+3. Reglas
+Sprint 8
+1. Certificados
+2. PDF
+3. QR
+4. Validación pública
+5. Revocación
+Sprint 9
+1. Encuestas
+2. Reportes
+3. Exportaciones
+4. Estadísticas
+Sprint 10
+1. Auditoría
+2. Seguridad
+3. Tests
+4. PWA
+5. Optimización
+6. Deploy
+37. Prompt específico para que una IA construya el frontend
+
+Este sería el prompt que utilizaría después de definir el backend:
+
+Construir el frontend completo de una plataforma multiinstitucional de gestión de eventos académicos utilizando Next.js, TypeScript, Tailwind CSS, shadcn/ui, TanStack Query, React Hook Form, Zod, TanStack Table, Recharts y WebSocket.
+
+El frontend debe estar dividido en tres experiencias: portal público, portal del participante y panel administrativo.
+
+Implementar rutas protegidas y autorización basada en permisos. El frontend nunca debe conectarse directamente a PostgreSQL; todas las operaciones deben realizarse mediante la API REST /api/v1.
+
+Crear un Design System reutilizable antes de desarrollar las pantallas funcionales.
+
+Implementar layouts responsive para desktop, tablet y móvil.
+
+Crear los siguientes módulos:
+
+autenticación;
+dashboard;
+instituciones;
+eventos;
+constructor de eventos;
+páginas públicas;
+formularios dinámicos;
+participantes;
+inscripciones;
+cupos;
+lista de espera;
+actividades;
+módulos académicos;
+agenda;
+salas;
+ponentes;
+materiales;
+pagos;
+credenciales;
+QR;
+acreditación;
+asistencia;
+dashboard de asistencia en tiempo real;
+evaluaciones;
+resultados;
+reglas de certificación;
+certificados;
+generación y descarga de PDF;
+validación pública;
+revocación;
+encuestas;
+notificaciones;
+reportes;
+exportaciones;
+usuarios;
+roles;
+permisos;
+configuración;
+auditoría.
+
+El portal público debe permitir consultar eventos, visualizar información, programa y ponentes, completar inscripción y consultar certificados.
+
+El portal del participante debe mostrar eventos, inscripciones, credenciales QR, asistencias, evaluaciones y certificados.
+
+El panel administrativo debe permitir gestionar integralmente cada evento.
+
+Crear un Event Builder mediante wizard dividido en información general, fechas, inscripción, programa, certificación y publicación.
+
+Crear un sistema de formularios dinámicos basado en metadatos enviados por el backend. Los campos deben generarse automáticamente según tipo, obligatoriedad, opciones y reglas de validación.
+
+Crear un componente QRScanner optimizado para celulares y tablets. Después de cada escaneo debe mostrar inmediatamente el resultado y volver al modo de escaneo.
+
+Implementar WebSocket para actualizar estadísticas de asistencia sin recargar la página.
+
+Implementar estados loading, error, empty y success para todas las operaciones.
+
+Implementar paginación, filtros, búsqueda, ordenamiento y acciones masivas en las tablas administrativas.
+
+Implementar responsive design priorizando móvil para credenciales y acreditación y desktop para administración.
+
+Utilizar componentes reutilizables y evitar duplicación de código.
+
+No hardcodear datos de eventos, participantes, certificados o estadísticas.
+
+Crear mocks solamente cuando el endpoint todavía no exista y aislarlos de la implementación definitiva.
+
+Antes de implementar cada módulo, definir tipos TypeScript, contrato API, estados de UI, permisos y criterios de aceptación.
+
+Implementar tests unitarios y E2E para los flujos críticos.
+
+No considerar una pantalla terminada hasta que tenga validaciones, estados de carga, manejo de errores, responsive design y conexión con la API correspondiente.
