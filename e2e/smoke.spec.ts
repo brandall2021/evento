@@ -52,21 +52,21 @@ test.describe('API smoke', () => {
 test.describe('Frontend smoke', () => {
   test('login page renders auth form', async ({ page }) => {
     await page.goto('/login')
-    await expect(page.locator('h1')).toContainText('Iniciar sesión')
     await expect(page.locator('#email')).toBeVisible()
     await expect(page.locator('#password')).toBeVisible()
     await expect(page.locator('button[type="submit"]')).toBeVisible()
+    await expect(page.locator('button[type="submit"]')).toContainText('Iniciar sesión')
   })
 
   test('register page renders auth form', async ({ page }) => {
     await page.goto('/register')
-    await expect(page.locator('h1')).toContainText('Crear cuenta')
     await expect(page.locator('#email')).toBeVisible()
     await expect(page.locator('button[type="submit"]')).toBeVisible()
+    await expect(page.locator('button[type="submit"]')).toContainText('Crear cuenta')
   })
 
   test('unauthenticated user is redirected to /login from protected route', async ({ page }) => {
-    await page.goto('/cursos')
+    await page.goto('/dashboard')
     await page.waitForURL('**/login')
     expect(page.url()).toContain('/login')
   })
