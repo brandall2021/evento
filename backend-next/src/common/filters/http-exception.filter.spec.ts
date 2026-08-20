@@ -1,4 +1,4 @@
-import { HttpException, NotFoundException } from '@nestjs/common'
+import { HttpException, Logger } from '@nestjs/common'
 import { HttpExceptionFilter } from './http-exception.filter'
 
 describe('HttpExceptionFilter', () => {
@@ -68,5 +68,16 @@ describe('HttpExceptionFilter', () => {
     const body = res.json.mock.calls[0][0]
     expect(body.timestamp).toBeDefined()
     expect(new Date(body.timestamp).getTime()).not.toBeNaN()
+  })
+
+  it('should log a warning for the request', () => {
+    const warnSpy = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined as never)
+    const exception = new HttpException('Error', 500)
+    const res = mockResponse()
+
+    filter.catch(exception, mockHost(mockRequest('/api/test', 'POST'), res))
+
+    expect(warnSpy).toHaveBeenCalledWith('POST /api/test -> 500')
+    warnSpy.mockRestore()
   })
 })
