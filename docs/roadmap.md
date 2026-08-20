@@ -20,7 +20,7 @@
 ## Proximos pasos
 
 - [ ] Desplegar NestJS como servicio separado en Dokploy
-- [ ] Aplicar branding LACDI (colores hex + logo)
+- [x] Aplicar branding LACDI (colores hex + logo)
 - [ ] Tests de integracion (end-to-end)
 - [ ] App movil (React Native o Flutter)
 - [ ] CI/CD pipeline (GitHub Actions)

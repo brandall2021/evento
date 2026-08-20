@@ -12,6 +12,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
+import { BrandMark } from "@/components/brand/brand-mark"
 
 const loginSchema = z.object({
   email: z.string().min(1, "El email es requerido").email("Email inválido"),
@@ -49,8 +50,11 @@ export default function LoginPage() {
   }
 
   return (
-    <Card>
+    <Card className="border-0 bg-transparent shadow-none ring-0">
       <CardHeader>
+        <div className="mb-2 lg:hidden">
+          <BrandMark compact />
+        </div>
         <CardTitle>Iniciar sesión</CardTitle>
       </CardHeader>
       <form onSubmit={handleSubmit(onSubmit)}>

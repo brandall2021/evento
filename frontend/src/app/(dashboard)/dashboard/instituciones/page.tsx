@@ -7,6 +7,7 @@ import { z } from "zod/v4"
 import { toast } from "sonner"
 import { DataTable, type Column } from "@/components/data-table"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -19,7 +20,7 @@ import {
 } from "@/components/ui/dialog"
 import { useTenants, useCreateTenant } from "@/hooks/use-tenants"
 import type { Tenant } from "@/types/tenant"
-import { PlusIcon } from "lucide-react"
+import { Building2, PlusIcon } from "lucide-react"
 
 const createTenantSchema = z.object({
   name: z.string().min(1, "Nombre requerido"),
@@ -80,25 +81,37 @@ export default function InstitucionesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Instituciones</h1>
-          <p className="text-sm text-muted-foreground">
-            Gestiona las instituciones (tenants) del sistema
-          </p>
-        </div>
-        <Button onClick={() => setDialogOpen(true)}>
-          <PlusIcon className="size-4" />
-          Nueva institución
-        </Button>
-      </div>
+      <Card className="border-border/70 bg-card/90 shadow-[0_18px_50px_rgba(11,42,85,0.08)]">
+        <CardContent className="flex flex-col gap-5 p-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl space-y-3">
+            <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-primary">
+              <Building2 className="size-3.5" />
+              LACDI
+            </div>
+            <div>
+              <h1 className="text-3xl font-semibold tracking-tight text-balance">Instituciones</h1>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Gestiona los tenants con una vista de administración más sobria y clara.
+              </p>
+            </div>
+          </div>
+          <Button onClick={() => setDialogOpen(true)} className="shrink-0">
+            <PlusIcon className="size-4" />
+            Nueva institución
+          </Button>
+        </CardContent>
+      </Card>
 
-      <DataTable
-        columns={columns}
-        data={tenants ?? []}
-        isLoading={isLoading}
-        emptyMessage="No hay instituciones registradas"
-      />
+      <Card className="border-border/70 bg-card/90 shadow-[0_18px_50px_rgba(11,42,85,0.08)]">
+        <CardContent className="p-2 sm:p-4">
+          <DataTable
+            columns={columns}
+            data={tenants ?? []}
+            isLoading={isLoading}
+            emptyMessage="No hay instituciones registradas"
+          />
+        </CardContent>
+      </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>

@@ -14,8 +14,15 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "Evento — Plataforma de Gestión de Eventos",
-  description: "Sistema multi-tenant para la gestión integral de eventos, conferencias y capacitaciones.",
+  title: {
+    default: "LACDI",
+    template: "%s · LACDI",
+  },
+  description: "Plataforma de eventos para operar inscripciones, agenda, certificados, networking y control de acceso.",
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+  },
 }
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

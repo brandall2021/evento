@@ -1367,7 +1367,7 @@ docker exec -it <CONTAINER_ID> env | grep -E "DB_|JWT_|PORT"
 ### Próximos pasos
 
 - [ ] Desplegar NestJS como servicio separado en Dokploy
-- [ ] Aplicar branding LACDI (colores hex + logo)
+- [x] Aplicar branding LACDI (colores hex + logo)
 - [ ] Tests de integración (end-to-end)
 - [ ] App móvil (React Native o Flutter)
 - [ ] CI/CD pipeline (GitHub Actions)

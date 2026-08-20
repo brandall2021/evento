@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { LayoutDashboard, Users, Shield, Building2 } from "lucide-react"
+import { BrandMark } from "@/components/brand/brand-mark"
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -16,11 +17,9 @@ export function Sidebar() {
   const pathname = usePathname()
 
   return (
-    <aside className="hidden w-56 shrink-0 border-r bg-muted/30 md:block">
-      <div className="flex h-14 items-center border-b px-4">
-        <Link href="/dashboard" className="text-sm font-semibold tracking-tight">
-          Evento
-        </Link>
+    <aside className="hidden w-64 shrink-0 border-r border-border/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(247,243,235,0.96))] md:block dark:bg-[linear-gradient(180deg,rgba(8,18,38,0.96),rgba(12,23,46,0.98))]">
+      <div className="flex h-20 items-center border-b border-border/70 px-5">
+        <BrandMark className="w-full justify-start" />
       </div>
       <nav className="flex flex-col gap-1 p-3">
         {navItems.map((item) => {
@@ -30,9 +29,9 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                "flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
                 active
-                  ? "bg-accent text-accent-foreground"
+                  ? "bg-primary text-primary-foreground shadow-[0_10px_26px_rgba(11,42,85,0.16)]"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
               )}
             >

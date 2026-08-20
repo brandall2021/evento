@@ -51,6 +51,8 @@ export function useAuth() {
       clearTokens()
       queryClient.clear()
       if (typeof window !== "undefined") {
+        // Internal navigation after logout.
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
         window.location.href = "/login"
       }
     },

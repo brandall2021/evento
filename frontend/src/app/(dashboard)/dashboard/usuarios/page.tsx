@@ -7,6 +7,7 @@ import { z } from "zod/v4"
 import { toast } from "sonner"
 import { DataTable, type Column } from "@/components/data-table"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -19,7 +20,7 @@ import {
 } from "@/components/ui/dialog"
 import { useUsers, useCreateUser, useDeleteUser } from "@/hooks/use-users"
 import type { User } from "@/types/user"
-import { PlusIcon, Trash2Icon } from "lucide-react"
+import { PlusIcon, Trash2Icon, Users } from "lucide-react"
 
 const createUserSchema = z.object({
   email: z.email("Email inválido"),
@@ -97,37 +98,49 @@ export default function UsuariosPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Usuarios</h1>
-          <p className="text-sm text-muted-foreground">
-            Gestiona los usuarios del sistema
-          </p>
-        </div>
-        <Button onClick={() => setDialogOpen(true)}>
-          <PlusIcon className="size-4" />
-          Nuevo usuario
-        </Button>
-      </div>
-
-      <DataTable
-        columns={columns}
-        data={data?.data ?? []}
-        meta={data?.meta}
-        onPageChange={setPage}
-        isLoading={isLoading}
-        emptyMessage="No hay usuarios registrados"
-        actions={(user) => (
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => handleDelete(user)}
-            disabled={deleteUser.isPending}
-          >
-            <Trash2Icon className="size-4 text-destructive" />
+      <Card className="border-border/70 bg-card/90 shadow-[0_18px_50px_rgba(11,42,85,0.08)]">
+        <CardContent className="flex flex-col gap-5 p-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl space-y-3">
+            <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-primary">
+              <Users className="size-3.5" />
+              LACDI
+            </div>
+            <div>
+              <h1 className="text-3xl font-semibold tracking-tight text-balance">Usuarios</h1>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Gestiona los usuarios del sistema con una vista más clara y consistente.
+              </p>
+            </div>
+          </div>
+          <Button onClick={() => setDialogOpen(true)} className="shrink-0">
+            <PlusIcon className="size-4" />
+            Nuevo usuario
           </Button>
-        )}
-      />
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/70 bg-card/90 shadow-[0_18px_50px_rgba(11,42,85,0.08)]">
+        <CardContent className="p-2 sm:p-4">
+          <DataTable
+            columns={columns}
+            data={data?.data ?? []}
+            meta={data?.meta}
+            onPageChange={setPage}
+            isLoading={isLoading}
+            emptyMessage="No hay usuarios registrados"
+            actions={(user) => (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => handleDelete(user)}
+                disabled={deleteUser.isPending}
+              >
+                <Trash2Icon className="size-4 text-destructive" />
+              </Button>
+            )}
+          />
+        </CardContent>
+      </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
@@ -185,10 +198,10 @@ export default function UsuariosPage() {
               <Input id="phone" {...form.register("phone")} />
             </div>
 
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
                 onClick={() => setDialogOpen(false)}
               >
                 Cancelar
