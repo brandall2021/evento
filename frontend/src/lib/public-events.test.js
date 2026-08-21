@@ -9,6 +9,7 @@ const {
   formatPublicEventDateRange,
   getAvailabilityLabel,
   getEnrollmentActionLabel,
+  normalizePublicEventAgenda,
 } = require('./public-events')
 
 test('normalizePublicEventCollection extracts items and pagination', () => {
@@ -45,4 +46,22 @@ test('getAvailabilityLabel maps availability state', () => {
 test('getEnrollmentActionLabel maps availability state', () => {
   assert.equal(getEnrollmentActionLabel({ available_spots: 4, cupos: 10 }), 'Inscribirme')
   assert.equal(getEnrollmentActionLabel({ available_spots: 0, cupos: 10 }), 'Sumarme a lista de espera')
+})
+
+test('normalizePublicEventAgenda keeps days, blocks and sessions grouped', () => {
+  const result = normalizePublicEventAgenda([
+    {
+      id: 1,
+      titulo: 'Día 1',
+      bloques: [
+        {
+          id: 11,
+          titulo: 'Bloque 1',
+          sesiones: [{ id: 21, titulo: 'Sesión 1' }],
+        },
+      ],
+    },
+  ])
+
+  assert.equal(result[0].bloques[0].sesiones[0].titulo, 'Sesión 1')
 })

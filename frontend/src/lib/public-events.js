@@ -27,6 +27,20 @@ function normalizePublicEventCollection(payload) {
   }
 }
 
+function normalizePublicEventAgenda(payload) {
+  if (!Array.isArray(payload)) return []
+
+  return payload.map((day) => ({
+    ...day,
+    bloques: Array.isArray(day.bloques)
+      ? day.bloques.map((block) => ({
+          ...block,
+          sesiones: Array.isArray(block.sesiones) ? block.sesiones : [],
+        }))
+      : [],
+  }))
+}
+
 function getEventTypeLabel(mode) {
   if (mode === 'presencial') return 'Presencial'
   if (mode === 'virtual') return 'Virtual'
@@ -64,6 +78,7 @@ function formatPublicEventDateRange(start, end) {
 
 module.exports = {
   normalizePublicEventCollection,
+  normalizePublicEventAgenda,
   getEventTypeLabel,
   getAvailabilityLabel,
   getEnrollmentActionLabel,

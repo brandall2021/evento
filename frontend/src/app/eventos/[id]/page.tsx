@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useParams } from "next/navigation"
 import { ArrowRight, CalendarDays, Sparkles } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
-import { formatPublicEventDateRange, getAvailabilityLabel, getEnrollmentActionLabel, getEventTypeLabel, normalizePublicEventCollection } from "@/lib/public-events"
+import { formatPublicEventDateRange, getAvailabilityLabel, getEnrollmentActionLabel, getEventTypeLabel, normalizePublicEventAgenda, normalizePublicEventCollection } from "@/lib/public-events"
 import { usePublicEvent, usePublicEvents } from "@/hooks/use-public-events"
 
 export default function EventoPublicoPage() {
@@ -14,6 +14,7 @@ export default function EventoPublicoPage() {
   const { data: listData } = usePublicEvents({ page: 1, limit: 24 })
 
   const { items: relatedEvents } = normalizePublicEventCollection(listData)
+  const agenda = normalizePublicEventAgenda(data?.agenda)
 
   if (isLoading) {
     return (
@@ -98,7 +99,41 @@ export default function EventoPublicoPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-border/70 bg-card/90 shadow-[0_18px_50px_rgba(11,42,85,0.08)]">
+        <Card className="border-border/70 bg-card/90 shadow-[0_18px_50px_rgba(11,42,85,0.08)]">
+          <CardContent className="space-y-4 p-6">
+            <div className="text-sm font-semibold uppercase tracking-[0.3em] text-primary">Agenda</div>
+            {agenda.length > 0 ? (
+              <div className="space-y-4">
+                {agenda.map((day) => (
+                  <div key={day.id} className="rounded-2xl border border-border/70 p-4">
+                    <div className="font-semibold">{day.titulo}</div>
+                    <div className="text-sm text-muted-foreground">{day.fecha}</div>
+                    <div className="mt-3 space-y-3">
+                      {day.bloques.map((block) => (
+                        <div key={block.id} className="rounded-xl border border-border/70 bg-muted/20 p-3 text-sm">
+                          <div className="font-medium">{block.titulo}</div>
+                          <div className="text-muted-foreground">{block.hora_inicio} - {block.hora_fin}</div>
+                          <div className="mt-2 space-y-1">
+                            {block.sesiones.map((session) => (
+                              <div key={session.id} className="rounded-lg bg-background px-3 py-2">
+                                <div className="font-medium">{session.titulo}</div>
+                                {session.descripcion ? <div className="text-xs text-muted-foreground">{session.descripcion}</div> : null}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">La agenda todavía no fue cargada para este evento.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70 bg-card/90 shadow-[0_18px_50px_rgba(11,42,85,0.08)]">
             <CardContent className="space-y-4 p-6">
               <div className="text-sm font-semibold uppercase tracking-[0.3em] text-primary">Eventos relacionados</div>
               <div className="space-y-3">

@@ -10,6 +10,9 @@ import { PerfilPonente } from '../ponentes/perfil-ponente.entity'
 import { PlantillaCertificado } from '../plantillas/plantilla.entity'
 import { CacheService } from '../cache/cache.service'
 import { FormsService } from '../forms/forms.service'
+import { DiaAgenda } from '../agenda/dia.entity'
+import { Bloque } from '../agenda/bloque.entity'
+import { Sesion } from '../agenda/sesion.entity'
 
 @Injectable()
 export class PublicApiService {
@@ -23,6 +26,9 @@ export class PublicApiService {
     @InjectRepository(Inscripcion) private inscripcionRepo: Repository<Inscripcion>,
     private readonly cache: CacheService,
     private readonly formsService: FormsService,
+    @InjectRepository(DiaAgenda) private diaRepo: Repository<DiaAgenda>,
+    @InjectRepository(Bloque) private bloqueRepo: Repository<Bloque>,
+    @InjectRepository(Sesion) private sesionRepo: Repository<Sesion>,
   ) {}
 
   private async attachAvailability<T extends Curso>(curso: T) {
@@ -35,6 +41,41 @@ export class PublicApiService {
       available_spots: availableSpots,
       is_full: availableSpots <= 0,
     }
+  }
+
+  private async attachAgenda(cursoId: number) {
+    const dias = this.diaRepo?.find
+      ? (await this.diaRepo.find({
+          where: { curso_id: cursoId },
+          order: { orden: 'ASC', fecha: 'ASC' },
+        })) ?? []
+      : []
+
+    const agenda: any[] = []
+    for (const dia of dias) {
+      const bloques = this.bloqueRepo?.find
+        ? (await this.bloqueRepo.find({
+            where: { dia_id: dia.id },
+            order: { orden: 'ASC', hora_inicio: 'ASC' },
+          })) ?? []
+        : []
+
+      const bloquesConSesiones: any[] = []
+      for (const bloque of bloques) {
+        const sesiones = this.sesionRepo?.find
+          ? (await this.sesionRepo.find({
+              where: { bloque_id: bloque.id },
+              relations: ['sala', 'ponente'],
+              order: { orden: 'ASC', createdAt: 'ASC' },
+            })) ?? []
+          : []
+        bloquesConSesiones.push({ ...bloque, sesiones })
+      }
+
+      agenda.push({ ...dia, bloques: bloquesConSesiones })
+    }
+
+    return agenda
   }
 
   async cursos(page = 1, limit = 12) {
@@ -60,8 +101,10 @@ export class PublicApiService {
     const curso = await this.cursoRepo.findOne({ where: { id } })
     if (!curso) return curso
     const result = await this.attachAvailability(curso)
-    await this.cache.set(key, result, 600)
-    return result
+    const agenda = await this.attachAgenda(id)
+    const resultWithAgenda = { ...result, agenda }
+    await this.cache.set(key, resultWithAgenda, 600)
+    return resultWithAgenda
   }
 
   async blogPosts(page = 1, limit = 10) {
