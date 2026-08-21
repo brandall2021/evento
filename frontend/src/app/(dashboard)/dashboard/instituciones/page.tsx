@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod/v4"
@@ -8,74 +8,117 @@ import { toast } from "sonner"
 import { DataTable, type Column } from "@/components/data-table"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from "@/components/ui/dialog"
-import { useTenants, useCreateTenant } from "@/hooks/use-tenants"
+import { useCreateTenant, useDeleteTenant, useTenants, useUpdateTenant } from "@/hooks/use-tenants"
 import type { Tenant } from "@/types/tenant"
-import { Building2, PlusIcon } from "lucide-react"
+import { Building2, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react"
 
-const createTenantSchema = z.object({
+const tenantSchema = z.object({
   name: z.string().min(1, "Nombre requerido"),
   slug: z.string().min(1, "Slug requerido").regex(/^[a-z0-9-]+$/, "Solo minúsculas, números y guiones"),
   domain: z.string().optional(),
+  logoUrl: z.string().optional(),
+  bannerUrl: z.string().optional(),
+  isActive: z.boolean().optional(),
 })
 
-type CreateTenantForm = z.infer<typeof createTenantSchema>
+type TenantForm = z.infer<typeof tenantSchema>
 
 export default function InstitucionesPage() {
-  const [dialogOpen, setDialogOpen] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
+  const [editTenant, setEditTenant] = useState<Tenant | null>(null)
 
   const { data: tenants, isLoading } = useTenants()
   const createTenant = useCreateTenant()
+  const updateTenant = useUpdateTenant()
+  const deleteTenant = useDeleteTenant()
 
-  const form = useForm<CreateTenantForm>({
-    resolver: zodResolver(createTenantSchema),
-    defaultValues: { name: "", slug: "", domain: "" },
+  const createForm = useForm<TenantForm>({
+    resolver: zodResolver(tenantSchema),
+    defaultValues: { name: "", slug: "", domain: "", logoUrl: "", bannerUrl: "", isActive: true },
   })
+
+  const editForm = useForm<TenantForm>({
+    resolver: zodResolver(tenantSchema),
+    defaultValues: { name: "", slug: "", domain: "", logoUrl: "", bannerUrl: "", isActive: true },
+  })
+
+  useEffect(() => {
+    if (editTenant) {
+      editForm.reset({
+        name: editTenant.name,
+        slug: editTenant.slug,
+        domain: editTenant.domain ?? "",
+        logoUrl: editTenant.logoUrl ?? "",
+        bannerUrl: editTenant.bannerUrl ?? "",
+        isActive: editTenant.isActive,
+      })
+    }
+  }, [editTenant, editForm])
 
   const columns: Column<Tenant>[] = [
     { key: "name", header: "Nombre" },
     { key: "slug", header: "Slug" },
-    {
-      key: "domain",
-      header: "Dominio",
-      render: (t) => (
-        <span className="text-muted-foreground">{t.domain || "—"}</span>
-      ),
-    },
+    { key: "domain", header: "Dominio", render: (tenant) => <span className="text-muted-foreground">{tenant.domain || "—"}</span> },
     {
       key: "isActive",
       header: "Estado",
-      render: (t) => (
-        <span
-          className={
-            t.isActive
-              ? "text-sm text-green-600"
-              : "text-sm text-muted-foreground"
-          }
-        >
-          {t.isActive ? "Activa" : "Inactiva"}
+      render: (tenant) => (
+        <span className={tenant.isActive ? "text-sm text-green-600" : "text-sm text-muted-foreground"}>
+          {tenant.isActive ? "Activa" : "Inactiva"}
         </span>
       ),
     },
   ]
 
-  async function onSubmit(values: CreateTenantForm) {
+  async function onCreate(values: TenantForm) {
     try {
-      await createTenant.mutateAsync(values)
+      await createTenant.mutateAsync({
+        name: values.name,
+        slug: values.slug,
+        domain: values.domain || undefined,
+        logoUrl: values.logoUrl || undefined,
+        bannerUrl: values.bannerUrl || undefined,
+        isActive: values.isActive,
+      })
       toast.success("Institución creada")
-      setDialogOpen(false)
-      form.reset()
+      setCreateOpen(false)
+      createForm.reset()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Error al crear institución")
+    }
+  }
+
+  async function onEdit(values: TenantForm) {
+    if (!editTenant) return
+    try {
+      await updateTenant.mutateAsync({
+        id: editTenant.id,
+        payload: {
+          name: values.name,
+          slug: values.slug,
+          domain: values.domain || null,
+          logoUrl: values.logoUrl || null,
+          bannerUrl: values.bannerUrl || null,
+          isActive: values.isActive,
+        },
+      })
+      toast.success("Institución actualizada")
+      setEditTenant(null)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al actualizar institución")
+    }
+  }
+
+  async function handleDelete(tenant: Tenant) {
+    if (!confirm(`¿Eliminar institución ${tenant.name}?`)) return
+    try {
+      await deleteTenant.mutateAsync(tenant.id)
+      toast.success("Institución eliminada")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error al eliminar institución")
     }
   }
 
@@ -95,7 +138,7 @@ export default function InstitucionesPage() {
               </p>
             </div>
           </div>
-          <Button onClick={() => setDialogOpen(true)} className="shrink-0">
+          <Button onClick={() => setCreateOpen(true)} className="shrink-0">
             <PlusIcon className="size-4" />
             Nueva institución
           </Button>
@@ -109,56 +152,111 @@ export default function InstitucionesPage() {
             data={tenants ?? []}
             isLoading={isLoading}
             emptyMessage="No hay instituciones registradas"
+            actions={(tenant) => (
+              <div className="flex items-center justify-end gap-1">
+                <Button variant="ghost" size="icon-sm" onClick={() => setEditTenant(tenant)}>
+                  <PencilIcon className="size-4" />
+                </Button>
+                <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(tenant)} disabled={deleteTenant.isPending}>
+                  <Trash2Icon className="size-4 text-destructive" />
+                </Button>
+              </div>
+            )}
           />
         </CardContent>
       </Card>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Nueva institución</DialogTitle>
-            <DialogDescription>
-              Crea una nueva institución (tenant) en el sistema
-            </DialogDescription>
+            <DialogDescription>Crea un nuevo tenant en el sistema</DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+          <form onSubmit={createForm.handleSubmit(onCreate)} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="name">Nombre</Label>
-              <Input id="name" {...form.register("name")} />
-              {form.formState.errors.name && (
-                <p className="text-xs text-destructive">
-                  {form.formState.errors.name.message}
-                </p>
-              )}
+              <Input id="name" {...createForm.register("name")} />
+              {createForm.formState.errors.name && <p className="text-xs text-destructive">{createForm.formState.errors.name.message}</p>}
             </div>
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="slug">Slug</Label>
-              <Input id="slug" placeholder="mi-institucion" {...form.register("slug")} />
-              {form.formState.errors.slug && (
-                <p className="text-xs text-destructive">
-                  {form.formState.errors.slug.message}
-                </p>
-              )}
+              <Input id="slug" placeholder="mi-institucion" {...createForm.register("slug")} />
+              {createForm.formState.errors.slug && <p className="text-xs text-destructive">{createForm.formState.errors.slug.message}</p>}
             </div>
 
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="domain">Dominio (opcional)</Label>
-              <Input id="domain" placeholder="ejemplo.com" {...form.register("domain")} />
+              <Input id="domain" placeholder="ejemplo.com" {...createForm.register("domain")} />
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="logoUrl">Logo URL</Label>
+                <Input id="logoUrl" {...createForm.register("logoUrl")} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="bannerUrl">Banner URL</Label>
+                <Input id="bannerUrl" {...createForm.register("bannerUrl")} />
+              </div>
+            </div>
+
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <input type="checkbox" {...createForm.register("isActive")} />
+              Activa
+            </label>
+
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setDialogOpen(false)}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={createTenant.isPending}>
-                {createTenant.isPending ? "Creando…" : "Crear institución"}
-              </Button>
+              <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>Cancelar</Button>
+              <Button type="submit" disabled={createTenant.isPending}>{createTenant.isPending ? "Creando…" : "Crear institución"}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editTenant} onOpenChange={(open) => !open && setEditTenant(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar institución</DialogTitle>
+            <DialogDescription>Actualiza los datos del tenant seleccionado</DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={editForm.handleSubmit(onEdit)} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="editName">Nombre</Label>
+              <Input id="editName" {...editForm.register("name")} />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="editSlug">Slug</Label>
+              <Input id="editSlug" {...editForm.register("slug")} />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="editDomain">Dominio</Label>
+              <Input id="editDomain" {...editForm.register("domain")} />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="editLogoUrl">Logo URL</Label>
+                <Input id="editLogoUrl" {...editForm.register("logoUrl")} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="editBannerUrl">Banner URL</Label>
+                <Input id="editBannerUrl" {...editForm.register("bannerUrl")} />
+              </div>
+            </div>
+
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <input type="checkbox" {...editForm.register("isActive")} />
+              Activa
+            </label>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditTenant(null)}>Cancelar</Button>
+              <Button type="submit" disabled={updateTenant.isPending}>{updateTenant.isPending ? "Guardando…" : "Guardar cambios"}</Button>
             </DialogFooter>
           </form>
         </DialogContent>

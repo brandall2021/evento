@@ -2,7 +2,8 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
-import type { Role, CreateRolePayload } from "@/types/role"
+import type { Role, CreateRolePayload, UpdateRolePayload } from "@/types/role"
+import type { Permission } from "@/types/permission"
 
 export function useRoles() {
   return useQuery<Role[]>({
@@ -39,6 +40,20 @@ export function useCreateRole() {
   })
 }
 
+export function useUpdateRole() {
+  const queryClient = useQueryClient()
+
+  return useMutation<Role, Error, { id: string; payload: UpdateRolePayload }>({
+    mutationFn: async ({ id, payload }) => {
+      const { data } = await api.patch(`/roles/${id}`, payload)
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["roles"] })
+    },
+  })
+}
+
 export function useAssignPermissions() {
   const queryClient = useQueryClient()
 
@@ -58,6 +73,17 @@ export function useAssignPermissions() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["roles"] })
     },
+  })
+}
+
+export function usePermissionsByRole(roleId: string) {
+  return useQuery<Permission[]>({
+    queryKey: ["roles", roleId, "permissions"],
+    queryFn: async () => {
+      const { data } = await api.get(`/roles/${roleId}`)
+      return data.permissions ?? []
+    },
+    enabled: !!roleId,
   })
 }
 

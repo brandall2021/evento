@@ -56,3 +56,13 @@ export interface CreateUserPayload {
   phone?: string
   avatarUrl?: string
 }
+
+export interface UpdateUserPayload {
+  email?: string
+  password?: string
+  firstName?: string
+  lastName?: string
+  phone?: string | null
+  avatarUrl?: string | null
+  is_active?: boolean
+}

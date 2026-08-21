@@ -25,6 +25,7 @@ import { StreamingModule } from './streaming/streaming.module'
 import { GamificacionModule } from './gamificacion/gamificacion.module'
 import { InteraccionModule } from './interaccion/interaccion.module'
 import { CmsModule } from './cms/cms.module'
+import { FormsModule } from './forms/forms.module'
 import { NotificacionesModule } from './notificaciones/notificaciones.module'
 import { PublicApiModule } from './public-api/public-api.module'
 import { WebhooksModule } from './webhooks/webhooks.module'
@@ -78,6 +79,9 @@ import { Pagina } from './cms/pagina.entity'
 import { BlogPost } from './cms/blog-post.entity'
 import { Galeria } from './cms/galeria.entity'
 import { FAQ } from './cms/faq.entity'
+import { FormTemplate } from './forms/form-template.entity'
+import { FormTemplateVersion } from './forms/form-template-version.entity'
+import { FormSubmission } from './forms/form-submission.entity'
 import { Notificacion } from './notificaciones/notificacion.entity'
 import { PlantillaNotificacion } from './notificaciones/plantilla-notificacion.entity'
 import { Webhook, WebhookEvent } from './webhooks/webhook.entity'
@@ -116,7 +120,8 @@ import { UserRole } from './users/entities/user-role.entity'
           SalaStreaming, EncuestaStreaming, RespuestaEncuesta, PreguntaQA,
           PuntosHistorial, Badge, UsuarioBadge,
           Comentario, Like, Trivia, RespuestaTrivia,
-          Pagina, BlogPost, Galeria, FAQ,
+           Pagina, BlogPost, Galeria, FAQ,
+           FormTemplate, FormTemplateVersion, FormSubmission,
           Notificacion, PlantillaNotificacion,
           Webhook, WebhookEvent,
           AuditLog,
@@ -156,6 +161,7 @@ import { UserRole } from './users/entities/user-role.entity'
     GamificacionModule,
     InteraccionModule,
     CmsModule,
+    FormsModule,
     NotificacionesModule,
     PublicApiModule,
     WebhooksModule,

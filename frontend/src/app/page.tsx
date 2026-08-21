@@ -64,10 +64,14 @@ export default function Home() {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Link href="/register" className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-[0_18px_40px_rgba(11,42,85,0.18)] transition-transform hover:-translate-y-0.5">
-                Crear cuenta
-                <ArrowRight className="size-4" />
-              </Link>
+            <Link href="/eventos" className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-[0_18px_40px_rgba(11,42,85,0.18)] transition-transform hover:-translate-y-0.5">
+              Ver eventos públicos
+              <ArrowRight className="size-4" />
+            </Link>
+            <Link href="/register" className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-[0_18px_40px_rgba(11,42,85,0.18)] transition-transform hover:-translate-y-0.5">
+              Crear cuenta
+              <ArrowRight className="size-4" />
+            </Link>
               <Link href="/login" className="inline-flex items-center justify-center rounded-full border border-border/70 bg-card px-6 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent hover:text-accent-foreground">
                 Entrar al panel
               </Link>

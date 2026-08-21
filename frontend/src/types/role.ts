@@ -1,3 +1,5 @@
+import type { Permission } from "./permission"
+
 export interface Role {
   id: string
   tenantId: string
@@ -9,16 +11,14 @@ export interface Role {
   updatedAt: string
 }
 
-export interface Permission {
-  id: string
-  code: string
-  module: string
-  action: string
-  description: string | null
-}
-
 export interface CreateRolePayload {
   name: string
   description?: string
+  permissionIds?: string[]
+}
+
+export interface UpdateRolePayload {
+  name?: string
+  description?: string | null
   permissionIds?: string[]
 }

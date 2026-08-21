@@ -2,12 +2,14 @@ import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { Curso, EstadoCurso } from '../cursos/curso.entity'
+import { Inscripcion, EstadoInscripcion } from '../inscripciones/inscripcion.entity'
 import { BlogPost } from '../cms/blog-post.entity'
 import { FAQ } from '../cms/faq.entity'
 import { Galeria } from '../cms/galeria.entity'
 import { PerfilPonente } from '../ponentes/perfil-ponente.entity'
 import { PlantillaCertificado } from '../plantillas/plantilla.entity'
 import { CacheService } from '../cache/cache.service'
+import { FormsService } from '../forms/forms.service'
 
 @Injectable()
 export class PublicApiService {
@@ -18,8 +20,22 @@ export class PublicApiService {
     @InjectRepository(Galeria) private galeriaRepo: Repository<Galeria>,
     @InjectRepository(PerfilPonente) private ponenteRepo: Repository<PerfilPonente>,
     @InjectRepository(PlantillaCertificado) private plantillaRepo: Repository<PlantillaCertificado>,
+    @InjectRepository(Inscripcion) private inscripcionRepo: Repository<Inscripcion>,
     private readonly cache: CacheService,
+    private readonly formsService: FormsService,
   ) {}
+
+  private async attachAvailability<T extends Curso>(curso: T) {
+    const acceptedCount = await this.inscripcionRepo.count({
+      where: { curso_id: curso.id, estado: EstadoInscripcion.ACEPTADO },
+    })
+    const availableSpots = Math.max(0, Number(curso.cupos || 0) - acceptedCount)
+    return {
+      ...curso,
+      available_spots: availableSpots,
+      is_full: availableSpots <= 0,
+    }
+  }
 
   async cursos(page = 1, limit = 12) {
     const key = `pub:cursos:${page}:${limit}`
@@ -31,7 +47,8 @@ export class PublicApiService {
       skip: (page - 1) * limit,
       take: limit,
     })
-    const result = { items, total, page, pageSize: limit, totalPages: Math.ceil(total / limit) }
+    const enriched = await Promise.all(items.map((curso) => this.attachAvailability(curso)))
+    const result = { items: enriched, total, page, pageSize: limit, totalPages: Math.ceil(total / limit) }
     await this.cache.set(key, result, 600)
     return result
   }
@@ -41,8 +58,10 @@ export class PublicApiService {
     const cached = await this.cache.get<any>(key)
     if (cached) return cached
     const curso = await this.cursoRepo.findOne({ where: { id } })
-    if (curso) await this.cache.set(key, curso, 600)
-    return curso
+    if (!curso) return curso
+    const result = await this.attachAvailability(curso)
+    await this.cache.set(key, result, 600)
+    return result
   }
 
   async blogPosts(page = 1, limit = 10) {
@@ -108,5 +127,13 @@ export class PublicApiService {
 
   async plantillaDefault() {
     return this.plantillaRepo.findOne({ where: { is_default: true } as any })
+  }
+
+  async formBySlug(slug: string) {
+    return this.formsService.publishedBySlug(slug)
+  }
+
+  async submitForm(slug: string, payload: Record<string, unknown>, userId?: string | null) {
+    return this.formsService.submitBySlug(slug, payload, userId)
   }
 }

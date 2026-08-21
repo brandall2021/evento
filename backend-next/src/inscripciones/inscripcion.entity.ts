@@ -15,6 +15,7 @@ import { Curso } from '../cursos/curso.entity'
 export enum EstadoInscripcion {
   PENDIENTE = 'pendiente',
   ACEPTADO = 'aceptado',
+  EN_ESPERA = 'en_espera',
   RECHAZADO = 'rechazado',
   EN_CURSO = 'en_curso',
   FINALIZADO = 'finalizado',

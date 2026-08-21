@@ -37,9 +37,18 @@ export function Header() {
           <nav className="fixed left-0 top-16 z-50 w-64 border-r border-border/70 bg-background/95 p-3 shadow-[0_20px_60px_rgba(11,42,85,0.16)] md:hidden">
             {[
               { href: "/dashboard", label: "Dashboard" },
+              { href: "/dashboard/cursos", label: "Cursos" },
+              { href: "/dashboard/inscripciones", label: "Inscripciones" },
+              { href: "/dashboard/pagos", label: "Pagos" },
+              { href: "/dashboard/checkin", label: "Check-in" },
+              { href: "/dashboard/credenciales", label: "Credenciales" },
+              { href: "/dashboard/formularios", label: "Formularios" },
+              { href: "/dashboard/programa-academico", label: "Programa académico" },
               { href: "/dashboard/usuarios", label: "Usuarios" },
               { href: "/dashboard/roles", label: "Roles" },
               { href: "/dashboard/instituciones", label: "Instituciones" },
+              { href: "/dashboard/permisos", label: "Permisos" },
+              { href: "/dashboard/settings", label: "Settings" },
             ].map((item) => (
               <Link
                 key={item.href}

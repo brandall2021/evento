@@ -1,4 +1,5 @@
 import { Controller, Get, Param, Query, ParseIntPipe } from '@nestjs/common'
+import { Body, Post } from '@nestjs/common'
 import { PublicApiService } from './public-api.service'
 
 @Controller('public')
@@ -58,5 +59,15 @@ export class PublicApiController {
   @Get('plantilla-certificado')
   plantillaDefault() {
     return this.publicApiService.plantillaDefault()
+  }
+
+  @Get('forms/:slug')
+  formBySlug(@Param('slug') slug: string) {
+    return this.publicApiService.formBySlug(slug)
+  }
+
+  @Post('forms/:slug/submissions')
+  submitForm(@Param('slug') slug: string, @Body() body: Record<string, unknown>) {
+    return this.publicApiService.submitForm(slug, body)
   }
 }

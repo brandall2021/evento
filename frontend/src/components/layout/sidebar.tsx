@@ -3,14 +3,23 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, Users, Shield, Building2 } from "lucide-react"
+import { LayoutDashboard, Users, Shield, Building2, BookOpen, ClipboardList, DollarSign, QrCode, BadgeCheck, FormInput, Layers3 } from "lucide-react"
 import { BrandMark } from "@/components/brand/brand-mark"
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard/cursos", label: "Cursos", icon: BookOpen },
+  { href: "/dashboard/inscripciones", label: "Inscripciones", icon: ClipboardList },
+  { href: "/dashboard/pagos", label: "Pagos", icon: DollarSign },
+  { href: "/dashboard/checkin", label: "Check-in", icon: QrCode },
+  { href: "/dashboard/credenciales", label: "Credenciales", icon: BadgeCheck },
+  { href: "/dashboard/formularios", label: "Formularios", icon: FormInput },
+  { href: "/dashboard/programa-academico", label: "Programa académico", icon: Layers3 },
   { href: "/dashboard/usuarios", label: "Usuarios", icon: Users },
   { href: "/dashboard/roles", label: "Roles", icon: Shield },
   { href: "/dashboard/instituciones", label: "Instituciones", icon: Building2 },
+  { href: "/dashboard/permisos", label: "Permisos", icon: Shield },
+  { href: "/dashboard/settings", label: "Settings", icon: Building2 },
 ]
 
 export function Sidebar() {

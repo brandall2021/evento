@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
-import type { Tenant, CreateTenantPayload } from "@/types/tenant"
+import type { Tenant, CreateTenantPayload, UpdateTenantPayload } from "@/types/tenant"
 
 export function useTenants() {
   return useQuery<Tenant[]>({
@@ -42,8 +42,8 @@ export function useCreateTenant() {
 export function useUpdateTenant() {
   const queryClient = useQueryClient()
 
-  return useMutation<Tenant, Error, { id: string } & Partial<CreateTenantPayload>>({
-    mutationFn: async ({ id, ...payload }) => {
+  return useMutation<Tenant, Error, { id: string; payload: UpdateTenantPayload }>({
+    mutationFn: async ({ id, payload }) => {
       const { data } = await api.patch(`/tenants/${id}`, payload)
       return data
     },

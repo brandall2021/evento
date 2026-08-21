@@ -32,7 +32,7 @@ interface DataTableProps<T> {
   actions?: (item: T) => React.ReactNode
 }
 
-export function DataTable<T extends { id: string }>({
+export function DataTable<T extends { id: string | number }>({
   columns,
   data,
   meta,

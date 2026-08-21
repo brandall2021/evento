@@ -158,4 +158,8 @@ export class AgendaService {
 
     return resultado
   }
+
+  async programaAcademico(cursoId: number) {
+    return this.agendaCompleta(cursoId)
+  }
 }

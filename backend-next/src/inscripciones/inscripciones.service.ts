@@ -37,12 +37,12 @@ export class InscripcionesService {
     })
     if (existente) throw new BadRequestException('Ya solicitaste este curso')
 
-    const hayCupos = await this.verificarCupos(cursoId)
-    if (!hayCupos) throw new BadRequestException('Cupos agotados')
-
     let estado = EstadoInscripcion.PENDIENTE
     let fechaAceptacion: Date | null = null
-    if (curso.aceptacion_auto && Number(curso.precio) === 0) {
+    const hayCupos = await this.verificarCupos(cursoId)
+    if (!hayCupos) {
+      estado = EstadoInscripcion.EN_ESPERA
+    } else if (curso.aceptacion_auto && Number(curso.precio) === 0) {
       estado = EstadoInscripcion.ACEPTADO
       fechaAceptacion = new Date()
     }
@@ -99,7 +99,7 @@ export class InscripcionesService {
   async aprobar(id: number) {
     const insc = await this.inscRepo.findOne({ where: { id }, relations: ['curso'] })
     if (!insc) throw new NotFoundException('Inscripción no encontrada')
-    if (insc.estado !== EstadoInscripcion.PENDIENTE) {
+    if (![EstadoInscripcion.PENDIENTE, EstadoInscripcion.EN_ESPERA].includes(insc.estado)) {
       throw new BadRequestException('Inscripción no está pendiente')
     }
 

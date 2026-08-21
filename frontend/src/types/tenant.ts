@@ -20,3 +20,13 @@ export interface CreateTenantPayload {
   settings?: Record<string, unknown>
   isActive?: boolean
 }
+
+export interface UpdateTenantPayload {
+  name?: string
+  slug?: string
+  domain?: string | null
+  logoUrl?: string | null
+  bannerUrl?: string | null
+  settings?: Record<string, unknown> | null
+  isActive?: boolean
+}

@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
-import type { User, CreateUserPayload } from "@/types/user"
+import type { User, CreateUserPayload, UpdateUserPayload } from "@/types/user"
 import type { PaginatedResponse, PaginationParams } from "@/types/api"
 
 export function useUsers(params?: PaginationParams & { tenantId?: string; isActive?: string }) {
@@ -32,6 +32,20 @@ export function useCreateUser() {
   return useMutation<User, Error, CreateUserPayload>({
     mutationFn: async (payload) => {
       const { data } = await api.post("/users", payload)
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] })
+    },
+  })
+}
+
+export function useUpdateUser() {
+  const queryClient = useQueryClient()
+
+  return useMutation<User, Error, { id: string; payload: UpdateUserPayload }>({
+    mutationFn: async ({ id, payload }) => {
+      const { data } = await api.patch(`/users/${id}`, payload)
       return data
     },
     onSuccess: () => {
