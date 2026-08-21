@@ -12,6 +12,7 @@ export function normalizeProgramAgenda(days: unknown): Array<{
     sesiones: Array<{
       id?: number
       titulo?: string
+      orden?: number
       descripcion?: string
       tipo?: string
       cupos?: number

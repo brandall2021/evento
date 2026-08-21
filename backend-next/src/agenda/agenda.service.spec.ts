@@ -48,4 +48,17 @@ describe('AgendaService', () => {
     })
     expect(result[0].bloques).toEqual([])
   })
+
+  it('orders sessions by orden within a block', async () => {
+    const sesionRepo = service['sesionRepo'] as any
+    sesionRepo.find.mockResolvedValue([])
+
+    await service.sesionesByBloque(11)
+
+    expect(sesionRepo.find).toHaveBeenCalledWith({
+      where: { bloque_id: 11 },
+      relations: ['sala', 'ponente'],
+      order: { orden: 'ASC', createdAt: 'ASC' },
+    })
+  })
 })

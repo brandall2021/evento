@@ -393,6 +393,25 @@ export default function ProgramaAcademicoPage() {
     }
   }
 
+  async function moveSession(dayId: number, blockId: number, sessionId: number, direction: "up" | "down") {
+    const day = program.find((item) => item.id === dayId)
+    const block = day?.bloques.find((item) => item.id === blockId)
+    if (!block) return
+
+    const nextSessions = moveOrderedItems(block.sesiones, sessionId, direction)
+    const currentOrders = new Map(block.sesiones.map((session) => [session.id, session.orden ?? 0]))
+    const updates = nextSessions.filter((session) => currentOrders.get(session.id) !== (session.orden ?? 0))
+
+    if (!updates.length) return
+
+    try {
+      await Promise.all(updates.map((session) => updateSession.mutateAsync({ id: Number(session.id), payload: { orden: session.orden } })))
+      toast.success("Orden de sesiones actualizado")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo reordenar la sesión")
+    }
+  }
+
   return (
     <div className="space-y-6">
       <Card className="border-border/70 bg-card/90 shadow-[0_18px_50px_rgba(11,42,85,0.08)]">
@@ -584,6 +603,12 @@ export default function ProgramaAcademicoPage() {
                             <div key={session.id} className="flex items-center justify-between gap-3 rounded-lg bg-background px-3 py-2">
                               <span>{session.titulo}</span>
                               <div className="flex gap-1">
+                                <Button variant="outline" size="icon" onClick={() => moveSession(Number(day.id), Number(block.id), Number(session.id), "up")} title="Subir sesión">
+                                  <ArrowUp className="size-4" />
+                                </Button>
+                                <Button variant="outline" size="icon" onClick={() => moveSession(Number(day.id), Number(block.id), Number(session.id), "down")} title="Bajar sesión">
+                                  <ArrowDown className="size-4" />
+                                </Button>
                                 <Button variant="outline" size="icon" onClick={() => setSessionEditor(session)}>
                                   <PencilIcon className="size-4" />
                                 </Button>

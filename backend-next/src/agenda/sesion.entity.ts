@@ -50,6 +50,9 @@ export class Sesion {
   @Column()
   titulo: string
 
+  @Column({ default: 0 })
+  orden: number
+
   @Column({ type: 'text', nullable: true })
   descripcion: string
 

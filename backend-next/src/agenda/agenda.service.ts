@@ -112,7 +112,7 @@ export class AgendaService {
     return this.sesionRepo.find({
       where: { bloque_id: bloqueId },
       relations: ['sala', 'ponente'],
-      order: { createdAt: 'ASC' },
+      order: { orden: 'ASC', createdAt: 'ASC' },
     })
   }
 
@@ -149,6 +149,7 @@ export class AgendaService {
         const sesiones = await this.sesionRepo.find({
           where: { bloque_id: bloque.id },
           relations: ['sala', 'ponente'],
+          order: { orden: 'ASC', createdAt: 'ASC' },
         })
         bloquesConSesiones.push({ ...bloque, sesiones })
       }

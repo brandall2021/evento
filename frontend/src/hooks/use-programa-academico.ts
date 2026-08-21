@@ -141,7 +141,7 @@ export function useCreateProgramSession(courseId?: number, bloqueId?: number) {
 export function useUpdateProgramSession(courseId?: number) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({ id, payload }: { id: number; payload: { titulo?: string; descripcion?: string; sala_id?: number; ponente_id?: number; tipo?: string; cupos?: number } }) => {
+    mutationFn: async ({ id, payload }: { id: number; payload: { titulo?: string; orden?: number; descripcion?: string; sala_id?: number; ponente_id?: number; tipo?: string; cupos?: number } }) => {
       const { data } = await api.put(`/sesiones/${id}`, payload)
       return data
     },
