@@ -1,6 +1,8 @@
 export function normalizeProgramAgenda(days: unknown): Array<{
   id?: number
   titulo?: string
+  fecha?: string
+  orden?: number
   bloques: Array<{
     id?: number
     titulo?: string
@@ -9,6 +11,9 @@ export function normalizeProgramAgenda(days: unknown): Array<{
     sesiones: Array<{
       id?: number
       titulo?: string
+      descripcion?: string
+      tipo?: string
+      cupos?: number
     }>
   }>
 }>
