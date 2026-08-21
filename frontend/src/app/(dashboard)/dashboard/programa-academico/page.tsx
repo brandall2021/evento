@@ -6,7 +6,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
   useProgramAgenda,
   useProgramRooms,
@@ -25,6 +24,7 @@ import {
 } from "@/hooks/use-programa-academico"
 import { normalizeProgramAgenda } from "@/lib/programa-academico"
 import { buildProgramAgendaView } from "@/lib/programa-academico-view"
+import { getProgramEditorMeta } from "@/lib/programa-academico-editor"
 import { moveOrderedItems } from "@/lib/programa-academico-order"
 import { ArrowDown, ArrowUp, BookOpen, CalendarDays, DoorOpen, Layers3, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react"
 
@@ -248,6 +248,116 @@ export default function ProgramaAcademicoPage() {
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "No se pudo eliminar la sesión")
     }
+  }
+
+  const editorKind = dayEditor ? "day" : blockEditor ? "block" : roomEditor ? "room" : sessionEditor ? "session" : null
+  const editorMeta = editorKind ? getProgramEditorMeta(editorKind) : null
+
+  function closeEditor() {
+    setDayEditor(null)
+    setBlockEditor(null)
+    setRoomEditor(null)
+    setSessionEditor(null)
+  }
+
+  function renderEditorForm() {
+    if (dayEditor) {
+      return (
+        <form onSubmit={submitDayUpdate} className="grid gap-4 md:grid-cols-2">
+          <div className="flex flex-col gap-1.5 md:col-span-2">
+            <Label htmlFor="edit-day-title">Título</Label>
+            <Input id="edit-day-title" name="titulo" defaultValue={dayEditor?.titulo || ""} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="edit-day-date">Fecha</Label>
+            <Input id="edit-day-date" name="fecha" type="date" defaultValue={dayEditor?.fecha || ""} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="edit-day-order">Orden</Label>
+            <Input id="edit-day-order" name="orden" type="number" defaultValue={dayEditor?.orden ?? 0} />
+          </div>
+          <div className="md:col-span-2 flex justify-end gap-2 border-t pt-4">
+            <Button type="button" variant="outline" onClick={closeEditor}>Cancelar</Button>
+            <Button type="submit" disabled={updateDay.isPending}>{updateDay.isPending ? "Guardando…" : editorMeta?.submitLabel || "Guardar"}</Button>
+          </div>
+        </form>
+      )
+    }
+
+    if (blockEditor) {
+      return (
+        <form onSubmit={submitBlockUpdate} className="grid gap-4 md:grid-cols-2">
+          <div className="flex flex-col gap-1.5 md:col-span-2">
+            <Label htmlFor="edit-block-title">Título</Label>
+            <Input id="edit-block-title" name="titulo" defaultValue={blockEditor?.titulo || ""} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="edit-block-start">Inicio</Label>
+            <Input id="edit-block-start" name="hora_inicio" type="time" defaultValue={blockEditor?.hora_inicio || ""} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="edit-block-end">Fin</Label>
+            <Input id="edit-block-end" name="hora_fin" type="time" defaultValue={blockEditor?.hora_fin || ""} />
+          </div>
+          <div className="md:col-span-2 flex justify-end gap-2 border-t pt-4">
+            <Button type="button" variant="outline" onClick={closeEditor}>Cancelar</Button>
+            <Button type="submit" disabled={updateBlock.isPending}>{updateBlock.isPending ? "Guardando…" : editorMeta?.submitLabel || "Guardar"}</Button>
+          </div>
+        </form>
+      )
+    }
+
+    if (roomEditor) {
+      return (
+        <form onSubmit={submitRoomUpdate} className="grid gap-4 md:grid-cols-2">
+          <div className="flex flex-col gap-1.5 md:col-span-2">
+            <Label htmlFor="edit-room-name">Nombre</Label>
+            <Input id="edit-room-name" name="nombre" defaultValue={roomEditor?.nombre || ""} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="edit-room-capacity">Capacidad</Label>
+            <Input id="edit-room-capacity" name="capacidad" type="number" defaultValue={roomEditor?.capacidad ?? 0} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="edit-room-location">Ubicación</Label>
+            <Input id="edit-room-location" name="ubicacion" defaultValue={roomEditor?.ubicacion || ""} />
+          </div>
+          <div className="md:col-span-2 flex justify-end gap-2 border-t pt-4">
+            <Button type="button" variant="outline" onClick={closeEditor}>Cancelar</Button>
+            <Button type="submit" disabled={updateRoom.isPending}>{updateRoom.isPending ? "Guardando…" : editorMeta?.submitLabel || "Guardar"}</Button>
+          </div>
+        </form>
+      )
+    }
+
+    if (sessionEditor) {
+      return (
+        <form onSubmit={submitSessionUpdate} className="grid gap-4 md:grid-cols-2">
+          <div className="flex flex-col gap-1.5 md:col-span-2">
+            <Label htmlFor="edit-session-title">Título</Label>
+            <Input id="edit-session-title" name="titulo" defaultValue={sessionEditor?.titulo || ""} />
+          </div>
+          <div className="flex flex-col gap-1.5 md:col-span-2">
+            <Label htmlFor="edit-session-desc">Descripción</Label>
+            <Input id="edit-session-desc" name="descripcion" defaultValue={sessionEditor?.descripcion || ""} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="edit-session-type">Tipo</Label>
+            <Input id="edit-session-type" name="tipo" defaultValue={sessionEditor?.tipo || ""} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="edit-session-seats">Cupos</Label>
+            <Input id="edit-session-seats" name="cupos" type="number" defaultValue={sessionEditor?.cupos ?? 0} />
+          </div>
+          <div className="md:col-span-2 flex justify-end gap-2 border-t pt-4">
+            <Button type="button" variant="outline" onClick={closeEditor}>Cancelar</Button>
+            <Button type="submit" disabled={updateSession.isPending}>{updateSession.isPending ? "Guardando…" : editorMeta?.submitLabel || "Guardar"}</Button>
+          </div>
+        </form>
+      )
+    }
+
+    return null
   }
 
   async function moveDay(dayId: number, direction: "up" | "down") {
@@ -496,117 +606,21 @@ export default function ProgramaAcademicoPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={!!dayEditor} onOpenChange={(open) => !open && setDayEditor(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Editar día</DialogTitle>
-            <DialogDescription>Ajusta el título, fecha u orden del día.</DialogDescription>
-          </DialogHeader>
-          <form onSubmit={submitDayUpdate} className="grid gap-4 md:grid-cols-2">
-            <div className="flex flex-col gap-1.5 md:col-span-2">
-              <Label htmlFor="edit-day-title">Título</Label>
-              <Input id="edit-day-title" name="titulo" defaultValue={dayEditor?.titulo || ""} />
+      <div className={`fixed inset-0 z-50 transition ${editorKind ? "pointer-events-auto" : "pointer-events-none"}`} aria-hidden={!editorKind}>
+        <button type="button" aria-label="Cerrar editor" onClick={closeEditor} className={`absolute inset-0 bg-black/20 backdrop-blur-[2px] transition ${editorKind ? "opacity-100" : "opacity-0"}`} />
+        <aside className={`absolute top-0 right-0 h-full w-full max-w-xl border-l border-border bg-background shadow-2xl transition-transform duration-200 ${editorKind ? "translate-x-0" : "translate-x-full"}`}>
+          <div className="flex h-full flex-col">
+            <div className="border-b p-6">
+              <div className="text-sm font-semibold uppercase tracking-[0.3em] text-primary">Programa académico</div>
+              <h2 className="mt-3 text-2xl font-semibold">{editorMeta?.title || "Editar"}</h2>
+              <p className="mt-2 text-sm text-muted-foreground">{editorMeta?.description || ""}</p>
             </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="edit-day-date">Fecha</Label>
-              <Input id="edit-day-date" name="fecha" type="date" defaultValue={dayEditor?.fecha || ""} />
+            <div className="flex-1 overflow-auto p-6">
+              {renderEditorForm()}
             </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="edit-day-order">Orden</Label>
-              <Input id="edit-day-order" name="orden" type="number" defaultValue={dayEditor?.orden ?? 0} />
-            </div>
-            <DialogFooter className="md:col-span-2">
-              <Button type="button" variant="outline" onClick={() => setDayEditor(null)}>Cancelar</Button>
-              <Button type="submit" disabled={updateDay.isPending}>{updateDay.isPending ? "Guardando…" : "Guardar"}</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={!!roomEditor} onOpenChange={(open) => !open && setRoomEditor(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Editar sala</DialogTitle>
-            <DialogDescription>Actualiza nombre, capacidad o ubicación.</DialogDescription>
-          </DialogHeader>
-          <form onSubmit={submitRoomUpdate} className="grid gap-4 md:grid-cols-2">
-            <div className="flex flex-col gap-1.5 md:col-span-2">
-              <Label htmlFor="edit-room-name">Nombre</Label>
-              <Input id="edit-room-name" name="nombre" defaultValue={roomEditor?.nombre || ""} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="edit-room-capacity">Capacidad</Label>
-              <Input id="edit-room-capacity" name="capacidad" type="number" defaultValue={roomEditor?.capacidad ?? 0} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="edit-room-location">Ubicación</Label>
-              <Input id="edit-room-location" name="ubicacion" defaultValue={roomEditor?.ubicacion || ""} />
-            </div>
-            <DialogFooter className="md:col-span-2">
-              <Button type="button" variant="outline" onClick={() => setRoomEditor(null)}>Cancelar</Button>
-              <Button type="submit" disabled={updateRoom.isPending}>{updateRoom.isPending ? "Guardando…" : "Guardar"}</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={!!blockEditor} onOpenChange={(open) => !open && setBlockEditor(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Editar bloque</DialogTitle>
-            <DialogDescription>Modifica el nombre y el rango horario.</DialogDescription>
-          </DialogHeader>
-          <form onSubmit={submitBlockUpdate} className="grid gap-4 md:grid-cols-2">
-            <div className="flex flex-col gap-1.5 md:col-span-2">
-              <Label htmlFor="edit-block-title">Título</Label>
-              <Input id="edit-block-title" name="titulo" defaultValue={blockEditor?.titulo || ""} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="edit-block-start">Inicio</Label>
-              <Input id="edit-block-start" name="hora_inicio" type="time" defaultValue={blockEditor?.hora_inicio || ""} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="edit-block-end">Fin</Label>
-              <Input id="edit-block-end" name="hora_fin" type="time" defaultValue={blockEditor?.hora_fin || ""} />
-            </div>
-            <DialogFooter className="md:col-span-2">
-              <Button type="button" variant="outline" onClick={() => setBlockEditor(null)}>Cancelar</Button>
-              <Button type="submit" disabled={updateBlock.isPending}>{updateBlock.isPending ? "Guardando…" : "Guardar"}</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={!!sessionEditor} onOpenChange={(open) => !open && setSessionEditor(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Editar sesión</DialogTitle>
-            <DialogDescription>Actualiza los datos básicos de la sesión.</DialogDescription>
-          </DialogHeader>
-          <form onSubmit={submitSessionUpdate} className="grid gap-4 md:grid-cols-2">
-            <div className="flex flex-col gap-1.5 md:col-span-2">
-              <Label htmlFor="edit-session-title">Título</Label>
-              <Input id="edit-session-title" name="titulo" defaultValue={sessionEditor?.titulo || ""} />
-            </div>
-            <div className="flex flex-col gap-1.5 md:col-span-2">
-              <Label htmlFor="edit-session-desc">Descripción</Label>
-              <Input id="edit-session-desc" name="descripcion" defaultValue={sessionEditor?.descripcion || ""} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="edit-session-type">Tipo</Label>
-              <Input id="edit-session-type" name="tipo" defaultValue={sessionEditor?.tipo || ""} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="edit-session-seats">Cupos</Label>
-              <Input id="edit-session-seats" name="cupos" type="number" defaultValue={sessionEditor?.cupos ?? 0} />
-            </div>
-            <DialogFooter className="md:col-span-2">
-              <Button type="button" variant="outline" onClick={() => setSessionEditor(null)}>Cancelar</Button>
-              <Button type="submit" disabled={updateSession.isPending}>{updateSession.isPending ? "Guardando…" : "Guardar"}</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+          </div>
+        </aside>
+      </div>
     </div>
   )
 }
