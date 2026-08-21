@@ -25,7 +25,8 @@ import {
 } from "@/hooks/use-programa-academico"
 import { normalizeProgramAgenda } from "@/lib/programa-academico"
 import { buildProgramAgendaView } from "@/lib/programa-academico-view"
-import { BookOpen, CalendarDays, DoorOpen, Layers3, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react"
+import { moveOrderedItems } from "@/lib/programa-academico-order"
+import { ArrowDown, ArrowUp, BookOpen, CalendarDays, DoorOpen, Layers3, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react"
 
 export default function ProgramaAcademicoPage() {
   const [courseId, setCourseId] = useState("7")
@@ -249,6 +250,39 @@ export default function ProgramaAcademicoPage() {
     }
   }
 
+  async function moveDay(dayId: number, direction: "up" | "down") {
+    const nextDays = moveOrderedItems(program, dayId, direction)
+    const currentOrders = new Map(program.map((day) => [day.id, day.orden ?? 0]))
+    const updates = nextDays.filter((day) => currentOrders.get(day.id) !== (day.orden ?? 0))
+
+    if (!updates.length) return
+
+    try {
+      await Promise.all(updates.map((day) => updateDay.mutateAsync({ id: Number(day.id), payload: { orden: day.orden } })))
+      toast.success("Orden de días actualizado")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo reordenar el día")
+    }
+  }
+
+  async function moveBlock(dayId: number, blockId: number, direction: "up" | "down") {
+    const day = program.find((item) => item.id === dayId)
+    if (!day) return
+
+    const nextBlocks = moveOrderedItems(day.bloques, blockId, direction)
+    const currentOrders = new Map(day.bloques.map((block) => [block.id, block.orden ?? 0]))
+    const updates = nextBlocks.filter((block) => currentOrders.get(block.id) !== (block.orden ?? 0))
+
+    if (!updates.length) return
+
+    try {
+      await Promise.all(updates.map((block) => updateBlock.mutateAsync({ id: Number(block.id), payload: { orden: block.orden } })))
+      toast.success("Orden de bloques actualizado")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo reordenar el bloque")
+    }
+  }
+
   return (
     <div className="space-y-6">
       <Card className="border-border/70 bg-card/90 shadow-[0_18px_50px_rgba(11,42,85,0.08)]">
@@ -398,6 +432,12 @@ export default function ProgramaAcademicoPage() {
                       <div className="text-sm text-muted-foreground">{day.fecha}</div>
                     </div>
                     <div className="flex gap-1">
+                      <Button variant="outline" size="icon" onClick={() => moveDay(Number(day.id), "up")} title="Subir día">
+                        <ArrowUp className="size-4" />
+                      </Button>
+                      <Button variant="outline" size="icon" onClick={() => moveDay(Number(day.id), "down")} title="Bajar día">
+                        <ArrowDown className="size-4" />
+                      </Button>
                       <Button variant="outline" size="icon" onClick={() => setDayEditor(day)}>
                         <PencilIcon className="size-4" />
                       </Button>
@@ -415,6 +455,12 @@ export default function ProgramaAcademicoPage() {
                             <div className="text-muted-foreground">{block.hora_inicio} - {block.hora_fin}</div>
                           </div>
                           <div className="flex gap-1">
+                            <Button variant="outline" size="icon" onClick={() => moveBlock(Number(day.id), Number(block.id), "up")} title="Subir bloque">
+                              <ArrowUp className="size-4" />
+                            </Button>
+                            <Button variant="outline" size="icon" onClick={() => moveBlock(Number(day.id), Number(block.id), "down")} title="Bajar bloque">
+                              <ArrowDown className="size-4" />
+                            </Button>
                             <Button variant="outline" size="icon" onClick={() => setBlockEditor(block)}>
                               <PencilIcon className="size-4" />
                             </Button>

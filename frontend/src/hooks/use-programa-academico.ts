@@ -72,7 +72,7 @@ export function useCreateProgramBlock(courseId?: number, diaId?: number) {
 export function useUpdateProgramBlock(courseId?: number) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({ id, payload }: { id: number; payload: { titulo?: string; hora_inicio?: string; hora_fin?: string } }) => {
+    mutationFn: async ({ id, payload }: { id: number; payload: { titulo?: string; orden?: number; hora_inicio?: string; hora_fin?: string } }) => {
       const { data } = await api.put(`/bloques/${id}`, payload)
       return data
     },

@@ -25,6 +25,9 @@ export class Bloque {
   @Column()
   titulo: string
 
+  @Column({ default: 0 })
+  orden: number
+
   @Column({ type: 'time' })
   hora_inicio: string
 

@@ -6,6 +6,7 @@ export function normalizeProgramAgenda(days: unknown): Array<{
   bloques: Array<{
     id?: number
     titulo?: string
+    orden?: number
     hora_inicio?: string
     hora_fin?: string
     sesiones: Array<{

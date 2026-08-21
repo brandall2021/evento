@@ -76,7 +76,7 @@ export class AgendaService {
   }
 
   async bloquesByDia(diaId: number) {
-    return this.bloqueRepo.find({ where: { dia_id: diaId }, order: { hora_inicio: 'ASC' } })
+    return this.bloqueRepo.find({ where: { dia_id: diaId }, order: { orden: 'ASC', hora_inicio: 'ASC' } })
   }
 
   async actualizarBloque(id: number, data: Partial<Bloque>) {
@@ -141,7 +141,7 @@ export class AgendaService {
     for (const dia of dias) {
       const bloques = await this.bloqueRepo.find({
         where: { dia_id: dia.id },
-        order: { hora_inicio: 'ASC' },
+        order: { orden: 'ASC', hora_inicio: 'ASC' },
       })
 
       const bloquesConSesiones: any[] = []

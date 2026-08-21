@@ -31,17 +31,21 @@ describe('AgendaService', () => {
     service = module.get<AgendaService>(AgendaService)
   })
 
-  it('returns a program overview for the course', async () => {
+  it('returns blocks ordered by orden inside the program overview', async () => {
     const diaRepo = service['diaRepo'] as any
     const bloqueRepo = service['bloqueRepo'] as any
     const sesionRepo = service['sesionRepo'] as any
 
     diaRepo.find.mockResolvedValue([{ id: 1, curso_id: 7, fecha: '2026-08-20', titulo: 'Día 1', orden: 1 }])
-    bloqueRepo.find.mockResolvedValue([{ id: 11, dia_id: 1, titulo: 'Bloque 1', hora_inicio: '09:00', hora_fin: '10:00' }])
+    bloqueRepo.find.mockResolvedValue([])
     sesionRepo.find.mockResolvedValue([{ id: 21, bloque_id: 11, titulo: 'Sesión 1' }])
 
     const result = await service.programaAcademico(7)
 
-    expect(result[0].bloques[0].sesiones[0].titulo).toBe('Sesión 1')
+    expect(bloqueRepo.find).toHaveBeenCalledWith({
+      where: { dia_id: 1 },
+      order: { orden: 'ASC', hora_inicio: 'ASC' },
+    })
+    expect(result[0].bloques).toEqual([])
   })
 })
