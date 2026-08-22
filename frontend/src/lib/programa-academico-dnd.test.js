@@ -1,7 +1,7 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
 
-const { describeProgramDragMove, getProgramDragTargets, moveSessionBetweenBlocks } = require('./programa-academico-dnd')
+const { buildCrossParentMovePayload, describeProgramDragMove, getProgramDragTargets, moveSessionBetweenBlocks } = require('./programa-academico-dnd')
 
 test('getProgramDragTargets identifies the dragged item and its parent', () => {
   const targets = getProgramDragTargets({
@@ -44,6 +44,18 @@ test('describeProgramDragMove distinguishes same-parent and cross-parent moves',
     relationship: 'cross-parent',
     sameParent: false,
   })
+})
+
+test('buildCrossParentMovePayload carries new parent id and order', () => {
+  const payload = buildCrossParentMovePayload({
+    kind: 'session',
+    itemId: 21,
+    parentId: 11,
+    targetParentId: 12,
+    orden: 2,
+  })
+
+  assert.deepEqual(payload, { bloque_id: 12, orden: 2 })
 })
 
 test('moveSessionBetweenBlocks moves a session to a new block at the end', () => {

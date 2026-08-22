@@ -3,6 +3,19 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
 
+type ProgramAgendaMoveKind = "day" | "block" | "session"
+
+type ProgramAgendaMoveOperation = {
+  kind: ProgramAgendaMoveKind
+  id: number
+  payload: Record<string, unknown>
+}
+
+type ProgramAgendaMoveVariables = {
+  optimisticAgenda: any[]
+  operations: ProgramAgendaMoveOperation[]
+}
+
 export function useProgramAgenda(courseId?: number) {
   return useQuery<any[]>({
     queryKey: ["programa-academico", courseId],
@@ -159,5 +172,46 @@ export function useDeleteProgramSession(courseId?: number) {
       return data
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["programa-academico", courseId] }),
+  })
+}
+
+function getProgramAgendaMoveEndpoint(kind: ProgramAgendaMoveKind, id: number) {
+  if (kind === "day") {
+    return `/dias/${id}`
+  }
+
+  if (kind === "block") {
+    return `/bloques/${id}`
+  }
+
+  return `/sesiones/${id}`
+}
+
+export function usePersistProgramAgendaMove(courseId?: number) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (variables: ProgramAgendaMoveVariables) => {
+      for (const operation of variables.operations) {
+        await api.put(getProgramAgendaMoveEndpoint(operation.kind, operation.id), operation.payload)
+      }
+    },
+    onMutate: async (variables) => {
+      const queryKey = ["programa-academico", courseId]
+
+      await queryClient.cancelQueries({ queryKey })
+      const previousAgenda = queryClient.getQueryData(queryKey)
+      queryClient.setQueryData(queryKey, variables.optimisticAgenda)
+
+      return { queryKey, previousAgenda }
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previousAgenda) {
+        queryClient.setQueryData(context.queryKey, context.previousAgenda)
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["programa-academico", courseId] })
+    },
   })
 }

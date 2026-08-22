@@ -96,6 +96,18 @@ function getProgramDragId(kind, id) {
   return `${kind}:${id}`
 }
 
+function buildCrossParentMovePayload(input) {
+  if (input.kind === 'block') {
+    return { dia_id: input.targetParentId, orden: input.orden }
+  }
+
+  if (input.kind === 'session') {
+    return { bloque_id: input.targetParentId, orden: input.orden }
+  }
+
+  return { orden: input.orden }
+}
+
 function sortByOrden(items) {
   return [...items].sort((left, right) => (left.orden ?? 0) - (right.orden ?? 0))
 }
@@ -155,6 +167,7 @@ function describeProgramDragMove(activeTarget, overTarget) {
 
 module.exports = {
   flattenProgramAgendaNodes,
+  buildCrossParentMovePayload,
   getProgramDragTargets,
   getProgramDragId,
   describeProgramDragMove,

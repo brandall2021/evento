@@ -24,13 +24,14 @@ import {
   useCreateProgramSession,
   useUpdateProgramSession,
   useDeleteProgramSession,
+  usePersistProgramAgendaMove,
 } from "@/hooks/use-programa-academico"
 import { normalizeProgramAgenda } from "@/lib/programa-academico"
 import { buildProgramAgendaView } from "@/lib/programa-academico-view"
 import { getProgramEditorMeta } from "@/lib/programa-academico-editor"
 import { buildDuplicatedSessionPayload } from "@/lib/programa-academico-duplicate"
 import { buildDuplicatedBlockPayload, buildDuplicatedDayPayload } from "@/lib/programa-academico-duplicate-structure"
-import { getProgramDragId, getProgramDragTargets, moveSessionBetweenBlocks } from "@/lib/programa-academico-dnd"
+import { buildCrossParentMovePayload, getProgramDragId, getProgramDragTargets, moveSessionBetweenBlocks } from "@/lib/programa-academico-dnd"
 import { BookOpen, CalendarDays, CopyIcon, DoorOpen, GripVertical, Layers3, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react"
 
 function sortByOrden(items: Array<any>) {
@@ -196,6 +197,7 @@ export default function ProgramaAcademicoPage() {
   const createSession = useCreateProgramSession(courseIdNumber, Number(selectedBlockId) || undefined)
   const updateSession = useUpdateProgramSession(courseIdNumber)
   const deleteSession = useDeleteProgramSession(courseIdNumber)
+  const persistProgramMove = usePersistProgramAgendaMove(courseIdNumber)
 
   const program = useMemo(() => normalizeProgramAgenda(data), [data])
   const rooms = roomsData ?? []
@@ -613,10 +615,12 @@ export default function ProgramaAcademicoPage() {
 
   function getDayOrderUpdates(nextDays: Array<any>) {
     const currentOrders = new Map(program.map((day) => [day.id, day.orden ?? 0]))
-    return nextDays.filter((day) => currentOrders.get(day.id) !== (day.orden ?? 0))
+    return nextDays
+      .filter((day) => currentOrders.get(day.id) !== (day.orden ?? 0))
+      .map((day) => ({ kind: "day" as const, id: Number(day.id), payload: { orden: day.orden } }))
   }
 
-  function getBlockOrderUpdates(nextDays: Array<any>) {
+  function getBlockOrderUpdates(nextDays: Array<any>, excludeIds: Array<number> = []) {
     const currentBlocks = new Map<string, { dayId: number; orden: number }>()
 
     for (const day of program) {
@@ -629,9 +633,11 @@ export default function ProgramaAcademicoPage() {
 
     for (const day of nextDays) {
       for (const block of day.bloques) {
+        if (excludeIds.includes(Number(block.id))) continue
+
         const current = currentBlocks.get(String(block.id))
         if (!current || current.dayId !== day.id || current.orden !== (block.orden ?? 0)) {
-          updates.push({ id: Number(block.id), payload: { dia_id: Number(day.id), orden: block.orden } })
+          updates.push({ kind: "block" as const, id: Number(block.id), payload: { orden: block.orden } })
         }
       }
     }
@@ -639,7 +645,7 @@ export default function ProgramaAcademicoPage() {
     return updates
   }
 
-  function getSessionOrderUpdates(nextBlocks: Array<any>) {
+  function getSessionOrderUpdates(nextBlocks: Array<any>, excludeIds: Array<number> = []) {
     const currentSessions = new Map<string, { blockId: number; orden: number }>()
 
     for (const day of program) {
@@ -654,14 +660,25 @@ export default function ProgramaAcademicoPage() {
 
     for (const block of nextBlocks) {
       for (const session of block.sesiones) {
+        if (excludeIds.includes(Number(session.id))) continue
+
         const current = currentSessions.get(String(session.id))
         if (!current || current.blockId !== block.id || current.orden !== (session.orden ?? 0)) {
-          updates.push({ id: Number(session.id), payload: { bloque_id: Number(block.id), orden: session.orden } })
+          updates.push({ kind: "session" as const, id: Number(session.id), payload: { orden: session.orden } })
         }
       }
     }
 
     return updates
+  }
+
+  function applyUpdatedBlocksToProgram(nextBlocks: Array<any>) {
+    const nextBlocksById = new Map(nextBlocks.map((block) => [Number(block.id), block]))
+
+    return program.map((day) => ({
+      ...day,
+      bloques: day.bloques.map((block) => nextBlocksById.get(Number(block.id)) || block),
+    }))
   }
 
   function moveBlockBetweenDays(activeBlockId: number, targetDayId: number, overBlockId?: number) {
@@ -745,7 +762,7 @@ export default function ProgramaAcademicoPage() {
 
         if (!updates.length) return
 
-        await Promise.all(updates.map((day) => updateDay.mutateAsync({ id: Number(day.id), payload: { orden: day.orden } })))
+        await persistProgramMove.mutateAsync({ optimisticAgenda: nextDays, operations: updates })
         toast.success("Orden de días actualizado")
         return
       }
@@ -759,11 +776,31 @@ export default function ProgramaAcademicoPage() {
         const activeBlockId = Number(active.id.toString().split(":").pop())
         const overBlockId = overTarget.kind === "day" ? undefined : overTarget.blockId
         const nextDays = moveBlockBetweenDays(activeBlockId, Number(targetDay.id), overBlockId)
-        const updates = getBlockOrderUpdates(nextDays)
+        const movedBlock = nextDays.find((day) => day.id === targetDay.id)?.bloques.find((block) => block.id === activeBlockId)
+
+        if (!movedBlock) return
+
+        const updates =
+          sourceDay.id === targetDay.id
+            ? getBlockOrderUpdates(nextDays)
+            : [
+                {
+                  kind: "block" as const,
+                  id: activeBlockId,
+                  payload: buildCrossParentMovePayload({
+                    kind: "block",
+                    itemId: activeBlockId,
+                    parentId: Number(sourceDay.id),
+                    targetParentId: Number(targetDay.id),
+                    orden: movedBlock.orden ?? 0,
+                  }),
+                },
+                ...getBlockOrderUpdates(nextDays, [activeBlockId]),
+              ]
 
         if (!updates.length) return
 
-        await Promise.all(updates.map((block) => updateBlock.mutateAsync({ id: Number(block.id), payload: block.payload })))
+        await persistProgramMove.mutateAsync({ optimisticAgenda: nextDays, operations: updates })
         toast.success("Orden de bloques actualizado")
         return
       }
@@ -791,22 +828,41 @@ export default function ProgramaAcademicoPage() {
           if (activeIndex < 0 || overIndex < 0) return
 
           const nextBlocks = [{ ...source.block, sesiones: renumberOrderedItems(arrayMove(orderedSessions, activeIndex, overIndex)) }]
+          const optimisticAgenda = applyUpdatedBlocksToProgram(nextBlocks)
           const updates = getSessionOrderUpdates(nextBlocks)
 
           if (!updates.length) return
 
-          await Promise.all(updates.map((session) => updateSession.mutateAsync({ id: Number(session.id), payload: session.payload })))
+          await persistProgramMove.mutateAsync({ optimisticAgenda, operations: updates })
           toast.success("Orden de sesiones actualizado")
           return
         }
 
         const blockPool = source.day.id === targetDay?.id ? source.day.bloques : [...source.day.bloques, ...(targetDay?.bloques || [])]
         const nextBlocks = moveSessionBetweenBlocks(blockPool, activeSessionId, targetBlock.id).blocks
-        const updates = getSessionOrderUpdates(nextBlocks)
+        const movedSession = nextBlocks.find((block) => block.id === targetBlock.id)?.sesiones.find((session) => session.id === activeSessionId)
+
+        if (!movedSession) return
+
+        const optimisticAgenda = applyUpdatedBlocksToProgram(nextBlocks)
+        const updates = [
+          {
+            kind: "session" as const,
+            id: activeSessionId,
+            payload: buildCrossParentMovePayload({
+              kind: "session",
+              itemId: activeSessionId,
+              parentId: Number(source.block.id),
+              targetParentId: Number(targetBlock.id),
+              orden: movedSession.orden ?? 0,
+            }),
+          },
+          ...getSessionOrderUpdates(nextBlocks, [activeSessionId]),
+        ]
 
         if (!updates.length) return
 
-        await Promise.all(updates.map((session) => updateSession.mutateAsync({ id: Number(session.id), payload: session.payload })))
+        await persistProgramMove.mutateAsync({ optimisticAgenda, operations: updates })
         toast.success("Orden de sesiones actualizado")
       }
     } catch (error) {
