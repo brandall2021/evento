@@ -60,7 +60,7 @@ export class DiaController {
 
   @Post(':diaId/bloques')
   @Roles(UserRole.ADMIN, UserRole.DOCENTE, UserRole.COORDINATOR)
-  crearBloque(@Param('diaId', ParseIntPipe) diaId: number, @Body() body: { titulo: string; hora_inicio: string; hora_fin: string }) {
+  crearBloque(@Param('diaId', ParseIntPipe) diaId: number, @Body() body: { titulo: string; hora_inicio: string; hora_fin: string; orden?: number }) {
     return this.agendaService.crearBloque(diaId, body)
   }
 

@@ -26,6 +26,7 @@ import { normalizeProgramAgenda } from "@/lib/programa-academico"
 import { buildProgramAgendaView } from "@/lib/programa-academico-view"
 import { getProgramEditorMeta } from "@/lib/programa-academico-editor"
 import { buildDuplicatedSessionPayload } from "@/lib/programa-academico-duplicate"
+import { buildDuplicatedBlockPayload, buildDuplicatedDayPayload } from "@/lib/programa-academico-duplicate-structure"
 import { moveOrderedItems } from "@/lib/programa-academico-order"
 import { ArrowDown, ArrowUp, BookOpen, CalendarDays, CopyIcon, DoorOpen, Layers3, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react"
 
@@ -162,9 +163,12 @@ export default function ProgramaAcademicoPage() {
     const formData = new FormData(event.currentTarget)
     try {
       await createBlock.mutateAsync({
-        titulo: String(formData.get("titulo_bloque") || ""),
-        hora_inicio: String(formData.get("hora_inicio") || ""),
-        hora_fin: String(formData.get("hora_fin") || ""),
+        dayId: Number(selectedDayId) || undefined,
+        payload: {
+          titulo: String(formData.get("titulo_bloque") || ""),
+          hora_inicio: String(formData.get("hora_inicio") || ""),
+          hora_fin: String(formData.get("hora_fin") || ""),
+        },
       })
       toast.success("Bloque creado")
       event.currentTarget.reset()
@@ -265,6 +269,87 @@ export default function ProgramaAcademicoPage() {
       toast.success("Sesión duplicada")
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "No se pudo duplicar la sesión")
+    }
+  }
+
+  async function duplicateBlock(day: any, block: any) {
+    const nextOrden = day.bloques.reduce((max: number, current: any) => Math.max(max, Number(current.orden ?? 0)), 0) + 1
+    const duplicated = buildDuplicatedBlockPayload(block, nextOrden)
+
+    try {
+      const createdBlock = await createBlock.mutateAsync({
+        dayId: day.id,
+        payload: {
+          titulo: duplicated.titulo,
+          hora_inicio: duplicated.hora_inicio,
+          hora_fin: duplicated.hora_fin,
+          orden: duplicated.orden,
+        },
+      })
+
+      for (const session of duplicated.sesiones) {
+        await createSession.mutateAsync({
+          blockId: createdBlock.id,
+          payload: {
+            titulo: session.titulo,
+            descripcion: session.descripcion,
+            tipo: session.tipo,
+            cupos: session.cupos,
+            sala_id: session.sala_id,
+            ponente_id: session.ponente_id,
+            orden: session.orden,
+          },
+        })
+      }
+
+      toast.success("Bloque duplicado")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo duplicar el bloque")
+    }
+  }
+
+  async function duplicateDay(day: any) {
+    const nextOrden = program.reduce((max, current) => Math.max(max, Number(current.orden ?? 0)), 0) + 1
+    const duplicated = buildDuplicatedDayPayload(day, nextOrden)
+
+    try {
+      const createdDay = await createDay.mutateAsync({
+        titulo: duplicated.titulo,
+        fecha: duplicated.fecha,
+        orden: duplicated.orden,
+      })
+
+      for (const block of duplicated.bloques) {
+        const createdBlock = await createBlock.mutateAsync({
+          dayId: createdDay.id,
+          payload: {
+            titulo: block.titulo,
+            hora_inicio: block.hora_inicio,
+            hora_fin: block.hora_fin,
+            orden: block.orden,
+          },
+        })
+
+        for (const session of block.sesiones) {
+          await createSession.mutateAsync({
+            blockId: createdBlock.id,
+            payload: {
+              titulo: session.titulo,
+              descripcion: session.descripcion,
+              tipo: session.tipo,
+              cupos: session.cupos,
+              sala_id: session.sala_id,
+              ponente_id: session.ponente_id,
+              orden: session.orden,
+            },
+          })
+        }
+      }
+
+      void createdDay
+      toast.success("Día duplicado")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo duplicar el día")
     }
   }
 
@@ -585,6 +670,9 @@ export default function ProgramaAcademicoPage() {
                       <Button variant="outline" size="icon" onClick={() => moveDay(Number(day.id), "down")} title="Bajar día">
                         <ArrowDown className="size-4" />
                       </Button>
+                      <Button variant="outline" size="icon" onClick={() => duplicateDay(day)} title="Duplicar día">
+                        <CopyIcon className="size-4" />
+                      </Button>
                       <Button variant="outline" size="icon" onClick={() => setDayEditor(day)}>
                         <PencilIcon className="size-4" />
                       </Button>
@@ -607,6 +695,9 @@ export default function ProgramaAcademicoPage() {
                             </Button>
                             <Button variant="outline" size="icon" onClick={() => moveBlock(Number(day.id), Number(block.id), "down")} title="Bajar bloque">
                               <ArrowDown className="size-4" />
+                            </Button>
+                            <Button variant="outline" size="icon" onClick={() => duplicateBlock(day, block)} title="Duplicar bloque">
+                              <CopyIcon className="size-4" />
                             </Button>
                             <Button variant="outline" size="icon" onClick={() => setBlockEditor(block)}>
                               <PencilIcon className="size-4" />

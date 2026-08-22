@@ -61,8 +61,9 @@ export function useDeleteProgramDay(courseId?: number) {
 export function useCreateProgramBlock(courseId?: number, diaId?: number) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (payload: { titulo: string; hora_inicio: string; hora_fin: string }) => {
-      const { data } = await api.post(`/cursos/${courseId}/dias/${diaId}/bloques`, payload)
+    mutationFn: async ({ dayId, payload }: { dayId?: number; payload: { titulo: string; hora_inicio: string; hora_fin: string; orden?: number } }) => {
+      const targetDayId = dayId ?? diaId
+      const { data } = await api.post(`/cursos/${courseId}/dias/${targetDayId}/bloques`, payload)
       return data
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["programa-academico", courseId] }),

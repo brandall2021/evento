@@ -68,7 +68,7 @@ export class AgendaService {
   }
 
   // --- Bloques ---
-  async crearBloque(diaId: number, data: { titulo: string; hora_inicio: string; hora_fin: string }) {
+  async crearBloque(diaId: number, data: { titulo: string; hora_inicio: string; hora_fin: string; orden?: number }) {
     const dia = await this.diaRepo.findOneBy({ id: diaId })
     if (!dia) throw new NotFoundException('Día no encontrado')
     const bloque = this.bloqueRepo.create({ dia_id: diaId, ...data })
