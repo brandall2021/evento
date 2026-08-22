@@ -13,6 +13,7 @@ export interface ProgramDragNode extends ProgramDragTarget {
 
 export function flattenProgramAgendaNodes(program: unknown): ProgramDragNode[]
 export function getProgramDragTargets(program: unknown, activeId: number | string): ProgramDragTarget | null
+export function resolveProgramDayDragTarget(target: ProgramDragTarget | null | undefined): { kind: 'day'; dayId: number } | null
 export function getProgramDragId(kind: ProgramDragKind, id: number | string): string
 export function buildCrossParentMovePayload(input: {
   kind: 'block' | 'session' | 'day'

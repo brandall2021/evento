@@ -74,6 +74,21 @@ function getProgramDragTargets(program, activeId) {
   }
 }
 
+function resolveProgramDayDragTarget(target) {
+  if (!target) {
+    return null
+  }
+
+  if (target.kind === 'day') {
+    return target
+  }
+
+  return {
+    kind: 'day',
+    dayId: target.dayId,
+  }
+}
+
 function parseProgramDragId(value) {
   if (typeof value === 'string') {
     const match = value.match(/^(day|block|session):(\d+)$/)
@@ -169,6 +184,7 @@ module.exports = {
   flattenProgramAgendaNodes,
   buildCrossParentMovePayload,
   getProgramDragTargets,
+  resolveProgramDayDragTarget,
   getProgramDragId,
   describeProgramDragMove,
   moveSessionBetweenBlocks,

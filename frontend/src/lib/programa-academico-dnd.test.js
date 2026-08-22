@@ -1,7 +1,7 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
 
-const { buildCrossParentMovePayload, describeProgramDragMove, getProgramDragTargets, moveSessionBetweenBlocks } = require('./programa-academico-dnd')
+const { buildCrossParentMovePayload, describeProgramDragMove, getProgramDragTargets, moveSessionBetweenBlocks, resolveProgramDayDragTarget } = require('./programa-academico-dnd')
 
 test('getProgramDragTargets identifies the dragged item and its parent', () => {
   const targets = getProgramDragTargets({
@@ -25,6 +25,13 @@ test('getProgramDragTargets identifies day targets', () => {
     dayId: 7,
     parentId: undefined,
     blockId: undefined,
+  })
+})
+
+test('resolveProgramDayDragTarget collapses nested drops to the containing day', () => {
+  assert.deepEqual(resolveProgramDayDragTarget({ kind: 'session', dayId: 7, parentId: 12, blockId: 12 }), {
+    kind: 'day',
+    dayId: 7,
   })
 })
 

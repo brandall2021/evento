@@ -31,7 +31,7 @@ import { buildProgramAgendaView } from "@/lib/programa-academico-view"
 import { getProgramEditorMeta } from "@/lib/programa-academico-editor"
 import { buildDuplicatedSessionPayload } from "@/lib/programa-academico-duplicate"
 import { buildDuplicatedBlockPayload, buildDuplicatedDayPayload } from "@/lib/programa-academico-duplicate-structure"
-import { buildCrossParentMovePayload, getProgramDragId, getProgramDragTargets, moveSessionBetweenBlocks } from "@/lib/programa-academico-dnd"
+import { buildCrossParentMovePayload, getProgramDragId, getProgramDragTargets, moveSessionBetweenBlocks, resolveProgramDayDragTarget } from "@/lib/programa-academico-dnd"
 import { BookOpen, CalendarDays, CopyIcon, DoorOpen, GripVertical, Layers3, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react"
 
 function sortByOrden(items: Array<any>) {
@@ -750,10 +750,12 @@ export default function ProgramaAcademicoPage() {
     }
 
     try {
-      if (activeTarget.kind === "day" && overTarget.kind === "day") {
+      const overDayTarget = resolveProgramDayDragTarget(overTarget)
+
+      if (activeTarget.kind === "day" && overDayTarget) {
         const orderedDays = sortByOrden(program)
         const activeIndex = orderedDays.findIndex((day) => day.id === activeTarget.dayId)
-        const overIndex = orderedDays.findIndex((day) => day.id === overTarget.dayId)
+        const overIndex = orderedDays.findIndex((day) => day.id === overDayTarget.dayId)
 
         if (activeIndex < 0 || overIndex < 0) return
 
@@ -762,7 +764,7 @@ export default function ProgramaAcademicoPage() {
 
         if (!updates.length) return
 
-        await persistProgramMove.mutateAsync({ optimisticAgenda: nextDays, operations: updates })
+        await persistProgramMove.mutateAsync({ optimisticAgenda: nextDays, previousAgenda: program, operations: updates })
         toast.success("Orden de días actualizado")
         return
       }
@@ -800,7 +802,7 @@ export default function ProgramaAcademicoPage() {
 
         if (!updates.length) return
 
-        await persistProgramMove.mutateAsync({ optimisticAgenda: nextDays, operations: updates })
+        await persistProgramMove.mutateAsync({ optimisticAgenda: nextDays, previousAgenda: program, operations: updates })
         toast.success("Orden de bloques actualizado")
         return
       }
@@ -833,7 +835,7 @@ export default function ProgramaAcademicoPage() {
 
           if (!updates.length) return
 
-          await persistProgramMove.mutateAsync({ optimisticAgenda, operations: updates })
+          await persistProgramMove.mutateAsync({ optimisticAgenda, previousAgenda: program, operations: updates })
           toast.success("Orden de sesiones actualizado")
           return
         }
@@ -862,7 +864,7 @@ export default function ProgramaAcademicoPage() {
 
         if (!updates.length) return
 
-        await persistProgramMove.mutateAsync({ optimisticAgenda, operations: updates })
+        await persistProgramMove.mutateAsync({ optimisticAgenda, previousAgenda: program, operations: updates })
         toast.success("Orden de sesiones actualizado")
       }
     } catch (error) {
