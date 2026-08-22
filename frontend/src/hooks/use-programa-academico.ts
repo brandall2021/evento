@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
+import { buildProgramAgendaMoveInvalidationKeys } from "@/lib/programa-academico-move"
 
 type ProgramAgendaMoveKind = "day" | "block" | "session"
 
@@ -210,8 +211,10 @@ export function usePersistProgramAgendaMove(courseId?: number) {
         queryClient.setQueryData(context.queryKey, context.previousAgenda)
       }
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["programa-academico", courseId] })
+    onSuccess: () => {
+      for (const queryKey of buildProgramAgendaMoveInvalidationKeys(courseId)) {
+        queryClient.invalidateQueries({ queryKey })
+      }
     },
   })
 }
