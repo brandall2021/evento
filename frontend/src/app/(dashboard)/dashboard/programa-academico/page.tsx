@@ -25,8 +25,9 @@ import {
 import { normalizeProgramAgenda } from "@/lib/programa-academico"
 import { buildProgramAgendaView } from "@/lib/programa-academico-view"
 import { getProgramEditorMeta } from "@/lib/programa-academico-editor"
+import { buildDuplicatedSessionPayload } from "@/lib/programa-academico-duplicate"
 import { moveOrderedItems } from "@/lib/programa-academico-order"
-import { ArrowDown, ArrowUp, BookOpen, CalendarDays, DoorOpen, Layers3, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react"
+import { ArrowDown, ArrowUp, BookOpen, CalendarDays, CopyIcon, DoorOpen, Layers3, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react"
 
 export default function ProgramaAcademicoPage() {
   const [courseId, setCourseId] = useState("7")
@@ -207,10 +208,13 @@ export default function ProgramaAcademicoPage() {
     const formData = new FormData(event.currentTarget)
     try {
       await createSession.mutateAsync({
-        titulo: String(formData.get("titulo_sesion") || ""),
-        descripcion: String(formData.get("descripcion") || "") || undefined,
-        tipo: String(formData.get("tipo") || "") || undefined,
-        cupos: Number(formData.get("cupos") || 0) || undefined,
+        blockId: Number(selectedBlockId) || undefined,
+        payload: {
+          titulo: String(formData.get("titulo_sesion") || ""),
+          descripcion: String(formData.get("descripcion") || "") || undefined,
+          tipo: String(formData.get("tipo") || "") || undefined,
+          cupos: Number(formData.get("cupos") || 0) || undefined,
+        },
       })
       toast.success("Sesión creada")
       event.currentTarget.reset()
@@ -247,6 +251,20 @@ export default function ProgramaAcademicoPage() {
       toast.success("Sesión eliminada")
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "No se pudo eliminar la sesión")
+    }
+  }
+
+  async function duplicateSession(blockId: number, blockSessions: Array<any>, session: any) {
+    const nextOrden = blockSessions.reduce((max, current) => Math.max(max, Number(current.orden ?? 0)), 0) + 1
+
+    try {
+      await createSession.mutateAsync({
+        blockId,
+        payload: buildDuplicatedSessionPayload(session, nextOrden),
+      })
+      toast.success("Sesión duplicada")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo duplicar la sesión")
     }
   }
 
@@ -608,6 +626,9 @@ export default function ProgramaAcademicoPage() {
                                 </Button>
                                 <Button variant="outline" size="icon" onClick={() => moveSession(Number(day.id), Number(block.id), Number(session.id), "down")} title="Bajar sesión">
                                   <ArrowDown className="size-4" />
+                                </Button>
+                                <Button variant="outline" size="icon" onClick={() => duplicateSession(Number(block.id), block.sesiones, session)} title="Duplicar sesión">
+                                  <CopyIcon className="size-4" />
                                 </Button>
                                 <Button variant="outline" size="icon" onClick={() => setSessionEditor(session)}>
                                   <PencilIcon className="size-4" />

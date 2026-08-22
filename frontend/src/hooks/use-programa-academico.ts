@@ -130,8 +130,9 @@ export function useDeleteProgramRoom(courseId?: number) {
 export function useCreateProgramSession(courseId?: number, bloqueId?: number) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (payload: { titulo: string; descripcion?: string; sala_id?: number; ponente_id?: number; tipo?: string; cupos?: number }) => {
-      const { data } = await api.post(`/cursos/${courseId}/bloques/${bloqueId}/sesiones`, payload)
+    mutationFn: async ({ blockId, payload }: { blockId?: number; payload: { titulo: string; descripcion?: string; sala_id?: number; ponente_id?: number; tipo?: string; cupos?: number; orden?: number } }) => {
+      const targetBlockId = blockId ?? bloqueId
+      const { data } = await api.post(`/cursos/${courseId}/bloques/${targetBlockId}/sesiones`, payload)
       return data
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["programa-academico", courseId] }),
