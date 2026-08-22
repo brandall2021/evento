@@ -1,6 +1,9 @@
 "use client"
 
-import { useEffect, useMemo, useState, type FormEvent } from "react"
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react"
+import { DndContext, KeyboardSensor, PointerSensor, closestCenter, type DragEndEvent, useSensor, useSensors } from "@dnd-kit/core"
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
 import { toast } from "sonner"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -27,8 +30,148 @@ import { buildProgramAgendaView } from "@/lib/programa-academico-view"
 import { getProgramEditorMeta } from "@/lib/programa-academico-editor"
 import { buildDuplicatedSessionPayload } from "@/lib/programa-academico-duplicate"
 import { buildDuplicatedBlockPayload, buildDuplicatedDayPayload } from "@/lib/programa-academico-duplicate-structure"
-import { moveOrderedItems } from "@/lib/programa-academico-order"
-import { ArrowDown, ArrowUp, BookOpen, CalendarDays, CopyIcon, DoorOpen, Layers3, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react"
+import { getProgramDragId, getProgramDragTargets, moveSessionBetweenBlocks } from "@/lib/programa-academico-dnd"
+import { BookOpen, CalendarDays, CopyIcon, DoorOpen, GripVertical, Layers3, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react"
+
+function sortByOrden(items: Array<any>) {
+  return [...items].sort((left, right) => (left.orden ?? 0) - (right.orden ?? 0))
+}
+
+function renumberOrderedItems(items: Array<any>) {
+  return items.map((item, index) => ({
+    ...item,
+    orden: index + 1,
+  }))
+}
+
+function findDayAndBlockBySessionId(program: Array<any>, sessionId: number) {
+  for (const day of program) {
+    for (const block of day.bloques) {
+      if (block.sesiones.some((session: any) => session.id === sessionId)) {
+        return { day, block }
+      }
+    }
+  }
+
+  return null
+}
+
+function SortableHandle({ attributes, listeners, label }: { attributes: Record<string, any>; listeners?: Record<string, any>; label: string }) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      className="size-8 shrink-0 cursor-grab touch-none active:cursor-grabbing"
+      aria-label={label}
+      {...attributes}
+      {...(listeners || {})}
+    >
+      <GripVertical className="size-4" />
+    </Button>
+  )
+}
+
+function SortableDayCard({ day, children, onEdit, onDuplicate, onDelete }: { day: any; children: ReactNode; onEdit: () => void; onDuplicate: () => void; onDelete: () => void }) {
+  const dragId = getProgramDragId("day", Number(day.id))
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: dragId })
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.7 : 1 }}
+      className="rounded-2xl border border-border/70 p-4"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <SortableHandle attributes={attributes} listeners={listeners} label={`Mover día ${day.titulo}`} />
+          <div>
+            <div className="font-semibold">{day.titulo}</div>
+            <div className="text-sm text-muted-foreground">{day.fecha}</div>
+          </div>
+        </div>
+        <div className="flex gap-1">
+          <Button variant="outline" size="icon" onClick={onDuplicate} title="Duplicar día">
+            <CopyIcon className="size-4" />
+          </Button>
+          <Button variant="outline" size="icon" onClick={onEdit} title="Editar día">
+            <PencilIcon className="size-4" />
+          </Button>
+          <Button variant="outline" size="icon" onClick={onDelete} title="Eliminar día">
+            <Trash2Icon className="size-4" />
+          </Button>
+        </div>
+      </div>
+      <div className="mt-3 space-y-3">{children}</div>
+    </div>
+  )
+}
+
+function SortableBlockCard({ block, children, onEdit, onDuplicate, onDelete }: { block: any; children: ReactNode; onEdit: () => void; onDuplicate: () => void; onDelete: () => void }) {
+  const dragId = getProgramDragId("block", Number(block.id))
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: dragId })
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.7 : 1 }}
+      className="rounded-xl border border-border/70 bg-muted/20 p-3 text-sm"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <SortableHandle attributes={attributes} listeners={listeners} label={`Mover bloque ${block.titulo}`} />
+          <div>
+            <div className="font-medium">{block.titulo}</div>
+            <div className="text-muted-foreground">
+              {block.hora_inicio} - {block.hora_fin}
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-1">
+          <Button variant="outline" size="icon" onClick={onDuplicate} title="Duplicar bloque">
+            <CopyIcon className="size-4" />
+          </Button>
+          <Button variant="outline" size="icon" onClick={onEdit} title="Editar bloque">
+            <PencilIcon className="size-4" />
+          </Button>
+          <Button variant="outline" size="icon" onClick={onDelete} title="Eliminar bloque">
+            <Trash2Icon className="size-4" />
+          </Button>
+        </div>
+      </div>
+      <div className="mt-2 space-y-1">{children}</div>
+    </div>
+  )
+}
+
+function SortableSessionRow({ session, onDuplicate, onEdit, onDelete }: { session: any; onDuplicate: () => void; onEdit: () => void; onDelete: () => void }) {
+  const dragId = getProgramDragId("session", Number(session.id))
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: dragId })
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.7 : 1 }}
+      className="flex items-center justify-between gap-3 rounded-lg bg-background px-3 py-2"
+    >
+      <div className="flex items-center gap-2">
+        <SortableHandle attributes={attributes} listeners={listeners} label={`Mover sesión ${session.titulo}`} />
+        <span>{session.titulo}</span>
+      </div>
+      <div className="flex gap-1">
+        <Button variant="outline" size="icon" onClick={onDuplicate} title="Duplicar sesión">
+          <CopyIcon className="size-4" />
+        </Button>
+        <Button variant="outline" size="icon" onClick={onEdit} title="Editar sesión">
+          <PencilIcon className="size-4" />
+        </Button>
+        <Button variant="outline" size="icon" onClick={onDelete} title="Eliminar sesión">
+          <Trash2Icon className="size-4" />
+        </Button>
+      </div>
+    </div>
+  )
+}
 
 export default function ProgramaAcademicoPage() {
   const [courseId, setCourseId] = useState("7")
@@ -463,55 +606,211 @@ export default function ProgramaAcademicoPage() {
     return null
   }
 
-  async function moveDay(dayId: number, direction: "up" | "down") {
-    const nextDays = moveOrderedItems(program, dayId, direction)
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+
+  function getDayOrderUpdates(nextDays: Array<any>) {
     const currentOrders = new Map(program.map((day) => [day.id, day.orden ?? 0]))
-    const updates = nextDays.filter((day) => currentOrders.get(day.id) !== (day.orden ?? 0))
-
-    if (!updates.length) return
-
-    try {
-      await Promise.all(updates.map((day) => updateDay.mutateAsync({ id: Number(day.id), payload: { orden: day.orden } })))
-      toast.success("Orden de días actualizado")
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "No se pudo reordenar el día")
-    }
+    return nextDays.filter((day) => currentOrders.get(day.id) !== (day.orden ?? 0))
   }
 
-  async function moveBlock(dayId: number, blockId: number, direction: "up" | "down") {
-    const day = program.find((item) => item.id === dayId)
-    if (!day) return
+  function getBlockOrderUpdates(nextDays: Array<any>) {
+    const currentBlocks = new Map<string, { dayId: number; orden: number }>()
 
-    const nextBlocks = moveOrderedItems(day.bloques, blockId, direction)
-    const currentOrders = new Map(day.bloques.map((block) => [block.id, block.orden ?? 0]))
-    const updates = nextBlocks.filter((block) => currentOrders.get(block.id) !== (block.orden ?? 0))
-
-    if (!updates.length) return
-
-    try {
-      await Promise.all(updates.map((block) => updateBlock.mutateAsync({ id: Number(block.id), payload: { orden: block.orden } })))
-      toast.success("Orden de bloques actualizado")
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "No se pudo reordenar el bloque")
+    for (const day of program) {
+      for (const block of day.bloques) {
+        currentBlocks.set(String(block.id), { dayId: Number(day.id), orden: block.orden ?? 0 })
+      }
     }
+
+    const updates: Array<any> = []
+
+    for (const day of nextDays) {
+      for (const block of day.bloques) {
+        const current = currentBlocks.get(String(block.id))
+        if (!current || current.dayId !== day.id || current.orden !== (block.orden ?? 0)) {
+          updates.push({ id: Number(block.id), payload: { dia_id: Number(day.id), orden: block.orden } })
+        }
+      }
+    }
+
+    return updates
   }
 
-  async function moveSession(dayId: number, blockId: number, sessionId: number, direction: "up" | "down") {
-    const day = program.find((item) => item.id === dayId)
-    const block = day?.bloques.find((item) => item.id === blockId)
-    if (!block) return
+  function getSessionOrderUpdates(nextBlocks: Array<any>) {
+    const currentSessions = new Map<string, { blockId: number; orden: number }>()
 
-    const nextSessions = moveOrderedItems(block.sesiones, sessionId, direction)
-    const currentOrders = new Map(block.sesiones.map((session) => [session.id, session.orden ?? 0]))
-    const updates = nextSessions.filter((session) => currentOrders.get(session.id) !== (session.orden ?? 0))
+    for (const day of program) {
+      for (const block of day.bloques) {
+        for (const session of block.sesiones) {
+          currentSessions.set(String(session.id), { blockId: Number(block.id), orden: session.orden ?? 0 })
+        }
+      }
+    }
 
-    if (!updates.length) return
+    const updates: Array<any> = []
+
+    for (const block of nextBlocks) {
+      for (const session of block.sesiones) {
+        const current = currentSessions.get(String(session.id))
+        if (!current || current.blockId !== block.id || current.orden !== (session.orden ?? 0)) {
+          updates.push({ id: Number(session.id), payload: { bloque_id: Number(block.id), orden: session.orden } })
+        }
+      }
+    }
+
+    return updates
+  }
+
+  function moveBlockBetweenDays(activeBlockId: number, targetDayId: number, overBlockId?: number) {
+    const sourceDay = program.find((day) => day.bloques.some((block: any) => block.id === activeBlockId))
+    const targetDay = program.find((day) => day.id === targetDayId)
+
+    if (!sourceDay || !targetDay) {
+      return program
+    }
+
+    const sourceBlocks = sortByOrden(sourceDay.bloques)
+    const targetBlocks = sourceDay.id === targetDay.id ? sourceBlocks : sortByOrden(targetDay.bloques)
+    const sourceIndex = sourceBlocks.findIndex((block) => block.id === activeBlockId)
+
+    if (sourceIndex < 0) {
+      return program
+    }
+
+    const [movedBlock] = sourceBlocks.splice(sourceIndex, 1)
+
+    if (sourceDay.id === targetDay.id) {
+      const nextIndex = typeof overBlockId === "number" ? sourceBlocks.findIndex((block) => block.id === overBlockId) : -1
+
+      if (nextIndex >= 0) {
+        sourceBlocks.splice(nextIndex, 0, movedBlock)
+      } else {
+        sourceBlocks.push(movedBlock)
+      }
+
+      return program.map((day) => (day.id === sourceDay.id ? { ...day, bloques: renumberOrderedItems(sourceBlocks) } : day))
+    }
+
+    if (typeof overBlockId === "number") {
+      const targetIndex = targetBlocks.findIndex((block) => block.id === overBlockId)
+      if (targetIndex >= 0) {
+        targetBlocks.splice(targetIndex, 0, movedBlock)
+      } else {
+        targetBlocks.push(movedBlock)
+      }
+    } else {
+      targetBlocks.push(movedBlock)
+    }
+
+    return program.map((day) => {
+      if (day.id === sourceDay.id) {
+        return { ...day, bloques: renumberOrderedItems(sourceBlocks) }
+      }
+
+      if (day.id === targetDay.id) {
+        return { ...day, bloques: renumberOrderedItems(targetBlocks) }
+      }
+
+      return day
+    })
+  }
+
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+
+    if (!over || String(active.id) === String(over.id)) {
+      return
+    }
+
+    const activeTarget = getProgramDragTargets(program, active.id)
+    const overTarget = getProgramDragTargets(program, over.id)
+
+    if (!activeTarget || !overTarget) {
+      return
+    }
 
     try {
-      await Promise.all(updates.map((session) => updateSession.mutateAsync({ id: Number(session.id), payload: { orden: session.orden } })))
-      toast.success("Orden de sesiones actualizado")
+      if (activeTarget.kind === "day" && overTarget.kind === "day") {
+        const orderedDays = sortByOrden(program)
+        const activeIndex = orderedDays.findIndex((day) => day.id === activeTarget.dayId)
+        const overIndex = orderedDays.findIndex((day) => day.id === overTarget.dayId)
+
+        if (activeIndex < 0 || overIndex < 0) return
+
+        const nextDays = arrayMove(orderedDays, activeIndex, overIndex).map((day, index) => ({ ...day, orden: index + 1 }))
+        const updates = getDayOrderUpdates(nextDays)
+
+        if (!updates.length) return
+
+        await Promise.all(updates.map((day) => updateDay.mutateAsync({ id: Number(day.id), payload: { orden: day.orden } })))
+        toast.success("Orden de días actualizado")
+        return
+      }
+
+      if (activeTarget.kind === "block") {
+        const sourceDay = program.find((day) => day.id === activeTarget.dayId)
+        const targetDay = program.find((day) => day.id === overTarget.dayId)
+
+        if (!sourceDay || !targetDay) return
+
+        const activeBlockId = Number(active.id.toString().split(":").pop())
+        const overBlockId = overTarget.kind === "day" ? undefined : overTarget.blockId
+        const nextDays = moveBlockBetweenDays(activeBlockId, Number(targetDay.id), overBlockId)
+        const updates = getBlockOrderUpdates(nextDays)
+
+        if (!updates.length) return
+
+        await Promise.all(updates.map((block) => updateBlock.mutateAsync({ id: Number(block.id), payload: block.payload })))
+        toast.success("Orden de bloques actualizado")
+        return
+      }
+
+      if (activeTarget.kind === "session") {
+        const source = findDayAndBlockBySessionId(program, Number(active.id.toString().split(":").pop()))
+        const targetDay = program.find((day) => day.id === overTarget.dayId)
+        const targetBlock =
+          overTarget.kind === "block"
+            ? targetDay?.bloques.find((block: any) => block.id === overTarget.blockId)
+            : findDayAndBlockBySessionId(program, Number(over.id.toString().split(":").pop()))?.block
+
+        if (!source || !targetBlock) return
+
+        const activeSessionId = Number(active.id.toString().split(":").pop())
+
+        if (source.block.id === targetBlock.id) {
+          if (overTarget.kind !== "session") return
+
+          const orderedSessions = sortByOrden(source.block.sesiones)
+          const activeIndex = orderedSessions.findIndex((session) => session.id === activeSessionId)
+          const overSessionId = Number(over.id.toString().split(":").pop())
+          const overIndex = orderedSessions.findIndex((session) => session.id === overSessionId)
+
+          if (activeIndex < 0 || overIndex < 0) return
+
+          const nextBlocks = [{ ...source.block, sesiones: renumberOrderedItems(arrayMove(orderedSessions, activeIndex, overIndex)) }]
+          const updates = getSessionOrderUpdates(nextBlocks)
+
+          if (!updates.length) return
+
+          await Promise.all(updates.map((session) => updateSession.mutateAsync({ id: Number(session.id), payload: session.payload })))
+          toast.success("Orden de sesiones actualizado")
+          return
+        }
+
+        const blockPool = source.day.id === targetDay?.id ? source.day.bloques : [...source.day.bloques, ...(targetDay?.bloques || [])]
+        const nextBlocks = moveSessionBetweenBlocks(blockPool, activeSessionId, targetBlock.id).blocks
+        const updates = getSessionOrderUpdates(nextBlocks)
+
+        if (!updates.length) return
+
+        await Promise.all(updates.map((session) => updateSession.mutateAsync({ id: Number(session.id), payload: session.payload })))
+        toast.success("Orden de sesiones actualizado")
+      }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "No se pudo reordenar la sesión")
+      toast.error(error instanceof Error ? error.message : "No se pudo reordenar el programa")
     }
   }
 
@@ -655,88 +954,53 @@ export default function ProgramaAcademicoPage() {
           {isLoading ? (
             <p className="text-sm text-muted-foreground">Cargando programa…</p>
           ) : program.length > 0 ? (
-            <div className="space-y-4">
-              {program.map((day) => (
-                <div key={day.id} className="rounded-2xl border border-border/70 p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="font-semibold">{day.titulo}</div>
-                      <div className="text-sm text-muted-foreground">{day.fecha}</div>
-                    </div>
-                    <div className="flex gap-1">
-                      <Button variant="outline" size="icon" onClick={() => moveDay(Number(day.id), "up")} title="Subir día">
-                        <ArrowUp className="size-4" />
-                      </Button>
-                      <Button variant="outline" size="icon" onClick={() => moveDay(Number(day.id), "down")} title="Bajar día">
-                        <ArrowDown className="size-4" />
-                      </Button>
-                      <Button variant="outline" size="icon" onClick={() => duplicateDay(day)} title="Duplicar día">
-                        <CopyIcon className="size-4" />
-                      </Button>
-                      <Button variant="outline" size="icon" onClick={() => setDayEditor(day)}>
-                        <PencilIcon className="size-4" />
-                      </Button>
-                      <Button variant="outline" size="icon" onClick={() => removeDay(day)}>
-                        <Trash2Icon className="size-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="mt-3 space-y-3">
-                    {day.bloques.map((block) => (
-                      <div key={block.id} className="rounded-xl border border-border/70 bg-muted/20 p-3 text-sm">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <div className="font-medium">{block.titulo}</div>
-                            <div className="text-muted-foreground">{block.hora_inicio} - {block.hora_fin}</div>
-                          </div>
-                          <div className="flex gap-1">
-                            <Button variant="outline" size="icon" onClick={() => moveBlock(Number(day.id), Number(block.id), "up")} title="Subir bloque">
-                              <ArrowUp className="size-4" />
-                            </Button>
-                            <Button variant="outline" size="icon" onClick={() => moveBlock(Number(day.id), Number(block.id), "down")} title="Bajar bloque">
-                              <ArrowDown className="size-4" />
-                            </Button>
-                            <Button variant="outline" size="icon" onClick={() => duplicateBlock(day, block)} title="Duplicar bloque">
-                              <CopyIcon className="size-4" />
-                            </Button>
-                            <Button variant="outline" size="icon" onClick={() => setBlockEditor(block)}>
-                              <PencilIcon className="size-4" />
-                            </Button>
-                            <Button variant="outline" size="icon" onClick={() => removeBlock(block)}>
-                              <Trash2Icon className="size-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="mt-2 space-y-1">
-                          {block.sesiones.map((session) => (
-                            <div key={session.id} className="flex items-center justify-between gap-3 rounded-lg bg-background px-3 py-2">
-                              <span>{session.titulo}</span>
-                              <div className="flex gap-1">
-                                <Button variant="outline" size="icon" onClick={() => moveSession(Number(day.id), Number(block.id), Number(session.id), "up")} title="Subir sesión">
-                                  <ArrowUp className="size-4" />
-                                </Button>
-                                <Button variant="outline" size="icon" onClick={() => moveSession(Number(day.id), Number(block.id), Number(session.id), "down")} title="Bajar sesión">
-                                  <ArrowDown className="size-4" />
-                                </Button>
-                                <Button variant="outline" size="icon" onClick={() => duplicateSession(Number(block.id), block.sesiones, session)} title="Duplicar sesión">
-                                  <CopyIcon className="size-4" />
-                                </Button>
-                                <Button variant="outline" size="icon" onClick={() => setSessionEditor(session)}>
-                                  <PencilIcon className="size-4" />
-                                </Button>
-                                <Button variant="outline" size="icon" onClick={() => removeSession(session)}>
-                                  <Trash2Icon className="size-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={sortByOrden(program).map((day) => getProgramDragId("day", Number(day.id)))} strategy={verticalListSortingStrategy}>
+                <div className="space-y-4">
+                  {sortByOrden(program).map((day) => {
+                    const orderedBlocks = sortByOrden(day.bloques)
+
+                    return (
+                      <SortableDayCard
+                        key={day.id}
+                        day={day}
+                        onDuplicate={() => duplicateDay(day)}
+                        onEdit={() => setDayEditor(day)}
+                        onDelete={() => removeDay(day)}
+                      >
+                        <SortableContext items={orderedBlocks.map((block) => getProgramDragId("block", Number(block.id)))} strategy={verticalListSortingStrategy}>
+                          {orderedBlocks.map((block) => {
+                            const orderedSessions = sortByOrden(block.sesiones || [])
+
+                            return (
+                              <SortableBlockCard
+                                key={block.id}
+                                block={block}
+                                onDuplicate={() => duplicateBlock(day, block)}
+                                onEdit={() => setBlockEditor(block)}
+                                onDelete={() => removeBlock(block)}
+                              >
+                                <SortableContext items={orderedSessions.map((session) => getProgramDragId("session", Number(session.id)))} strategy={verticalListSortingStrategy}>
+                                  {orderedSessions.map((session) => (
+                                    <SortableSessionRow
+                                      key={session.id}
+                                      session={session}
+                                      onDuplicate={() => duplicateSession(Number(block.id), orderedSessions, session)}
+                                      onEdit={() => setSessionEditor(session)}
+                                      onDelete={() => removeSession(session)}
+                                    />
+                                  ))}
+                                </SortableContext>
+                              </SortableBlockCard>
+                            )
+                          })}
+                        </SortableContext>
+                      </SortableDayCard>
+                    )
+                  })}
                 </div>
-              ))}
-            </div>
+              </SortableContext>
+            </DndContext>
           ) : (
             <p className="text-sm text-muted-foreground">Todavía no hay programa cargado para este curso.</p>
           )}

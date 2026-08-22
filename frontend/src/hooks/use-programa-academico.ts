@@ -73,7 +73,7 @@ export function useCreateProgramBlock(courseId?: number, diaId?: number) {
 export function useUpdateProgramBlock(courseId?: number) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({ id, payload }: { id: number; payload: { titulo?: string; orden?: number; hora_inicio?: string; hora_fin?: string } }) => {
+    mutationFn: async ({ id, payload }: { id: number; payload: { titulo?: string; orden?: number; hora_inicio?: string; hora_fin?: string; dia_id?: number } }) => {
       const { data } = await api.put(`/bloques/${id}`, payload)
       return data
     },
@@ -143,7 +143,7 @@ export function useCreateProgramSession(courseId?: number, bloqueId?: number) {
 export function useUpdateProgramSession(courseId?: number) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({ id, payload }: { id: number; payload: { titulo?: string; orden?: number; descripcion?: string; sala_id?: number; ponente_id?: number; tipo?: string; cupos?: number } }) => {
+    mutationFn: async ({ id, payload }: { id: number; payload: { titulo?: string; orden?: number; descripcion?: string; sala_id?: number; ponente_id?: number; tipo?: string; cupos?: number; bloque_id?: number } }) => {
       const { data } = await api.put(`/sesiones/${id}`, payload)
       return data
     },

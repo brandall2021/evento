@@ -53,7 +53,14 @@ function flattenProgramAgendaNodes(program) {
 }
 
 function getProgramDragTargets(program, activeId) {
-  const target = flattenProgramAgendaNodes(program).find((node) => String(node.id) === String(activeId))
+  const parsed = parseProgramDragId(activeId)
+  const target = flattenProgramAgendaNodes(program).find((node) => {
+    if (parsed.kind) {
+      return node.kind === parsed.kind && String(node.id) === String(parsed.id)
+    }
+
+    return String(node.id) === String(parsed.id)
+  })
 
   if (!target) {
     return null
@@ -64,6 +71,71 @@ function getProgramDragTargets(program, activeId) {
     dayId: target.dayId,
     parentId: target.parentId,
     blockId: target.blockId,
+  }
+}
+
+function parseProgramDragId(value) {
+  if (typeof value === 'string') {
+    const match = value.match(/^(day|block|session):(\d+)$/)
+
+    if (match) {
+      return {
+        kind: match[1],
+        id: Number(match[2]),
+      }
+    }
+  }
+
+  return {
+    kind: null,
+    id: Number(value),
+  }
+}
+
+function getProgramDragId(kind, id) {
+  return `${kind}:${id}`
+}
+
+function sortByOrden(items) {
+  return [...items].sort((left, right) => (left.orden ?? 0) - (right.orden ?? 0))
+}
+
+function renumberOrderedItems(items) {
+  return items.map((item, index) => ({
+    ...item,
+    orden: index + 1,
+  }))
+}
+
+function moveSessionBetweenBlocks(blocks, sessionId, targetBlockId) {
+  const orderedBlocks = blocks.map((block) => ({
+    ...block,
+    sesiones: renumberOrderedItems(sortByOrden(block.sesiones || [])),
+  }))
+
+  const sourceIndex = orderedBlocks.findIndex((block) => block.sesiones.some((session) => session.id === sessionId))
+  const targetIndex = orderedBlocks.findIndex((block) => block.id === targetBlockId)
+
+  if (sourceIndex < 0 || targetIndex < 0) {
+    return { blocks: orderedBlocks }
+  }
+
+  const sourceBlock = orderedBlocks[sourceIndex]
+  const targetBlock = orderedBlocks[targetIndex]
+  const sessionIndex = sourceBlock.sesiones.findIndex((session) => session.id === sessionId)
+
+  if (sessionIndex < 0) {
+    return { blocks: orderedBlocks }
+  }
+
+  const [movedSession] = sourceBlock.sesiones.splice(sessionIndex, 1)
+  targetBlock.sesiones = [...targetBlock.sesiones, movedSession]
+
+  sourceBlock.sesiones = renumberOrderedItems(sourceBlock.sesiones)
+  targetBlock.sesiones = renumberOrderedItems(targetBlock.sesiones)
+
+  return {
+    blocks: orderedBlocks,
   }
 }
 
@@ -84,5 +156,7 @@ function describeProgramDragMove(activeTarget, overTarget) {
 module.exports = {
   flattenProgramAgendaNodes,
   getProgramDragTargets,
+  getProgramDragId,
   describeProgramDragMove,
+  moveSessionBetweenBlocks,
 }

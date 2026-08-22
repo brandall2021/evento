@@ -1,7 +1,7 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
 
-const { describeProgramDragMove, getProgramDragTargets } = require('./programa-academico-dnd')
+const { describeProgramDragMove, getProgramDragTargets, moveSessionBetweenBlocks } = require('./programa-academico-dnd')
 
 test('getProgramDragTargets identifies the dragged item and its parent', () => {
   const targets = getProgramDragTargets({
@@ -44,4 +44,18 @@ test('describeProgramDragMove distinguishes same-parent and cross-parent moves',
     relationship: 'cross-parent',
     sameParent: false,
   })
+})
+
+test('moveSessionBetweenBlocks moves a session to a new block at the end', () => {
+  const result = moveSessionBetweenBlocks(
+    [
+      { id: 11, sesiones: [{ id: 21, orden: 1 }] },
+      { id: 12, sesiones: [{ id: 31, orden: 1 }] },
+    ],
+    21,
+    12,
+  )
+
+  assert.equal(result.blocks[0].sesiones.length, 0)
+  assert.equal(result.blocks[1].sesiones[1].id, 21)
 })
