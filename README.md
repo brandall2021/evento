@@ -1031,280 +1031,99 @@ CMD ["node", "src/index.js"]
 
 ## Despliegue con Dokploy
 
-Guía completa paso a paso para desplegar en un VPS con Dokploy.
+Guía de despliegue para Dokploy con el stack actual del repo.
 
-### Arquitectura en Dokploy
+### Topología recomendada
 
-```
-┌─────────────────────────────────────────────────────┐
-│                    Dokploy (VPS)                     │
-│                                                      │
-│  ┌──────────────┐    ┌──────────────────────────┐   │
-│  │  evento-web  │    │       evento-db           │   │
-│  │  (App)       │────│  (PostgreSQL 16)          │   │
-│  │  Express:3001│    │  :5432                    │   │
-│  │  + frontend  │    │                           │   │
-│  │  en dist/    │    │  DB: evento_web           │   │
-│  └──────┬───────┘    └──────────────────────────┘   │
-│         │                                           │
-│  ┌──────▼───────┐    ┌──────────────────────────┐   │
-│  │  Domain      │    │  Volume: uploads          │   │
-│  │  SSL (LE)    │    │  /app/backend/uploads     │   │
-│  │  HTTPS       │    │  (persiste reinicios)     │   │
-│  └──────────────┘    └──────────────────────────┘   │
-│                                                      │
-│  ┌──────────────┐  (Opcional — futuro)              │
-│  │  NestJS      │  Deploy como segundo servicio     │
-│  │  :3002       │  Conectado a mismo DB             │
-│  └──────────────┘                                   │
-└─────────────────────────────────────────────────────┘
-```
+Usar dos aplicaciones y la infraestructura compartida:
 
-### Requisitos previos
+| Servicio | Ruta | Puerto | Health check |
+|---|---|---:|---|
+| `evento-web` | `frontend/` | `3000` | `/` |
+| `evento-api` | `backend-next/` | `3002` | `/api/v1/health` |
+| `evento-db` | PostgreSQL 16 | `5432` | N/A |
+| `evento-redis` | Redis 7 | `6379` | N/A |
+| `evento-minio` | MinIO | `9000` / `9001` | N/A |
 
-| Requisito | Detalle |
-|-----------|---------|
-| Servidor VPS | Ubuntu 22.04+, mínimo 2GB RAM, 20GB SSD |
-| Docker | Instalado en el servidor |
-| Dokploy | [Guía de instalación](https://dokploy.com/docs/install) |
-| Dominio | DNS apuntando al servidor |
-| GitHub | Repo: `https://github.com/brandall2012/evento` |
+### Dominios
 
-### Paso 1 — Instalar Dokploy
+Recomendado:
 
-```bash
-ssh root@IP_DEL_SERVIDOR
-curl -fsSL https://dokploy.com/install.sh | sh
-```
+| Host | Servicio |
+|---|---|
+| `evento.tudominio.com` | `evento-web` |
+| `api.evento.tudominio.com` | `evento-api` |
 
-El instalador imprime la URL del panel (generalmente `https://IP:3000`).
+### Variables de entorno
 
-**Configuración inicial:**
-1. Crear usuario admin (email + password)
-2. Ir a Settings → verificar Docker
-
-### Paso 2 — Crear proyecto
-
-1. Menú lateral → **Projects** → **Create Project**
-2. **Name:** `evento-web`
-3. **Description:** `Plataforma de gestión de eventos`
-4. Create
-
-### Paso 3 — Conectar repositorio GitHub
-
-1. Dentro del proyecto → pestaña **Configuration** → sección **Git**
-2. Completar:
-   - **Repository URL:** `https://github.com/brandall2021/evento.git`
-   - **Branch:** `master2`
-3. Si el repo es **privado**:
-   - GitHub → Settings → Developer settings → **Personal access tokens**
-   - Crear token con permiso `repo`
-   - En Dokploy: **Auth Type** → `Token` → pegar el token
-4. **Save** → verificar que muestra los commits recientes
-
-### Paso 4 — Configurar dominio
-
-1. Pestaña **Domains** → **Add Domain**
-2. Completar:
-   - **Service Name:** `evento-web`
-   - **Host:** `evento.tudominio.com`
-   - **HTTPS:** Activar (Let's Encrypt automático)
-3. **Add**
-
-**Configurar DNS** (Cloudflare, Namecheap, etc.):
-
-```
-Tipo:    A
-Nombre:  evento
-Valor:   IP_DEL_SERVIDOR
-TTL:     Auto
-```
-
-**Cloudflare importante:**
-- Modo: **DNS Only** (icono nube en GRIS, no naranja)
-- SSL/TLS: **Full (strict)**
-- NO activar proxy Cloudflare al inicio
-
-Verificar DNS:
-```bash
-dig evento.tudominio.com
-# Debe devolver la IP del servidor
-```
-
-### Paso 5 — Agregar servicio PostgreSQL
-
-1. Menú lateral → **PostgreSQL** → **Create PostgreSQL**
-2. Completar:
-   - **Service Name:** `evento-db`
-   - **Database Name:** `evento_web`
-   - **Database User:** `postgres`
-   - **Password:** generar segura:
-     ```bash
-     openssl rand -hex 16
-     # Ejemplo: a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6
-     ```
-   - **Database Port:** `5432`
-3. **Create**
-
-**Anotar credenciales:**
-
-| Dato | Valor |
-|------|-------|
-| Host | `evento-db` |
-| Puerto | `5432` |
-| Usuario | `postgres` |
-| Password | *(la que generaste)* |
-| Database | `evento_web` |
-
-**Vincular al proyecto:**
-1. Dentro del proyecto → **Service Links** o **Linked Services**
-2. **Link Service** → seleccionar `evento-db`
-3. Esto hace que `evento-db` esté disponible como hostname dentro del contenedor
-
-### Paso 6 — Variables de entorno
-
-Pestaña **Environment** → **Add Variable** por cada una:
-
-| # | Variable | Valor | Notas |
-|---|----------|-------|-------|
-| 1 | `PORT` | `3001` | Puerto del contenedor |
-| 2 | `DB_HOST` | `evento-db` | **NO** usar `localhost`. Usar el nombre del servicio |
-| 3 | `DB_PORT` | `5432` | Puerto PostgreSQL |
-| 4 | `DB_NAME` | `evento_web` | Nombre de la base |
-| 5 | `DB_USER` | `postgres` | Usuario PostgreSQL |
-| 6 | `DB_PASSWORD` | *(tu contraseña)* | La misma del paso 5 |
-| 7 | `JWT_SECRET` | *(generar)* | `openssl rand -hex 32` — **NUNCA** usar el de desarrollo |
-| 8 | `JWT_EXPIRES_IN` | `7d` | Duración tokens |
-| 9 | `API_URL` | `https://evento.tudominio.com` | URL pública con `https://` |
-| 10 | `CORS_ORIGIN` | `https://evento.tudominio.com` | Mismo que API_URL |
-| 11 | `NESTJS_URL` | *(vacío por ahora)* | Se configura cuando NestJS esté en producción |
-
-> **Importante:** El `JWT_SECRET` debe ser **exactamente el mismo** en cada reinicio. Si cambia, todos los tokens se invalidan. Generarlo una vez con `openssl rand -hex 32` y reusarlo.
-
-### Paso 7 — Puerto y health check
-
-1. Pestaña **Configuration**
-2. **Ports / Expose:**
-   - **Container Port:** `3001`
-   - **Protocol:** TCP
-3. **Health Check:**
-   - **Path:** `/api/health`
-   - **Port:** `3001`
-   - **Interval:** `30`
-   - **Timeout:** `5`
-   - **Retries:** `3`
-
-### Paso 8 — Volumen para uploads
-
-Los archivos (QR, firmas, logos) se guardan en `backend/uploads/`. Sin volumen persistente se pierden al reiniciar.
-
-1. Pestaña **Advanced** → **Volumes**
-2. Agregar:
-   - **Mount Path:** `/app/backend/uploads`
-   - **Type:** `Volume`
-   - **Name:** `evento-uploads`
-
-O con ruta específica:
-   - **Type:** `Bind`
-   - **Host Path:** `/opt/evento-uploads`
-
-### Paso 9 — Desplegar
-
-1. Pestaña **Deployments** → **Deploy**
-2. Esperar build (~2-5 min)
-3. Verificar logs en tiempo real:
-   - Buscar: `Server running on http://localhost:3001`
-   - Buscar: `DB connected`
-4. Si hay errores → **Build Logs**
-
-### Paso 10 — Seed de datos iniciales
-
-**Desde Dokploy:**
-1. Pestaña **Terminal** → servicio `evento-web`
-2. Ejecutar:
-   ```bash
-   cd /app/backend && npm run seed
-   ```
-
-**Desde SSH:**
-```bash
-docker ps --filter "name=evento-web"
-docker exec -it <CONTAINER_ID> sh -c "cd /app/backend && npm run seed"
-```
-
-### Paso 11 — Verificar
-
-```bash
-# Health check
-curl https://evento.tudominio.com/api/health
-# → {"ok":true}
-
-# Login
-curl -X POST https://evento.tudominio.com/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@evento.com","password":"admin123"}'
-# → {"token":"eyJ...","user":{...}}
-
-# Frontend
-# Abrir https://evento.tudominio.com → landing page
-```
-
-### Paso 12 — Auto-deploy (push to deploy)
-
-**Opción A — Dokploy SSH Key:**
-1. Dokploy → Settings → SSH Keys → copiar public key
-2. GitHub → Settings → Deploy keys → agregar con permiso lectura
-3. Activar **Auto Deploy** en el proyecto
-
-**Opción B — GitHub Webhook:**
-1. GitHub → Settings → Webhooks → Add webhook
-2. **Payload URL:** `https://TU-SERVIDOR:3000/api/deploy-webhook?token=TU_TOKEN`
-3. **Content type:** `application/json`
-4. **Events:** `Just the push event`
-
-### Configuración de Dokploy resumida
-
-Si querés replicar el deploy sin leer toda la guía:
-
-| Servicio | Valor |
-|----------|-------|
-| Repo | `https://github.com/brandall2021/evento.git` |
-| Branch | `master2` |
-| Build | Dockerfile del root del repo |
-| App port | `3001` |
-| DB service | `evento-db` |
-| DB port | `5432` |
-| Health check | `/api/health` |
-| Uploads | `/app/backend/uploads` |
-| Auto deploy | GitHub deploy key o webhook |
-
-Variables mínimas:
+#### `evento-api`
 
 ```env
-PORT=3001
+PORT=3002
 DB_HOST=evento-db
 DB_PORT=5432
 DB_NAME=evento_web
 DB_USER=postgres
 DB_PASSWORD=***
 JWT_SECRET=***
-JWT_EXPIRES_IN=7d
-API_URL=https://evento.tudominio.com
+JWT_EXPIRES_IN=15m
+JWT_REFRESH_EXPIRES_IN=7d
+REDIS_HOST=evento-redis
+REDIS_PORT=6379
+MINIO_ENDPOINT=evento-minio
+MINIO_PORT=9000
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin
+MINIO_BUCKET=evento-files
+API_URL=https://api.evento.tudominio.com
 CORS_ORIGIN=https://evento.tudominio.com
 ```
 
-### Desplegar NestJS (futuro)
+#### `evento-web`
 
-Cuando NestJS esté listo para producción, desplegar como segundo servicio:
+```env
+PORT=3000
+NEXT_PUBLIC_API_URL=https://api.evento.tudominio.com/api/v1
+```
 
-1. **Create Service** → `evento-api`
-2. **Repository:** mismo repo
-3. **Build Command:** `cd backend-next && npm ci && npx nest build`
-4. **Start Command:** `cd backend-next && node dist/main.js`
-5. **Port:** `3002`
-6. **Variables de entorno:** las mismas que Express (mismo DB, mismo JWT_SECRET)
-7. Vincular al mismo `evento-db`
-8. Actualizar `NESTJS_URL` en el servicio `evento-web` → `http://evento-api:3002`
+### Paso a paso
+
+1. Crear el proyecto en Dokploy y conectar el repositorio `https://github.com/brandall2021/evento.git`.
+2. Fijar la branch que vas a desplegar.
+3. Crear `evento-db`, `evento-redis` y `evento-minio`.
+4. Crear `evento-api` con `backend-next/Dockerfile` y puerto `3002`.
+5. Crear `evento-web` con `frontend/Dockerfile` y puerto `3000`.
+6. Cargar las variables de entorno de arriba en cada servicio.
+7. Asignar los dominios y habilitar HTTPS con Let's Encrypt.
+8. Activar auto deploy por deploy key o webhook.
+
+### Valores de producción
+
+| Dato | Recomendación |
+|---|---|
+| `DB_NAME` | `evento_web` |
+| `DB_USER` | `postgres` |
+| `JWT_SECRET` | `openssl rand -hex 32` |
+| `JWT_EXPIRES_IN` | `15m` |
+| `JWT_REFRESH_EXPIRES_IN` | `7d` |
+| `NEXT_PUBLIC_API_URL` | `https://api.evento.tudominio.com/api/v1` |
+
+### Verificación rápida
+
+```bash
+curl https://api.evento.tudominio.com/api/v1/health
+curl https://evento.tudominio.com
+```
+
+### Troubleshooting Dokploy
+
+| Problema | Causa típica | Solución |
+|---|---|---|
+| `ECONNREFUSED 127.0.0.1:5432` | `DB_HOST=localhost` | Usar `evento-db` |
+| `CORS error` | `CORS_ORIGIN` incorrecto | Poner el dominio del frontend |
+| Build falla por dependencias | `npm install` incompleto o caché sucio | Rebuild limpio |
+| `jwt malformed` | `JWT_SECRET` cambió | Reusar el mismo secret |
+| Frontend no pega al API | `NEXT_PUBLIC_API_URL` incorrecta | Usar `https://api.evento.tudominio.com/api/v1` |
 
 ---
 

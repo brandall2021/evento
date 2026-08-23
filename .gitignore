@@ -7,3 +7,5 @@ backend/uploads/qr-*.png
 backend-next/dist/
 backend-next/node_modules/
 test-results/
+
+.worktrees/
