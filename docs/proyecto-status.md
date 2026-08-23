@@ -16,6 +16,7 @@ Documento de seguimiento contra la especificación técnica de `proyecto.txt`.
 - Participantes e inscripciones completos con alta pública y alta autenticada.
 - Cupos visibles en la UI pública y lista de espera operativa cuando el curso está completo.
 - Programa académico con agenda reordenable por drag-and-drop jerárquico en días, bloques y sesiones.
+- App móvil Expo para asistentes y staff reutilizando el mismo backend y auth.
 - Branding LACDI aplicado en todo el frontend.
 - Deploy separado para Dokploy con `backend-next` y `frontend`.
 - Tests básicos y smoke E2E de arranque.

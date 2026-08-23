@@ -11,6 +11,7 @@
 - [x] Fase 6 - CMS & Notificaciones: Paginas, Blog, Galeria, FAQ, Notificaciones con plantillas
 - [x] Fase 7 - API Publica, Webhooks, PWA, OAuth2 Google
 - [x] Fase 8 - Analytics, Export CSV, Audit Logs, Organizaciones multi-tenant, Permisos granulares
+- [x] App movil Expo: asistentes + staff con el mismo backend y auth
 - [x] Redis caching - CacheService global con ioredis, fallback graceful
 - [x] MinIO storage - StorageService S3-compatible con fallback a disco local
 - [x] WebSocket chat - ChatGateway con socket.io (join, send, typing, read)
@@ -22,5 +23,4 @@
 - [ ] Desplegar NestJS como servicio separado en Dokploy
 - [x] Aplicar branding LACDI (colores hex + logo)
 - [ ] Tests de integracion (end-to-end)
-- [ ] App movil (React Native o Flutter)
 - [ ] CI/CD pipeline (GitHub Actions)
