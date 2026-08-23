@@ -2,6 +2,21 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
+import { buildProgramAgendaMoveInvalidationKeys, buildProgramAgendaMoveRollbackOperations } from "@/lib/programa-academico-move"
+
+type ProgramAgendaMoveKind = "day" | "block" | "session"
+
+type ProgramAgendaMoveOperation = {
+  kind: ProgramAgendaMoveKind
+  id: number
+  payload: Record<string, unknown>
+}
+
+type ProgramAgendaMoveVariables = {
+  optimisticAgenda: any[]
+  previousAgenda: any[]
+  operations: ProgramAgendaMoveOperation[]
+}
 
 export function useProgramAgenda(courseId?: number) {
   return useQuery<any[]>({
@@ -73,7 +88,7 @@ export function useCreateProgramBlock(courseId?: number, diaId?: number) {
 export function useUpdateProgramBlock(courseId?: number) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({ id, payload }: { id: number; payload: { titulo?: string; orden?: number; hora_inicio?: string; hora_fin?: string } }) => {
+    mutationFn: async ({ id, payload }: { id: number; payload: { titulo?: string; orden?: number; hora_inicio?: string; hora_fin?: string; dia_id?: number } }) => {
       const { data } = await api.put(`/bloques/${id}`, payload)
       return data
     },
@@ -143,7 +158,7 @@ export function useCreateProgramSession(courseId?: number, bloqueId?: number) {
 export function useUpdateProgramSession(courseId?: number) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({ id, payload }: { id: number; payload: { titulo?: string; orden?: number; descripcion?: string; sala_id?: number; ponente_id?: number; tipo?: string; cupos?: number } }) => {
+    mutationFn: async ({ id, payload }: { id: number; payload: { titulo?: string; orden?: number; descripcion?: string; sala_id?: number; ponente_id?: number; tipo?: string; cupos?: number; bloque_id?: number } }) => {
       const { data } = await api.put(`/sesiones/${id}`, payload)
       return data
     },
@@ -159,5 +174,65 @@ export function useDeleteProgramSession(courseId?: number) {
       return data
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["programa-academico", courseId] }),
+  })
+}
+
+function getProgramAgendaMoveEndpoint(kind: ProgramAgendaMoveKind, id: number) {
+  if (kind === "day") {
+    return `/dias/${id}`
+  }
+
+  if (kind === "block") {
+    return `/bloques/${id}`
+  }
+
+  return `/sesiones/${id}`
+}
+
+export function usePersistProgramAgendaMove(courseId?: number) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (variables: ProgramAgendaMoveVariables) => {
+      const appliedOperations: ProgramAgendaMoveOperation[] = []
+
+      for (const operation of variables.operations) {
+        try {
+          await api.put(getProgramAgendaMoveEndpoint(operation.kind, operation.id), operation.payload)
+          appliedOperations.push(operation)
+        } catch (error) {
+          const rollbackOperations = buildProgramAgendaMoveRollbackOperations(variables.previousAgenda, appliedOperations)
+
+          for (const rollbackOperation of rollbackOperations) {
+            try {
+              await api.put(getProgramAgendaMoveEndpoint(rollbackOperation.kind, rollbackOperation.id), rollbackOperation.payload)
+            } catch {
+              // Preserve the original move error; rollback is best-effort.
+            }
+          }
+
+          throw error
+        }
+      }
+    },
+    onMutate: async (variables) => {
+      const queryKey = ["programa-academico", courseId]
+
+      await queryClient.cancelQueries({ queryKey })
+      const previousAgenda = queryClient.getQueryData(queryKey)
+      queryClient.setQueryData(queryKey, variables.optimisticAgenda)
+
+      return { queryKey, previousAgenda }
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.previousAgenda) {
+        queryClient.setQueryData(context.queryKey, context.previousAgenda)
+      }
+    },
+    onSuccess: () => {
+      for (const queryKey of buildProgramAgendaMoveInvalidationKeys(courseId)) {
+        queryClient.invalidateQueries({ queryKey })
+      }
+    },
   })
 }

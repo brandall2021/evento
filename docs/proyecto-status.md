@@ -15,6 +15,7 @@ Documento de seguimiento contra la especificación técnica de `proyecto.txt`.
 - Constructor de formularios dinámicos con borrador, publicación y renderer público.
 - Participantes e inscripciones completos con alta pública y alta autenticada.
 - Cupos visibles en la UI pública y lista de espera operativa cuando el curso está completo.
+- Programa académico con agenda reordenable por drag-and-drop jerárquico en días, bloques y sesiones.
 - Branding LACDI aplicado en todo el frontend.
 - Deploy separado para Dokploy con `backend-next` y `frontend`.
 - Tests básicos y smoke E2E de arranque.
@@ -27,7 +28,6 @@ Documento de seguimiento contra la especificación técnica de `proyecto.txt`.
 
 ## Falta
 
-- Programa académico: módulos, actividades y salas.
 - Ponentes, materiales y evaluación.
 - Pagos reales con Mercado Pago y webhooks.
 - Credenciales, acreditación y asistencia por actividad.
