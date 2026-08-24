@@ -170,7 +170,7 @@ Todos los módulos están en `backend-next/src/` y se registran en `app.module.t
 |---|--------|----------|-------------|
 | 9 | `PerfilModule` | `perfil/` | Perfil asistente (1:1 con User), empresa, cargo, bio, intereses, redes |
 | 10 | `AgendaModule` | `agenda/` | Días, Salas, Bloques, Sesiones — árbol jerárquico completo |
-| 11 | `CheckinModule` | `checkin/` | QR/manual/geolocalización, por sesión o general, estadísticas |
+| 11 | `AcreditacionModule` | `acreditacion/` | QR/manual/geolocalización, por sesión o general, estadísticas |
 | 12 | `CredencialesModule` | `credenciales/` | Emitir credencial PDF con QR, validar, misCredenciales |
 
 ### Fase 3 — Ponentes, Expositores, Patrocinadores
@@ -272,7 +272,7 @@ evento-web/
 │   │   ├── plantillas/                 # Plantilla certificado (configurable)
 │   │   ├── perfil/                     # Perfil asistente
 │   │   ├── agenda/                     # Días + Salas + Bloques + Sesiones
-│   │   ├── checkin/                    # QR/manual/geolocalización
+│   │   ├── acreditacion/               # QR/manual/geolocalización
 │   │   ├── credenciales/               # Credencial PDF
 │   │   ├── ponentes/                   # Perfil ponente
 │   │   ├── expositores/                # Expositor + Productos
@@ -406,7 +406,7 @@ evento-web/
 | Patrocinador | `patrocinador` | Sponsor | Ver beneficios, estadísticas |
 | Asistente | `asistente` | Participante | Inscribirse, ver agenda |
 | Invitado | `invitado` | Guest list | Ver agenda, check-in |
-| Check-in | `checkin` | Acreditación | Escanear QR, registrar asistencia |
+| Acreditación | `acreditacion` | Acreditación | Escanear QR, registrar asistencia |
 | Moderador | `moderador` | Modera sesiones | Chat, Q&A, encuestas |
 | Docente | `docente` | Compat. Express | CRUD cursos propios |
 | Estudiante | `estudiante` | Compat. Express | Inscribirse, ver certificados |
@@ -564,15 +564,15 @@ Ver sección detallada en la versión anterior del README o ejecutar `curl /api/
 | GET | `/agenda/completa/:cursoId` | Árbol completo (día→bloque→sesión) |
 | CRUD | `/agenda/dias/:id`, `/agenda/salas/:id`, etc. | Actualizar/eliminar |
 
-### Check-in (`/api/v2/checkin`)
+### Acreditación (`/api/v2/acreditacion`, alias `/api/v2/checkin`)
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
-| POST | `/checkin/qr` | Generar datos QR |
-| POST | `/checkin/scan` | Escanear QR |
-| POST | `/checkin/manual` | Check-in manual |
-| GET | `/checkin/sesion/:id` | Check-ins por sesión |
-| GET | `/checkin/estadisticas/:cursoId` | Estadísticas |
+| POST | `/acreditacion/qr` | Generar datos QR |
+| POST | `/acreditacion/scan` | Escanear QR |
+| POST | `/acreditacion/manual` | Acreditación manual |
+| GET | `/acreditacion/sesion/:id` | Acreditaciones por sesión |
+| GET | `/acreditacion/estadisticas/:cursoId` | Estadísticas |
 
 ### Credenciales (`/api/v2/credenciales`)
 
@@ -800,7 +800,7 @@ Ver sección detallada en la versión anterior del README o ejecutar `curl /api/
 ### Fase 2 — Asistentes & Agenda
 - Perfil asistente: empresa, cargo, bio, intereses, redes sociales
 - Agenda jerárquica: día → bloque → sesión, salas independientes
-- Check-in: QR, manual, geolocalización, estadísticas
+- Acreditación: QR, manual, geolocalización, estadísticas
 - Credenciales: PDF con QR, validación
 
 ### Fase 3 — Ponentes, Expositores, Patrocinadores
@@ -1170,7 +1170,7 @@ docker exec -it <CONTAINER_ID> env | grep -E "DB_|JWT_|PORT"
 
 - [x] **Fase 0** — Infraestructura: Docker Compose, NestJS scaffold, Auth + Users, proxy
 - [x] **Fase 1** — Core: Cursos, Inscripciones, Pagos, Certificados, Plantillas
-- [x] **Fase 2** — Asistentes & Agenda: Perfil, Agenda jerárquica, Check-in, Credenciales
+- [x] **Fase 2** — Asistentes & Agenda: Perfil, Agenda jerárquica, Acreditación, Credenciales
 - [x] **Fase 3** — Ponentes, Expositores, Patrocinadores con beneficios
 - [x] **Fase 4** — Networking & Streaming: Chat, Match, Reuniones, Salas + Encuestas + Q&A
 - [x] **Fase 5** — Gamificación & Interacción: Puntos, Badges, Ranking, Comentarios, Likes, Trivias

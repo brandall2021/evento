@@ -11,7 +11,7 @@ const navItems = [
   { href: "/dashboard/cursos", label: "Cursos", icon: BookOpen },
   { href: "/dashboard/inscripciones", label: "Inscripciones", icon: ClipboardList },
   { href: "/dashboard/pagos", label: "Pagos", icon: DollarSign },
-  { href: "/dashboard/checkin", label: "Check-in", icon: QrCode },
+  { href: "/dashboard/acreditacion", label: "Acreditación", icon: QrCode },
   { href: "/dashboard/credenciales", label: "Credenciales", icon: BadgeCheck },
   { href: "/dashboard/formularios", label: "Formularios", icon: FormInput },
   { href: "/dashboard/programa-academico", label: "Programa académico", icon: Layers3 },

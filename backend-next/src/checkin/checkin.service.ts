@@ -19,6 +19,18 @@ export class CheckinService {
     private readonly salaRepo: Repository<Sala>,
   ) {}
 
+  private buildAccreditationResponse(insc: Inscripcion, alreadyCheckedIn = false) {
+    return {
+      valid: true,
+      ...(alreadyCheckedIn ? { already_checked_in: true } : {}),
+      participant: {
+        name: `${insc.estudiante.first_name} ${insc.estudiante.last_name}`.trim(),
+      },
+      event: insc.curso.nombre,
+      status: alreadyCheckedIn ? 'ALREADY_CHECKED_IN' : 'CHECKED_IN',
+    }
+  }
+
   async generarQrData(inscripcionId: number) {
     const insc = await this.inscRepo.findOne({
       where: { id: inscripcionId },
@@ -52,13 +64,23 @@ export class CheckinService {
       throw new BadRequestException('QR inválido')
     }
 
-    const insc = await this.inscRepo.findOneBy({
-      id: payload.inscripcion_id,
-      curso_id: payload.curso_id,
+    const insc = await this.inscRepo.findOne({
+      where: {
+        id: payload.inscripcion_id,
+        curso_id: payload.curso_id,
+      },
+      relations: ['curso', 'estudiante'],
     })
     if (!insc) throw new BadRequestException('Inscripción no válida')
     if (insc.estado !== EstadoInscripcion.ACEPTADO && insc.estado !== EstadoInscripcion.EN_CURSO) {
       throw new BadRequestException('Inscripción no activa')
+    }
+
+    const existente = await this.checkinRepo.findOne({
+      where: { inscripcion_id: insc.id },
+    })
+    if (existente) {
+      return this.buildAccreditationResponse(insc, true)
     }
 
     if (sesionId) {
@@ -75,12 +97,23 @@ export class CheckinService {
       metodo: MetodoCheckin.QR,
       device_info: deviceInfo || null,
     })
-    return this.checkinRepo.save(checkin)
+    await this.checkinRepo.save(checkin)
+    return this.buildAccreditationResponse(insc)
   }
 
   async checkinManual(inscripcionId: number, sesionId?: number, salaId?: number) {
-    const insc = await this.inscRepo.findOneBy({ id: inscripcionId })
+    const insc = await this.inscRepo.findOne({
+      where: { id: inscripcionId },
+      relations: ['curso', 'estudiante'],
+    })
     if (!insc) throw new NotFoundException('Inscripción no encontrada')
+
+    const existente = await this.checkinRepo.findOne({
+      where: { inscripcion_id: insc.id },
+    })
+    if (existente) {
+      return this.buildAccreditationResponse(insc, true)
+    }
 
     if (sesionId) {
       const existe = await this.checkinRepo.findOne({
@@ -95,7 +128,8 @@ export class CheckinService {
       sala_id: salaId || null,
       metodo: MetodoCheckin.MANUAL,
     })
-    return this.checkinRepo.save(checkin)
+    await this.checkinRepo.save(checkin)
+    return this.buildAccreditationResponse(insc)
   }
 
   async checkinsBySesion(sesionId: number) {
