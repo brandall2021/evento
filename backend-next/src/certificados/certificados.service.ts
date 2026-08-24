@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm'
+import { DataSource, Repository } from 'typeorm'
 import { Certificado } from './certificado.entity'
 import { Inscripcion, EstadoInscripcion } from '../inscripciones/inscripcion.entity'
 import { Asistencia } from '../asistencias/asistencia.entity'
@@ -20,11 +20,14 @@ export class CertificadosService {
     private readonly asistenciaRepo: Repository<Asistencia>,
     @InjectRepository(PlantillaCertificado)
     private readonly plantillaRepo: Repository<PlantillaCertificado>,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
   ) {}
 
-  private generarCodigo(inscripcionId: number): string {
+  private async generarCodigo(): Promise<string> {
+    const [row] = await this.dataSource.query("SELECT nextval('evento.certificados_codigo_seq') AS numero")
     const year = new Date().getFullYear()
-    const pad = String(inscripcionId).padStart(6, '0')
+    const pad = String(Number(row?.numero || 0)).padStart(6, '0')
     return `${year}-${pad}`
   }
 
@@ -46,7 +49,7 @@ export class CertificadosService {
     const pct = total > 0 ? (presentes / total) * 100 : 0
     if (pct < 80) throw new BadRequestException('Asistencia menor al 80%')
 
-    const codigo = this.generarCodigo(inscripcionId)
+    const codigo = await this.generarCodigo()
     const apiUrl = process.env.API_URL || 'http://localhost:3001'
     const qrData = `${apiUrl}/api/certificados/validar/${codigo}`
     const qrPath = `uploads/qr-${codigo}.png`
