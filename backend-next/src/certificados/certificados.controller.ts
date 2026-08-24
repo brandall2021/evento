@@ -29,6 +29,12 @@ export class CertificadosController {
     return this.certificadosService.emitir(inscripcionId, nota)
   }
 
+  @Post(':id/revocar')
+  @Roles(UserRole.ADMIN)
+  revocar(@Param('id', ParseIntPipe) id: number) {
+    return this.certificadosService.revocar(id)
+  }
+
   @Get('validar/:codigo')
   validar(@Param('codigo') codigo: string) {
     return this.certificadosService.validar(codigo)

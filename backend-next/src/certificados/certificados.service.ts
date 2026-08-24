@@ -210,6 +210,18 @@ export class CertificadosService {
     }
   }
 
+  async revocar(id: number) {
+    const cert = await this.certRepo.findOne({
+      where: { id },
+      relations: ['inscripcion', 'inscripcion.curso', 'inscripcion.estudiante'],
+    })
+
+    if (!cert) throw new NotFoundException('Certificado no encontrado')
+
+    cert.valido = false
+    return this.certRepo.save(cert)
+  }
+
   async findAll(user: any, filters?: { page?: number; pageSize?: number }) {
     const where: any = {}
 

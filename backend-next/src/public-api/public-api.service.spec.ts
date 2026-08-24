@@ -1,4 +1,5 @@
 import { PublicApiService } from './public-api.service'
+import { NotFoundException } from '@nestjs/common'
 
 describe('PublicApiService', () => {
   it('adds availability metadata to a published course', async () => {
@@ -100,5 +101,30 @@ describe('PublicApiService', () => {
       horas: 20,
       fecha_emision: '2026-08-23T00:00:00.000Z',
     })
+  })
+
+  it('returns invalid when a certificate was revoked', async () => {
+    const certificadosService = {
+      validar: jest.fn().mockRejectedValue(new NotFoundException('Certificado no válido')),
+    }
+    const service = new (PublicApiService as any)(
+      { findOne: jest.fn(), findAndCount: jest.fn() } as any,
+      {} as any,
+      {} as any,
+      {} as any,
+      {} as any,
+      { findOne: jest.fn(), find: jest.fn() } as any,
+      { count: jest.fn() } as any,
+      { get: jest.fn(), set: jest.fn() } as any,
+      { publishedBySlug: jest.fn(), submitBySlug: jest.fn() } as any,
+      { find: jest.fn() } as any,
+      { find: jest.fn() } as any,
+      { find: jest.fn() } as any,
+      certificadosService,
+    )
+
+    const result = await service.validarCodigo('CERT-001')
+
+    expect(result).toEqual({ valido: false, mensaje: 'Certificado no válido' })
   })
 })

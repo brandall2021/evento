@@ -1,6 +1,26 @@
 import { CertificadosService } from './certificados.service'
 
 describe('CertificadosService', () => {
+  it('revokes a certificate by marking it invalid', async () => {
+    const certRepo = {
+      findOne: jest.fn().mockResolvedValue({ id: 7, valido: true }),
+      save: jest.fn(async (value) => value),
+    }
+
+    const service = new CertificadosService(
+      certRepo as any,
+      {} as any,
+      {} as any,
+      {} as any,
+      { query: jest.fn() } as any,
+    )
+
+    const result = await service.revocar(7)
+
+    expect(result.valido).toBe(false)
+    expect(certRepo.save).toHaveBeenCalledWith(expect.objectContaining({ id: 7, valido: false }))
+  })
+
   it('issues sequential certificate codes from the database sequence', async () => {
     const certRepo = {
       findOne: jest.fn().mockResolvedValueOnce(null),

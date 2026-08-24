@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { Curso, EstadoCurso } from '../cursos/curso.entity'
@@ -161,7 +161,15 @@ export class PublicApiService {
   }
 
   async validarCodigo(codigo: string) {
-    return this.certificadosService.validar(codigo)
+    try {
+      return await this.certificadosService.validar(codigo)
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        return { valido: false, mensaje: error.message }
+      }
+
+      throw error
+    }
   }
 
   async plantillaDefault() {
