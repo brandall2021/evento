@@ -11,14 +11,14 @@ import { Inscripcion } from '../inscripciones/inscripcion.entity'
 import { Sesion } from '../agenda/sesion.entity'
 import { Sala } from '../agenda/sala.entity'
 
-export enum MetodoCheckin {
+export enum MetodoAcreditacion {
   QR = 'qr',
   MANUAL = 'manual',
   GEOLOCATION = 'geolocation',
 }
 
 @Entity('checkins')
-export class Checkin {
+export class Acreditacion {
   @PrimaryGeneratedColumn()
   id: number
 
@@ -46,8 +46,8 @@ export class Checkin {
   @CreateDateColumn()
   timestamp: Date
 
-  @Column({ type: 'enum', enum: MetodoCheckin, default: MetodoCheckin.QR })
-  metodo: MetodoCheckin
+  @Column({ type: 'enum', enum: MetodoAcreditacion, default: MetodoAcreditacion.QR })
+  metodo: MetodoAcreditacion
 
   @Column({ type: 'varchar', nullable: true })
   device_info: string | null
@@ -58,3 +58,6 @@ export class Checkin {
   @DeleteDateColumn()
   deletedAt: Date
 }
+
+export { Acreditacion as Checkin }
+export { MetodoAcreditacion as MetodoCheckin }

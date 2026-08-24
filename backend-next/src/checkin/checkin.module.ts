@@ -1,17 +1,19 @@
 import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
-import { Checkin } from './checkin.entity'
+import { Acreditacion } from './checkin.entity'
 import { Inscripcion } from '../inscripciones/inscripcion.entity'
 import { Sesion } from '../agenda/sesion.entity'
 import { Sala } from '../agenda/sala.entity'
-import { CheckinService } from './checkin.service'
+import { AcreditacionService } from './checkin.service'
 import { CheckinController } from './checkin.controller'
 import { AcreditacionController } from './acreditacion.controller'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Checkin, Inscripcion, Sesion, Sala])],
+  imports: [TypeOrmModule.forFeature([Acreditacion, Inscripcion, Sesion, Sala])],
   controllers: [AcreditacionController, CheckinController],
-  providers: [CheckinService],
-  exports: [CheckinService],
+  providers: [AcreditacionService],
+  exports: [AcreditacionService],
 })
-export class CheckinModule {}
+export class AcreditacionModule {}
+
+export { AcreditacionModule as CheckinModule }

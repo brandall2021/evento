@@ -1,16 +1,16 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { Checkin, MetodoCheckin } from './checkin.entity'
+import { Acreditacion, MetodoAcreditacion } from './checkin.entity'
 import { Inscripcion, EstadoInscripcion } from '../inscripciones/inscripcion.entity'
 import { Sesion } from '../agenda/sesion.entity'
 import { Sala } from '../agenda/sala.entity'
 
 @Injectable()
-export class CheckinService {
+export class AcreditacionService {
   constructor(
-    @InjectRepository(Checkin)
-    private readonly checkinRepo: Repository<Checkin>,
+    @InjectRepository(Acreditacion)
+    private readonly acreditacionRepo: Repository<Acreditacion>,
     @InjectRepository(Inscripcion)
     private readonly inscRepo: Repository<Inscripcion>,
     @InjectRepository(Sesion)
@@ -76,7 +76,7 @@ export class CheckinService {
       throw new BadRequestException('Inscripción no activa')
     }
 
-    const existente = await this.checkinRepo.findOne({
+    const existente = await this.acreditacionRepo.findOne({
       where: { inscripcion_id: insc.id },
     })
     if (existente) {
@@ -84,20 +84,20 @@ export class CheckinService {
     }
 
     if (sesionId) {
-      const existe = await this.checkinRepo.findOne({
+      const existe = await this.acreditacionRepo.findOne({
         where: { inscripcion_id: insc.id, sesion_id: sesionId },
       })
       if (existe) throw new BadRequestException('Ya registrado en esta sesión')
     }
 
-    const checkin = this.checkinRepo.create({
+    const checkin = this.acreditacionRepo.create({
       inscripcion_id: insc.id,
       sesion_id: sesionId || null,
       sala_id: salaId || null,
-      metodo: MetodoCheckin.QR,
+      metodo: MetodoAcreditacion.QR,
       device_info: deviceInfo || null,
     })
-    await this.checkinRepo.save(checkin)
+    await this.acreditacionRepo.save(checkin)
     return this.buildAccreditationResponse(insc)
   }
 
@@ -108,7 +108,7 @@ export class CheckinService {
     })
     if (!insc) throw new NotFoundException('Inscripción no encontrada')
 
-    const existente = await this.checkinRepo.findOne({
+    const existente = await this.acreditacionRepo.findOne({
       where: { inscripcion_id: insc.id },
     })
     if (existente) {
@@ -116,24 +116,24 @@ export class CheckinService {
     }
 
     if (sesionId) {
-      const existe = await this.checkinRepo.findOne({
+      const existe = await this.acreditacionRepo.findOne({
         where: { inscripcion_id: insc.id, sesion_id: sesionId },
       })
       if (existe) throw new BadRequestException('Ya registrado en esta sesión')
     }
 
-    const checkin = this.checkinRepo.create({
+    const checkin = this.acreditacionRepo.create({
       inscripcion_id: inscripcionId,
       sesion_id: sesionId || null,
       sala_id: salaId || null,
-      metodo: MetodoCheckin.MANUAL,
+      metodo: MetodoAcreditacion.MANUAL,
     })
-    await this.checkinRepo.save(checkin)
+    await this.acreditacionRepo.save(checkin)
     return this.buildAccreditationResponse(insc)
   }
 
   async checkinsBySesion(sesionId: number) {
-    return this.checkinRepo.find({
+    return this.acreditacionRepo.find({
       where: { sesion_id: sesionId },
       relations: ['inscripcion', 'inscripcion.estudiante', 'sala'],
       order: { timestamp: 'ASC' },
@@ -155,12 +155,12 @@ export class CheckinService {
       return { total_inscritos: 0, total_checkins: 0, por_sesion: [] }
     }
 
-    const totalCheckins = await this.checkinRepo
+    const totalCheckins = await this.acreditacionRepo
       .createQueryBuilder('c')
       .where('c.inscripcion_id IN (:...ids)', { ids: inscIds })
       .getCount()
 
-    const porSesion = await this.checkinRepo
+    const porSesion = await this.acreditacionRepo
       .createQueryBuilder('c')
       .select('c.sesion_id', 'sesion_id')
       .addSelect('COUNT(DISTINCT c.inscripcion_id)', 'asistentes_unicos')
@@ -181,3 +181,5 @@ export class CheckinService {
     }
   }
 }
+
+export { AcreditacionService as CheckinService }

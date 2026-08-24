@@ -13,7 +13,7 @@ import { CertificadosModule } from './certificados/certificados.module'
 import { PlantillasModule } from './plantillas/plantillas.module'
 import { PerfilModule } from './perfil/perfil.module'
 import { AgendaModule } from './agenda/agenda.module'
-import { CheckinModule } from './checkin/checkin.module'
+import { AcreditacionModule } from './checkin/checkin.module'
 import { CredencialesModule } from './credenciales/credenciales.module'
 import { PonentesModule } from './ponentes/ponentes.module'
 import { ExpositoresModule } from './expositores/expositores.module'
@@ -51,7 +51,7 @@ import { DiaAgenda } from './agenda/dia.entity'
 import { Sala } from './agenda/sala.entity'
 import { Bloque } from './agenda/bloque.entity'
 import { Sesion } from './agenda/sesion.entity'
-import { Checkin } from './checkin/checkin.entity'
+import { Acreditacion } from './checkin/checkin.entity'
 import { Credencial } from './credenciales/credencial.entity'
 import { PerfilPonente } from './ponentes/perfil-ponente.entity'
 import { Expositor } from './expositores/expositor.entity'
@@ -113,7 +113,7 @@ import { UserRole } from './users/entities/user-role.entity'
         database: config.get('DB_NAME', 'evento_web'),
         entities: [
           User, Curso, Inscripcion, Asistencia, Pago, Certificado, PlantillaCertificado,
-          PerfilAsistente, DiaAgenda, Sala, Bloque, Sesion, Checkin, Credencial,
+          PerfilAsistente, DiaAgenda, Sala, Bloque, Sesion, Acreditacion, Credencial,
           PerfilPonente, Expositor, ProductoExpositor, Patrocinador, BeneficioPatrocinio,
           Conversacion, MensajeChat, ParticipanteConversacion, MatchNetworking,
           Reunion, ParticipanteReunion,
@@ -149,7 +149,7 @@ import { UserRole } from './users/entities/user-role.entity'
     PlantillasModule,
     PerfilModule,
     AgendaModule,
-    CheckinModule,
+    AcreditacionModule,
     CredencialesModule,
     PonentesModule,
     ExpositoresModule,
