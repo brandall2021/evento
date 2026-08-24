@@ -148,7 +148,7 @@ describe('RolesService', () => {
       rpRepo.manager.getRepository.mockReturnValue(mockRpRepo)
       rpRepo.manager.transaction.mockImplementation(async (fn: any) => fn(rpRepo.manager))
 
-      const result = await service.assignPermissions(tenantId, 'role-1', ['p1', 'p2'])
+      await service.assignPermissions(tenantId, 'role-1', ['p1', 'p2'])
       expect(rpRepo.manager.transaction).toHaveBeenCalled()
       expect(mockRpRepo.delete).toHaveBeenCalledWith({ role_id: 'role-1' })
     })

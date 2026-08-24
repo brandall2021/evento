@@ -1,3 +1,5 @@
+/* eslint-disable react/only-export-components */
+
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 
 const ThemeContext = createContext(null)

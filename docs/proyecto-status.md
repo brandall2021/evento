@@ -19,6 +19,7 @@ Documento de seguimiento contra la especificación técnica de `proyecto.txt`.
 - App móvil Expo para asistentes y staff reutilizando el mismo backend y auth.
 - Branding LACDI aplicado en todo el frontend.
 - Deploy separado para Dokploy con `backend-next` y `frontend`.
+- CI/CD base con GitHub Actions para `backend`, `backend-next`, `frontend` y lint/build del root.
 - Tests básicos y smoke E2E de arranque.
 
 ## Parcial

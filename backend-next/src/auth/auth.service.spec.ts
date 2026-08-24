@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import { JwtService } from '@nestjs/jwt'
-import { Repository } from 'typeorm'
 import { AuthService } from './auth.service'
 import { User } from '../users/entities/user.entity'
 import { RefreshToken } from '../users/entities/refresh-token.entity'
@@ -183,7 +182,7 @@ describe('AuthService', () => {
 
   describe('refresh', () => {
     it('should issue new tokens for valid refresh token', async () => {
-      const userRepo = service['userRepo'] as any
+      const _userRepo = service['userRepo'] as any
       const refreshTokenRepo = service['refreshTokenRepo'] as any
       const userTenantRepo = service['userTenantRepo'] as any
       const userRoleRepo = service['userRoleRepo'] as any

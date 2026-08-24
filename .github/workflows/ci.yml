@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - master2
+      - master3
+  pull_request:
+    branches:
+      - main
+      - master
+      - master2
+      - master3
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: root-web
+            working-directory: .
+            lockfile: package-lock.json
+            command: npm run lint && npm run build
+          - name: frontend-next
+            working-directory: frontend
+            lockfile: frontend/package-lock.json
+            command: npm run lint && npm run build && npm test
+          - name: backend-next
+            working-directory: backend-next
+            lockfile: backend-next/package-lock.json
+            command: npm run build && npx jest --runInBand
+          - name: backend-legacy
+            working-directory: backend
+            lockfile: backend/package-lock.json
+            command: node --check src/index.js && node --check src/seeders/seed.js
+
+    name: ${{ matrix.name }}
+
+    defaults:
+      run:
+        working-directory: ${{ matrix.working-directory }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ${{ matrix.lockfile }}
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Validate
+        run: ${{ matrix.command }}

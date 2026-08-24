@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import { CursosService } from './cursos.service'
-import { Curso, EstadoCurso } from './curso.entity'
+import { Curso } from './curso.entity'
 import { User, UserRole } from '../users/user.entity'
 import { CacheService } from '../cache/cache.service'
 

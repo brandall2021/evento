@@ -6,7 +6,6 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   ManyToOne,
-  OneToMany,
   JoinColumn,
 } from 'typeorm'
 import { Curso } from '../cursos/curso.entity'

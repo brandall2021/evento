@@ -63,7 +63,7 @@ export class ExpositoresService {
     precio?: number
     url_externa?: string
   }) {
-    const expositor = await this.findById(expositorId)
+    await this.findById(expositorId)
     const producto = this.productoRepo.create({ expositor_id: expositorId, ...data })
     return this.productoRepo.save(producto)
   }

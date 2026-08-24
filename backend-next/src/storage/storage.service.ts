@@ -46,7 +46,7 @@ export class StorageService implements OnModuleInit {
         await this.client.setBucketPolicy(this.bucket, policy)
         this.logger.log(`Bucket "${this.bucket}" created with public read`)
       }
-    } catch (err) {
+    } catch {
       this.logger.warn('MinIO bucket setup failed — using local storage')
     }
   }
@@ -58,7 +58,7 @@ export class StorageService implements OnModuleInit {
       const key = `${folder}/${randomUUID()}${ext}`
       await this.client.putObject(this.bucket, key, file.buffer, file.size, { 'Content-Type': file.mimetype })
       return `${this.endpoint}/${this.bucket}/${key}`
-    } catch (err) {
+    } catch {
       this.logger.error('MinIO upload failed, falling back to local')
       return this.saveLocal(file, folder)
     }

@@ -23,4 +23,4 @@
 - [ ] Desplegar NestJS como servicio separado en Dokploy
 - [x] Aplicar branding LACDI (colores hex + logo)
 - [ ] Tests de integracion (end-to-end)
-- [ ] CI/CD pipeline (GitHub Actions)
+- [x] CI/CD pipeline (GitHub Actions)

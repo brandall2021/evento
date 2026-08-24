@@ -1,3 +1,5 @@
+/* eslint-disable react/only-export-components */
+
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Providers } from "@/components/layout/providers"

@@ -11,11 +11,12 @@ import { Inscripcion } from '../inscripciones/inscripcion.entity'
 import { DiaAgenda } from '../agenda/dia.entity'
 import { Bloque } from '../agenda/bloque.entity'
 import { Sesion } from '../agenda/sesion.entity'
+import { CertificadosModule } from '../certificados/certificados.module'
 import { PublicApiService } from './public-api.service'
 import { PublicApiController } from './public-api.controller'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Curso, BlogPost, FAQ, Galeria, PerfilPonente, PlantillaCertificado, Inscripcion, DiaAgenda, Bloque, Sesion]), FormsModule],
+  imports: [TypeOrmModule.forFeature([Curso, BlogPost, FAQ, Galeria, PerfilPonente, PlantillaCertificado, Inscripcion, DiaAgenda, Bloque, Sesion]), FormsModule, CertificadosModule],
   controllers: [PublicApiController],
   providers: [PublicApiService],
   exports: [PublicApiService],

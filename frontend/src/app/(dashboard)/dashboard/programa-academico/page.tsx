@@ -1,6 +1,8 @@
 "use client"
 
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react"
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import { useMemo, useState, type FormEvent, type ReactNode } from "react"
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, type DragEndEvent, useSensor, useSensors } from "@dnd-kit/core"
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
@@ -202,14 +204,8 @@ export default function ProgramaAcademicoPage() {
   const program = useMemo(() => normalizeProgramAgenda(data), [data])
   const rooms = roomsData ?? []
   const agendaView = useMemo(() => buildProgramAgendaView(program), [program])
-
-  useEffect(() => {
-    if (!selectedDayId && agendaView.selectedDayId) setSelectedDayId(agendaView.selectedDayId)
-  }, [agendaView.selectedDayId, selectedDayId])
-
-  useEffect(() => {
-    if (!selectedBlockId && agendaView.selectedBlockId) setSelectedBlockId(agendaView.selectedBlockId)
-  }, [agendaView.selectedBlockId, selectedBlockId])
+  const activeSelectedDayId = selectedDayId || agendaView.selectedDayId
+  const activeSelectedBlockId = selectedBlockId || agendaView.selectedBlockId
 
   async function submitDay(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -308,7 +304,7 @@ export default function ProgramaAcademicoPage() {
     const formData = new FormData(event.currentTarget)
     try {
       await createBlock.mutateAsync({
-        dayId: Number(selectedDayId) || undefined,
+        dayId: Number(activeSelectedDayId) || undefined,
         payload: {
           titulo: String(formData.get("titulo_bloque") || ""),
           hora_inicio: String(formData.get("hora_inicio") || ""),
@@ -357,7 +353,7 @@ export default function ProgramaAcademicoPage() {
     const formData = new FormData(event.currentTarget)
     try {
       await createSession.mutateAsync({
-        blockId: Number(selectedBlockId) || undefined,
+        blockId: Number(activeSelectedBlockId) || undefined,
         payload: {
           titulo: String(formData.get("titulo_sesion") || ""),
           descripcion: String(formData.get("descripcion") || "") || undefined,
@@ -939,7 +935,7 @@ export default function ProgramaAcademicoPage() {
               <Input name="titulo_bloque" placeholder="Título del bloque" />
               <Input name="hora_inicio" type="time" />
               <Input name="hora_fin" type="time" />
-              <Button type="submit" disabled={createBlock.isPending || !selectedDayId} className="md:col-span-2">
+              <Button type="submit" disabled={createBlock.isPending || !activeSelectedDayId} className="md:col-span-2">
                 <PlusIcon className="size-4" />
                 Crear bloque
               </Button>
@@ -953,7 +949,7 @@ export default function ProgramaAcademicoPage() {
             <form onSubmit={submitSession} className="grid gap-4 md:grid-cols-2">
               <div className="md:col-span-2 flex flex-col gap-1.5">
                 <Label htmlFor="blockId">Bloque</Label>
-                <select id="blockId" value={selectedBlockId} onChange={(event) => setSelectedBlockId(event.target.value)} className="h-10 rounded-xl border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <select id="blockId" value={activeSelectedBlockId} onChange={(event) => setSelectedBlockId(event.target.value)} className="h-10 rounded-xl border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   {agendaView.blockOptions.map((block) => (
                     <option key={block.value} value={block.value}>{block.label}</option>
                   ))}
@@ -963,7 +959,7 @@ export default function ProgramaAcademicoPage() {
               <Input name="tipo" placeholder="Tipo" />
               <Input name="descripcion" placeholder="Descripción" />
               <Input name="cupos" type="number" placeholder="Cupos" />
-              <Button type="submit" disabled={createSession.isPending || !selectedBlockId} className="md:col-span-2">
+              <Button type="submit" disabled={createSession.isPending || !activeSelectedBlockId} className="md:col-span-2">
                 <PlusIcon className="size-4" />
                 Crear sesión
               </Button>

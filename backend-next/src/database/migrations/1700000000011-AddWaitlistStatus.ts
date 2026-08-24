@@ -34,7 +34,7 @@ export class AddWaitlistStatus1700000000011 implements MigrationInterface {
     `)
   }
 
-  public async down(queryRunner: QueryRunner): Promise<void> {
+  public async down(_queryRunner: QueryRunner): Promise<void> {
     // PostgreSQL enums cannot safely remove values in-place.
   }
 }

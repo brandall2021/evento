@@ -101,7 +101,7 @@ export default function RichTextEditor({ value, onChange, placeholder }) {
     if (editor && value !== editor.getHTML()) {
       editor.commands.setContent(value || '')
     }
-  }, [value])
+  }, [editor, value])
 
   return (
     <div className="tiptap-wrapper">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { api } from '../services/api'
 import { useNotify } from '../context/NotificationContext'
 
@@ -20,11 +20,7 @@ export default function AdminUsuarios() {
   const [filtroActivo, setFiltroActivo] = useState('')
   const { success, error } = useNotify()
 
-  useEffect(() => {
-    loadData()
-  }, [filtroRol, filtroActivo])
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     setLoading(true)
     try {
       const params = new URLSearchParams()
@@ -43,7 +39,11 @@ export default function AdminUsuarios() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [filtroRol, filtroActivo])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   function handleNew() {
     setEditing(null)

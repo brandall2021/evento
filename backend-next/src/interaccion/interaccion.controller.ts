@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, Request, ParseIntPipe, UseGuards } from '@nestjs/common'
+import { Controller, Get, Post, Delete, Body, Param, Query, Request, ParseIntPipe, UseGuards } from '@nestjs/common'
 import { InteraccionService } from './interaccion.service'
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
 

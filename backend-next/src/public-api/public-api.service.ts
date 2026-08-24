@@ -13,6 +13,7 @@ import { FormsService } from '../forms/forms.service'
 import { DiaAgenda } from '../agenda/dia.entity'
 import { Bloque } from '../agenda/bloque.entity'
 import { Sesion } from '../agenda/sesion.entity'
+import { CertificadosService } from '../certificados/certificados.service'
 
 @Injectable()
 export class PublicApiService {
@@ -29,6 +30,7 @@ export class PublicApiService {
     @InjectRepository(DiaAgenda) private diaRepo: Repository<DiaAgenda>,
     @InjectRepository(Bloque) private bloqueRepo: Repository<Bloque>,
     @InjectRepository(Sesion) private sesionRepo: Repository<Sesion>,
+    private readonly certificadosService: CertificadosService,
   ) {}
 
   private async attachAvailability<T extends Curso>(curso: T) {
@@ -159,13 +161,7 @@ export class PublicApiService {
   }
 
   async validarCodigo(codigo: string) {
-    const plantilla = await this.plantillaRepo.createQueryBuilder('p')
-      .where('p.codigo = :codigo', { codigo })
-      .getOne()
-    return {
-      valido: !!plantilla,
-      mensaje: plantilla ? 'Certificado válido' : 'Certificado no encontrado',
-    }
+    return this.certificadosService.validar(codigo)
   }
 
   async plantillaDefault() {

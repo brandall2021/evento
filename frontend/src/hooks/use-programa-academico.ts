@@ -1,5 +1,7 @@
 "use client"
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
 import { buildProgramAgendaMoveInvalidationKeys, buildProgramAgendaMoveRollbackOperations } from "@/lib/programa-academico-move"

@@ -5,7 +5,7 @@ import { Certificado } from './certificado.entity'
 import { Inscripcion, EstadoInscripcion } from '../inscripciones/inscripcion.entity'
 import { Asistencia } from '../asistencias/asistencia.entity'
 import { PlantillaCertificado } from '../plantillas/plantilla.entity'
-import { User, UserRole } from '../users/user.entity'
+import { UserRole } from '../users/user.entity'
 import * as QRCode from 'qrcode'
 import PDFDocument from 'pdfkit'
 
@@ -190,9 +190,18 @@ export class CertificadosService {
 
     return {
       valido: true,
-      codigo: cert.codigo,
-      estudiante: `${cert.inscripcion.estudiante.first_name} ${cert.inscripcion.estudiante.last_name}`,
-      curso: cert.inscripcion.curso.nombre,
+      certificado: {
+        codigo: cert.codigo,
+        horas: cert.horas,
+        fecha_emision: cert.fecha_emision,
+      },
+      estudiante: {
+        first_name: cert.inscripcion.estudiante.first_name,
+        last_name: cert.inscripcion.estudiante.last_name,
+      },
+      curso: {
+        nombre: cert.inscripcion.curso.nombre,
+      },
       horas: cert.horas,
       fecha_emision: cert.fecha_emision,
     }

@@ -4,7 +4,7 @@ import { Repository } from 'typeorm'
 import { Pago, EstadoPago } from './pago.entity'
 import { Inscripcion, EstadoInscripcion } from '../inscripciones/inscripcion.entity'
 import { Curso } from '../cursos/curso.entity'
-import { User, UserRole } from '../users/user.entity'
+import { UserRole } from '../users/user.entity'
 
 @Injectable()
 export class PagosService {
